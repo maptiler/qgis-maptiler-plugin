@@ -13,7 +13,9 @@ class SettingsManager:
 
     def load_setting(self, key):
         qsettings = QSettings()
-        value = qsettings.value(self.SETTING_GROUP + '/' + key)
+        qsettings.beginGroup(self.SETTING_GROUP)
+        value = qsettings.value(key)
+        qsettings.endGroup()
         if value:
             self._settings[key] = value
 
