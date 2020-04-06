@@ -50,7 +50,7 @@ class RasterCollection(QgsDataCollectionItem):
     def openDialog(self):
         new_connect_dialog = NewConnectDialog()
         new_connect_dialog.show()
-        result = new_connect_dialog.exec_()
+        new_connect_dialog.exec_()
         #reload browser
         self.parent().refreshConnections()
 

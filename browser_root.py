@@ -74,6 +74,6 @@ class RootCollection(QgsDataCollectionItem):
     def openConfigueDialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.show()
-        result = configue_dialog.exec_()
+        configue_dialog.exec_()
         #reload browser
         self.refreshConnections()
