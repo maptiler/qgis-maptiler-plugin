@@ -30,9 +30,9 @@ class RasterCollection(QgsDataCollectionItem):
         
         if self._user_editable:
             sm = SettingsManager()
-            rastermaps = sm.get_settings()['rastermaps']
+            rastermaps = sm.get_setting('rastermaps')
             for key in rastermaps:
-                item = RasterMapItem(self, key, rastermaps[key], deletable=True)
+                item = RasterMapItem(self, key, rastermaps[key], editable=True)
                 sip.transferto(item, self)
                 items.append(item)
 
@@ -55,11 +55,11 @@ class RasterCollection(QgsDataCollectionItem):
         self.parent().refreshConnections()
 
 class RasterMapItem(QgsDataItem):
-    def __init__(self, parent, name, url, deletable=False):
+    def __init__(self, parent, name, url, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/raster/" + parent.name() + '/' + name)
         self._name = name
         self._url = url
-        self._deletable = deletable
+        self._editable = editable
 
     def acceptDrop(self):
         return False
@@ -81,10 +81,9 @@ class RasterMapItem(QgsDataItem):
 
         return "type=xyz&url=" + url + apikey
 
-    #Add, Delete, Edit
     def actions(self, parent):
         actions = []
-        if self._deletable:
+        if self._editable:
             new = QAction(QIcon(), 'Remove', parent)
             new.triggered.connect(self._remove)
             actions.append(new)
