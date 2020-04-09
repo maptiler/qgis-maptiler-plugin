@@ -42,25 +42,29 @@ class RootCollection(QgsDataCollectionItem):
     
     def createChildren(self):
         #init default dataset
-        standard_dataset = {
+        raster_standard_dataset = {
             'Basic':r'https://api.maptiler.com/maps/basic/256/{z}/{x}/{y}.png?key=',
             'Bright':r'https://api.maptiler.com/maps/bright/256/{z}/{x}/{y}.png?key='
         }
-        local_dataset = {
+        raster_local_dataset = {
             'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/256/{z}/{x}/{y}.png?key='
         }
+        vector_standard_collection = {
+            
+        }
         #init Collections
-        standard_raster = RasterCollection('Standard raster tile', standard_dataset)
-        local_raster = RasterCollection('Local raster tile', local_dataset)
-        user_raster = RasterCollection('User raster tile', {}, user_editable=True)
-        vector = VectorCollection()
+        raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
+        raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
+        raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
+        
+        vector_standard_collection = VectorCollection()
 
-        sip.transferto(standard_raster, self)
-        sip.transferto(local_raster, self)
-        sip.transferto(user_raster, self)
-        sip.transferto(vector, self)
+        sip.transferto(raster_standard_collection, self)
+        sip.transferto(raster_local_collection, self)
+        sip.transferto(raster_user_collection, self)
+        sip.transferto(vector_standard_collection, self)
 
-        return [standard_raster, local_raster, user_raster, vector]
+        return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
 
     def actions(self, parent):
         actions = []
