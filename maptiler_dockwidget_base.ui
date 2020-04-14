@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>412</width>
-    <height>69</height>
+    <height>79</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -31,7 +31,7 @@
        </widget>
       </item>
       <item>
-       <widget class="QLineEdit" name="lineEdit">
+       <widget class="QLineEdit" name="searchword_text">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>
@@ -45,7 +45,10 @@
          </size>
         </property>
         <property name="placeholderText">
-         <string>search location</string>
+         <string>search location...</string>
+        </property>
+        <property name="clearButtonEnabled">
+         <bool>true</bool>
         </property>
        </widget>
       </item>
