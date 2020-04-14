@@ -5,20 +5,22 @@ import os
 
 from .settings_manager import SettingsManager
 
-FORM_CLASS, _ = uic.loadUiType(os.path.join(
-    os.path.dirname(__file__), 'configue_dialog_base.ui'))
-
-class ConfigueDialog(QtWidgets.QDialog, FORM_CLASS):
-    def __init__(self, parent=None):
-        super(ConfigueDialog, self).__init__(parent)
-        self.setupUi(self)
-
+class ConfigueDialog(QtWidgets.QDialog):
+    def __init__(self):
+        super().__init__()
+        self.ui = uic.loadUi(os.path.join(os.path.dirname(__file__), 'configue_dialog_base.ui'), self)
+        self.ui.button_box.accepted.connect(self._accepted)
+        self.ui.button_box.rejected.connect(self._rejected)
+        
         smanager = SettingsManager()
-        apikey = smanager.get_settings()['apikey']
-        if apikey:
-            self.user_txt.setText(apikey)
-    
-    def slot1(self):
+        apikey = smanager.get_setting('apikey')
+        self.ui.apikey_txt.setText(apikey)
+
+    def _accepted(self):
+        apikey = self.ui.apikey_txt.text()
         smanager = SettingsManager()
-        smanager.store_setting('apikey', self.user_txt.text())
+        smanager.store_setting('apikey', apikey)
+        self.close()
+
+    def _rejected(self):
         self.close()

@@ -1,23 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>geospacecdsDialogBase</class>
- <widget class="QDialog" name="geospacecdsDialogBase">
+ <class>MapTilerConfigueDialogBase</class>
+ <widget class="QDialog" name="MapTilerConfigueDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>350</width>
-    <height>290</height>
+    <width>339</width>
+    <height>306</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MapTiler Configue</string>
+   <string>MapTiler Plugin Configue</string>
   </property>
   <widget class="QDialogButtonBox" name="button_box">
    <property name="geometry">
     <rect>
      <x>-10</x>
-     <y>250</y>
+     <y>270</y>
      <width>341</width>
      <height>32</height>
     </rect>
@@ -29,14 +29,14 @@
     <set>QDialogButtonBox::Cancel|QDialogButtonBox::Ok</set>
    </property>
   </widget>
-  <widget class="QLineEdit" name="user_txt">
+  <widget class="QLineEdit" name="apikey_txt">
    <property name="enabled">
     <bool>true</bool>
    </property>
    <property name="geometry">
     <rect>
      <x>50</x>
-     <y>220</y>
+     <y>240</y>
      <width>281</width>
      <height>21</height>
     </rect>
@@ -49,7 +49,7 @@
    <property name="geometry">
     <rect>
      <x>10</x>
-     <y>220</y>
+     <y>240</y>
      <width>41</width>
      <height>21</height>
     </rect>
@@ -66,11 +66,17 @@
   <widget class="QLabel" name="label_2">
    <property name="geometry">
     <rect>
-     <x>80</x>
-     <y>10</y>
-     <width>191</width>
-     <height>201</height>
+     <x>70</x>
+     <y>0</y>
+     <width>200</width>
+     <height>200</height>
     </rect>
+   </property>
+   <property name="maximumSize">
+    <size>
+     <width>200</width>
+     <height>200</height>
+    </size>
    </property>
    <property name="text">
     <string notr="true"/>
@@ -81,56 +87,12 @@
    <property name="scaledContents">
     <bool>true</bool>
    </property>
-   <property name="textInteractionFlags">
-    <set>Qt::NoTextInteraction</set>
-   </property>
   </widget>
   <zorder>label</zorder>
   <zorder>button_box</zorder>
-  <zorder>user_txt</zorder>
+  <zorder>apikey_txt</zorder>
   <zorder>label_2</zorder>
  </widget>
- <tabstops>
-  <tabstop>user_txt</tabstop>
- </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>button_box</sender>
-   <signal>rejected()</signal>
-   <receiver>geospacecdsDialogBase</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>40</x>
-     <y>70</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>button_box</sender>
-   <signal>accepted()</signal>
-   <receiver>geospacecdsDialogBase</receiver>
-   <slot>slot1()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>40</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>31</x>
-     <y>27</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
- <slots>
-  <signal>signal1()</signal>
-  <signal>signal2()</signal>
-  <slot>slot1()</slot>
- </slots>
+ <connections/>
 </ui>
