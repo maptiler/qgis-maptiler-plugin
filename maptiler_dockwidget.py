@@ -40,7 +40,7 @@ class MapTilerDockWidget(QtWidgets.QDockWidget):
     #LineEdit returned event
     def on_searchword_returned(self):
         searchword = self._ui.searchword_text.text()
-        geojson_dict = self.fetch_geocoding_api(searchword)
+        geojson_dict = self._fetch_geocoding_api(searchword)
         
         self.result_features = geojson_dict['features']
 
@@ -52,7 +52,7 @@ class MapTilerDockWidget(QtWidgets.QDockWidget):
         model.setStringList(result_list)
         self.completer.complete()
 
-    def fetch_geocoding_api(self, searchword):
+    def _fetch_geocoding_api(self, searchword):
         #get a center point of MapCanvas
         center = self._iface.mapCanvas().center()
         center_as_qgspoint = QgsPoint(center.x(), center.y())

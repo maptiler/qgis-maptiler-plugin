@@ -21,21 +21,28 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QDockWidget
+from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
 
-from qgis.core import QgsApplication, QgsProject
-
-# Initialize Qt resources from file resources.py
-from .resources import *
+from qgis.core import (
+    QgsApplication,
+    QgsProject,
+    QgsCoordinateReferenceSystem,
+    QgsCoordinateTransform,
+    QgsPoint,
+    QgsRectangle,
+    QgsVectorLayer
+)
 
 # Import the code for the DockWidget
 from .maptiler_dockwidget import MapTilerDockWidget
 import os.path
+import json
 
 from .browser_root import DataItemProvider
 from .geocoder import MapTilerGeocoder
+from .configue_dialog import ConfigueDialog
 
 class MapTiler:
     """QGIS Plugin Implementation."""
@@ -48,6 +55,8 @@ class MapTiler:
             application at run time.
         :type iface: QgsInterface
         """
+        self.proj = QgsProject.instance()
+
         # Save reference to the QGIS interface
         self.iface = iface
 
@@ -73,10 +82,33 @@ class MapTiler:
         self.toolbar = self.iface.addToolBar(u'MapTiler')
         self.toolbar.setObjectName(u'MapTiler')
 
+        ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+        icon = QIcon(os.path.join(ICON_PATH, "maptiler_icon.svg"))
+        icon_action = QAction(icon, '', self.toolbar)
+        icon_action.triggered.connect(self.open_configue_dialog)
+        self.toolbar.addAction(icon_action)
+
+        self.search_line_edit = QLineEdit()
+        self.search_line_edit.setPlaceholderText('Search Location')
+        self.search_line_edit.setMaximumWidth(500)
+        self.toolbar.addWidget(self.search_line_edit)
+
+        #init QCompleter
+        self.completer = QCompleter([])
+        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.completer.setMaxVisibleItems(30)
+        self.completer.setModelSorting(QCompleter.UnsortedModel)
+        self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.completer.activated[QModelIndex].connect(self.on_result_clicked)
+
+        #init LineEdit of searchword
+        self.search_line_edit.setCompleter(self.completer)
+        self.search_line_edit.textEdited.connect(self.on_searchword_edited)
+        self.search_line_edit.returnPressed.connect(self.on_searchword_returned)
+
         #print "** INITIALIZING MapTiler"
 
         self.pluginIsActive = False
-        self.dockwidget = None
 
 
     # noinspection PyMethodMayBeStatic
@@ -94,113 +126,12 @@ class MapTiler:
         # noinspection PyTypeChecker,PyArgumentList,PyCallByClass
         return QCoreApplication.translate('MapTiler', message)
 
-
-    def add_action(
-        self,
-        icon_path,
-        text,
-        callback,
-        enabled_flag=True,
-        add_to_menu=True,
-        add_to_toolbar=True,
-        status_tip=None,
-        whats_this=None,
-        parent=None):
-        """Add a toolbar icon to the toolbar.
-
-        :param icon_path: Path to the icon for this action. Can be a resource
-            path (e.g. ':/plugins/foo/bar.png') or a normal file system path.
-        :type icon_path: str
-
-        :param text: Text that should be shown in menu items for this action.
-        :type text: str
-
-        :param callback: Function to be called when the action is triggered.
-        :type callback: function
-
-        :param enabled_flag: A flag indicating if the action should be enabled
-            by default. Defaults to True.
-        :type enabled_flag: bool
-
-        :param add_to_menu: Flag indicating whether the action should also
-            be added to the menu. Defaults to True.
-        :type add_to_menu: bool
-
-        :param add_to_toolbar: Flag indicating whether the action should also
-            be added to the toolbar. Defaults to True.
-        :type add_to_toolbar: bool
-
-        :param status_tip: Optional text to show in a popup when mouse pointer
-            hovers over the action.
-        :type status_tip: str
-
-        :param parent: Parent widget for the new action. Defaults None.
-        :type parent: QWidget
-
-        :param whats_this: Optional text to show in the status bar when the
-            mouse pointer hovers over the action.
-
-        :returns: The action that was created. Note that the action is also
-            added to self.actions list.
-        :rtype: QAction
-        """
-
-        icon = QIcon(icon_path)
-        action = QAction(icon, text, parent)
-        action.triggered.connect(callback)
-        action.setEnabled(enabled_flag)
-
-        if status_tip is not None:
-            action.setStatusTip(status_tip)
-
-        if whats_this is not None:
-            action.setWhatsThis(whats_this)
-
-        if add_to_toolbar:
-            self.toolbar.addAction(action)
-
-        if add_to_menu:
-            self.iface.addPluginToMenu(
-                self.menu,
-                action)
-
-        self.actions.append(action)
-
-        return action
-
-
     def initGui(self):
-        """Create the menu entries and toolbar icons inside the QGIS GUI."""
-
-        icon_path = ':/plugins/maptiler/icon.png'
-        self.add_action(
-            icon_path,
-            text=self.tr(u''),
-            callback=self.run,
-            parent=self.iface.mainWindow())
-
         #add MapTiler Collection to Browser
         dip = DataItemProvider()
         QgsApplication.instance().dataItemProviderRegistry().addProvider(dip)
 
     #--------------------------------------------------------------------------
-
-    def onClosePlugin(self):
-        """Cleanup necessary items here when plugin dockwidget is closed"""
-
-        #print "** CLOSING MapTiler"
-
-        # disconnects
-        self.dockwidget.closingPlugin.disconnect(self.onClosePlugin)
-
-        # remove this statement if dockwidget is to remain
-        # for reuse if plugin is reopened
-        # Commented next statement since it causes QGIS crashe
-        # when closing the docked window:
-        # self.dockwidget = None
-
-        self.pluginIsActive = False
-
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -209,35 +140,73 @@ class MapTiler:
         dip = DataItemProvider()
         QgsApplication.instance().dataItemProviderRegistry().removeProvider(dip)
 
-        #print "** UNLOAD MapTiler"
-
-        for action in self.actions:
-            self.iface.removePluginMenu(
-                self.tr(u'&MapTiler'),
-                action)
-            self.iface.removeToolBarIcon(action)
         # remove the toolbar
         del self.toolbar
 
     #--------------------------------------------------------------------------
 
-    def run(self):
-        """Run method that loads and starts the plugin"""
-        if not self.pluginIsActive:
-            self.pluginIsActive = True
+    def open_configue_dialog(self):
+        configue_dialog = ConfigueDialog()
+        configue_dialog.exec_()
 
-            #print "** STARTING MapTiler"
+    #LineEdit edited event
+    def on_searchword_edited(self):
+        model = self.completer.model()
+        model.setStringList([])
+        self.completer.complete()
+    
+    #LineEdit returned event
+    def on_searchword_returned(self):
+        searchword = self.search_line_edit.text()
+        geojson_dict = self._fetch_geocoding_api(searchword)
+        
+        self.result_features = geojson_dict['features']
 
-            # dockwidget may not exist if:
-            #    first run of plugin
-            #    removed on close (see self.onClosePlugin method)
-            if self.dockwidget == None:
-                # Create the dockwidget (after translation) and keep reference
-                self.dockwidget = MapTilerDockWidget(self.iface)
+        result_list = []
+        for feature in self.result_features:
+            result_list.append('%s:%s'%(feature['text'],feature['place_name']))
 
-            # connect to provide cleanup on closing of dockwidget
-            self.dockwidget.closingPlugin.connect(self.onClosePlugin)
+        model = self.completer.model()
+        model.setStringList(result_list)
+        self.completer.complete()
 
-            # show the dockwidget
-            self.iface.addDockWidget(Qt.LeftDockWidgetArea, self.dockwidget)
-            self.dockwidget.show()
+    def _fetch_geocoding_api(self, searchword):
+        #get a center point of MapCanvas
+        center = self.iface.mapCanvas().center()
+        center_as_qgspoint = QgsPoint(center.x(), center.y())
+
+        #transform the center point to EPSG:4326
+        target_crs = QgsCoordinateReferenceSystem('EPSG:4326')
+        transform = QgsCoordinateTransform(self.proj.crs(), target_crs, self.proj)
+        center_as_qgspoint.transform(transform)
+        center_lonlat = [center_as_qgspoint.x(), center_as_qgspoint.y()]
+
+        #start Geocoding
+        geocoder = MapTilerGeocoder()
+        geojson_dict = geocoder.geocoding(searchword, center_lonlat)
+        return geojson_dict
+
+    def on_result_clicked(self, result_index):
+        #add selected feature to Project
+        selected_feature = self.result_features[result_index.row()]
+        geojson_str = json.dumps(selected_feature)
+        vlayer = QgsVectorLayer(geojson_str, selected_feature['place_name'], 'ogr')
+        self.proj.addMapLayer(vlayer)
+
+        #get leftbottom and righttop points of vlayer
+        vlayer_extent_rect = vlayer.extent()
+        vlayer_extent_leftbottom = QgsPoint(vlayer_extent_rect.xMinimum(), vlayer_extent_rect.yMinimum()) 
+        vlayer_extent_righttop = QgsPoint(vlayer_extent_rect.xMaximum(), vlayer_extent_rect.yMaximum()) 
+        
+        #transform 2points to project CRS
+        current_crs = vlayer.sourceCrs()
+        target_crs = self.proj.crs()
+        transform = QgsCoordinateTransform(current_crs, target_crs, self.proj)
+        vlayer_extent_leftbottom.transform(transform)
+        vlayer_extent_righttop.transform(transform)
+
+        #make rectangle same to new extent by transformed 2points
+        target_extent_rect = QgsRectangle(vlayer_extent_leftbottom.x(), vlayer_extent_leftbottom.y(),
+                         vlayer_extent_righttop.x(), vlayer_extent_righttop.y() )
+
+        self.iface.mapCanvas().zoomToFeatureExtent(target_extent_rect)
