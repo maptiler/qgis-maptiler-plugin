@@ -65,13 +65,11 @@ class RootCollection(QgsDataCollectionItem):
         actions = []
 
         configue_action = QAction(QIcon(), 'Configue', parent)
-        configue_action.triggered.connect(self.openConfigueDialog)
+        configue_action.triggered.connect(self.open_configue_dialog)
         actions.append(configue_action)
 
         return actions
 
-    def openConfigueDialog(self):
+    def open_configue_dialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
-        #reload browser
-        self.refreshConnections()
