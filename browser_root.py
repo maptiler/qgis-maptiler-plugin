@@ -25,11 +25,6 @@ class DataItemProvider(QgsDataItemProvider):
     def capabilities(self):
         return QgsDataProvider.Net
 
-    def actions(self, parent):
-        action_configure = QAction("Configure", parent)
-        actions = [action_configure]
-        return actions
-
     def createDataItem(self, path, parentItem):
         root = RootCollection()
         sip.transferto(root, None)
@@ -77,7 +72,6 @@ class RootCollection(QgsDataCollectionItem):
 
     def openConfigueDialog(self):
         configue_dialog = ConfigueDialog()
-        configue_dialog.show()
         configue_dialog.exec_()
         #reload browser
         self.refreshConnections()

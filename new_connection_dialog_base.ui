@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Add New Connection</string>
+   <string>New Connection</string>
   </property>
   <widget class="QDialogButtonBox" name="button_box">
    <property name="geometry">
@@ -114,43 +114,5 @@
   <tabstop>pass_txt</tabstop>
  </tabstops>
  <resources/>
- <connections>
-  <connection>
-   <sender>button_box</sender>
-   <signal>rejected()</signal>
-   <receiver>geospacecdsDialogBase</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>40</x>
-     <y>70</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>20</x>
-     <y>20</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>button_box</sender>
-   <signal>accepted()</signal>
-   <receiver>geospacecdsDialogBase</receiver>
-   <slot>slot1()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>40</x>
-     <y>86</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>31</x>
-     <y>27</y>
-    </hint>
-   </hints>
-  </connection>
- </connections>
- <slots>
-  <signal>signal1()</signal>
-  <signal>signal2()</signal>
-  <slot>slot1()</slot>
- </slots>
+ <connections/>
 </ui>
