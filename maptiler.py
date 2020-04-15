@@ -35,8 +35,6 @@ from qgis.core import (
     QgsVectorLayer
 )
 
-# Import the code for the DockWidget
-from .maptiler_dockwidget import MapTilerDockWidget
 import os.path
 import json
 
