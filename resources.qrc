@@ -1,5 +1,5 @@
 <RCC>
-    <qresource prefix="/plugins/maptiler" >
-        <file>icon.png</file>
-    </qresource>
+  <qresource prefix="/plugins/maptiler">
+    <file>icon.png</file>
+  </qresource>
 </RCC>

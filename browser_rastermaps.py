@@ -12,12 +12,18 @@ from qgis.core import (
     QgsDataProvider
 )
 
-from .new_connect_dialog import NewConnectDialog
+from .configue_dialog import ConfigueDialog
+from .new_connection_dialog import RasterNewConnectionDialog
+from .edit_connection_dialog import RasterEditConnectionDialog
 from .settings_manager import SettingsManager
+from . import utils
+
+ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
 class RasterCollection(QgsDataCollectionItem):
     def __init__(self, name, dataset, user_editable=False):
         QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/raster/" + name)
+        self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_collection_icon.png")))
         self._dataset = dataset
         self._user_editable = user_editable
 
@@ -29,8 +35,8 @@ class RasterCollection(QgsDataCollectionItem):
             items.append(item)
         
         if self._user_editable:
-            sm = SettingsManager()
-            rastermaps = sm.get_setting('rastermaps')
+            smanager = SettingsManager()
+            rastermaps = smanager.get_setting('rastermaps')
             for key in rastermaps:
                 item = RasterMapItem(self, key, rastermaps[key], editable=True)
                 sip.transferto(item, self)
@@ -48,15 +54,16 @@ class RasterCollection(QgsDataCollectionItem):
         return actions
 
     def openDialog(self):
-        new_connect_dialog = NewConnectDialog()
-        new_connect_dialog.show()
-        new_connect_dialog.exec_()
+        new_dialog = RasterNewConnectionDialog()
+        new_dialog.exec_()
         #reload browser
         self.parent().refreshConnections()
 
 class RasterMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/raster/" + parent.name() + '/' + name)
+        self.populate() #set this item as not-folder-like
+
         self._name = name
         self._url = url
         self._editable = editable
@@ -65,30 +72,44 @@ class RasterMapItem(QgsDataItem):
         return False
 
     def handleDoubleClick(self):
-        proj = QgsProject().instance()
-        url = self.reshape_url(self._url)
-        raster = QgsRasterLayer(url, self._name, "wms")
-        proj.addMapLayer(raster)
+        self._add_to_canvas()
         return True
-
-    def reshape_url(self, url):
-        smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-        
-        #when URL includes APIKEY
-        if url.endswith(apikey):
-            return "type=xyz&url=" + url
-
-        return "type=xyz&url=" + url + apikey
 
     def actions(self, parent):
         actions = []
+
+        add_action = QAction(QIcon(), 'Add to Canvas', parent)
+        add_action.triggered.connect(self._add_to_canvas)
+        actions.append(add_action)
+
         if self._editable:
-            new = QAction(QIcon(), 'Remove', parent)
-            new.triggered.connect(self._remove)
-            actions.append(new)
+            edit_action = QAction(QIcon(), 'Edit', parent)
+            edit_action.triggered.connect(self._edit)
+            actions.append(edit_action)
+
+            remove_action = QAction(QIcon(), 'Remove', parent)
+            remove_action.triggered.connect(self._remove)
+            actions.append(remove_action)
         
         return actions
+
+    def _add_to_canvas(self):
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+
+        if not utils.validate_key(apikey):
+            self._openConfigueDialog()
+            return True
+        
+        proj = QgsProject().instance()
+        url = "type=xyz&url=" + self._url + apikey
+        raster = QgsRasterLayer(url, self._name, "wms")
+        proj.addMapLayer(raster)
+
+    def _edit(self):
+        edit_dialog = RasterEditConnectionDialog(self._name)
+        edit_dialog.exec_()
+        self.parent().refreshConnections()
 
     def _remove(self):
         smanager = SettingsManager()
@@ -96,3 +117,7 @@ class RasterMapItem(QgsDataItem):
         del rastermaps[self._name]
         smanager.store_setting('rastermaps', rastermaps)
         self.parent().refreshConnections()
+
+    def _openConfigueDialog(self):
+        configue_dialog = ConfigueDialog()
+        configue_dialog.exec_()
