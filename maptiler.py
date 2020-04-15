@@ -89,6 +89,7 @@ class MapTiler:
         self.search_line_edit = QLineEdit()
         self.search_line_edit.setPlaceholderText('Search Location')
         self.search_line_edit.setMaximumWidth(500)
+        self.search_line_edit.setClearButtonEnabled(True)
         self.toolbar.addWidget(self.search_line_edit)
 
         #init QCompleter

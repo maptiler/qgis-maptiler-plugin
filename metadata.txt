@@ -12,8 +12,8 @@ email=info@mierune.co.jp
 
 about=Show MapTiler cloud maps.
 
-tracker=http://bugs
-repository=http://repo
+tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
+repository=https://github.com/maptiler/qgis-maptiler-plugin
 # End of mandatory metadata
 
 # Recommended items:
@@ -25,23 +25,8 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python, maptiler, raster, vector, tile
 
-homepage=http://homepage
-category=Plugins
-icon=icon.png
+homepage=https://github.com/maptiler/qgis-maptiler-plugin
+category=Web
+icon=./imgs/maptiler_icon.svg
 # experimental flag
 experimental=False
-
-# deprecated flag (applies to the whole plugin, not just a single version)
-deprecated=False
-
-# Since QGIS 3.8, a comma separated list of plugins to be installed
-# (or upgraded) can be specified.
-# Check the documentation for more information.
-# plugin_dependencies=
-
-Category of the plugin: Raster, Vector, Database or Web
-# category=
-
-# If the plugin can run on QGIS Server.
-server=False
-
