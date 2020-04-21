@@ -9,7 +9,7 @@ from qgis.core import (
 )
 
 from .browser_rastermaps import RasterCollection
-from .browser_vectormaps import VectorCollection
+#from .browser_vectormaps import VectorCollection
 
 from .configue_dialog import ConfigueDialog
 
@@ -45,21 +45,21 @@ class RootCollection(QgsDataCollectionItem):
             'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/256/{z}/{x}/{y}.png?key='
         }
         vector_standard_collection = {
-            
+            'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
         }
         #init Collections
         raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
         raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
         raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
-        
-        vector_standard_collection = VectorCollection()
+        #vector_standard_collection = VectorCollection('Standard Vector tile', vector_standard_collection)
 
         sip.transferto(raster_standard_collection, self)
         sip.transferto(raster_local_collection, self)
         sip.transferto(raster_user_collection, self)
-        sip.transferto(vector_standard_collection, self)
+        #sip.transferto(vector_standard_collection, self)
 
-        return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
+        return [raster_standard_collection, raster_local_collection, raster_user_collection]
+        #return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
 
     def actions(self, parent):
         actions = []

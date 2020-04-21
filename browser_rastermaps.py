@@ -1,5 +1,6 @@
 import os
 import sip
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import (
