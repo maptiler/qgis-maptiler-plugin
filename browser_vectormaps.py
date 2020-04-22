@@ -3,13 +3,7 @@ import sip
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import (
-    QgsDataCollectionItem,
-    QgsProject,
-    QgsDataItem,
-    QgsDataCollectionItem,
-    QgsVectorTileLayer
-)
+from qgis.core import *
 
 from .new_connection_dialog import VectorNewConnectionDialog
 from .settings_manager import SettingsManager

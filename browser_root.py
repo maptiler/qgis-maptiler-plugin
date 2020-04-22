@@ -3,15 +3,16 @@ import sip
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import (
+    Qgis,
     QgsDataCollectionItem,
     QgsDataItemProvider,
     QgsDataProvider
 )
 
 from .browser_rastermaps import RasterCollection
-#from .browser_vectormaps import VectorCollection
-
+from .browser_vectormaps import VectorCollection
 from .configue_dialog import ConfigueDialog
+from .settings_manager import SettingsManager
 
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
@@ -44,22 +45,32 @@ class RootCollection(QgsDataCollectionItem):
         raster_local_dataset = {
             'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/256/{z}/{x}/{y}.png?key='
         }
-        vector_standard_collection = {
-            'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-        }
+        
         #init Collections
         raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
         raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
         raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
-        #vector_standard_collection = VectorCollection('Standard Vector tile', vector_standard_collection)
 
         sip.transferto(raster_standard_collection, self)
         sip.transferto(raster_local_collection, self)
         sip.transferto(raster_user_collection, self)
-        #sip.transferto(vector_standard_collection, self)
 
-        return [raster_standard_collection, raster_local_collection, raster_user_collection]
-        #return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
+        #judge vtile is available or not
+        qgis_version_str = str(Qgis.QGIS_VERSION_INT) #e.g. QGIS3.10.4 -> 31004
+        minor_ver = int(qgis_version_str[1:3])
+
+        smanager = SettingsManager()
+        isVectorEnabled = int(smanager.get_setting('isVectorEnabled'))
+        if minor_ver < 13 or not isVectorEnabled:
+            return [raster_standard_collection, raster_local_collection, raster_user_collection]
+
+        #if vtile is available
+        vector_standard_collection = {
+            'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
+        }
+        vector_standard_collection = VectorCollection('Standard Vector tile', vector_standard_collection)
+        sip.transferto(vector_standard_collection, self)
+        return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
 
     def actions(self, parent):
         actions = []

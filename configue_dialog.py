@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from PyQt5 import uic, QtWidgets, QtCore
 import os
+
+from PyQt5 import uic, QtWidgets, QtCore
+from qgis.core import Qgis
 
 from .settings_manager import SettingsManager
 
@@ -16,10 +18,27 @@ class ConfigueDialog(QtWidgets.QDialog):
         apikey = smanager.get_setting('apikey')
         self.ui.apikey_txt.setText(apikey)
 
+        qgis_version_str = str(Qgis.QGIS_VERSION_INT) #e.g. QGIS3.10.4 -> 31004
+        #major_ver = int(qgis_version_str[0])
+        minor_ver = int(qgis_version_str[1:3])
+        #micro_ver = int(qgis_version_str[3:])
+        
+        #Checkbox are available only when on QGIS version having feature of Vectortile
+        if minor_ver > 12:
+            self.ui.vtileCheckBox.setEnabled(True)
+            isVectorEnabled = int(smanager.get_setting('isVectorEnabled'))
+            self.ui.vtileCheckBox.setChecked(isVectorEnabled)
+
     def _accepted(self):
-        apikey = self.ui.apikey_txt.text()
+        #get and store UI values
         smanager = SettingsManager()
+
+        apikey = self.ui.apikey_txt.text()
         smanager.store_setting('apikey', apikey)
+
+        isVectorEnabled = int(self.ui.vtileCheckBox.isChecked())
+        smanager.store_setting('isVectorEnabled', isVectorEnabled)
+
         self.close()
 
     def _rejected(self):

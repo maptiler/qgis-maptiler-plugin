@@ -1,5 +1,9 @@
 from PyQt5.QtCore import QSettings
 
+#QSettings holds variables as list or dict or str.
+#if int or bool value is set, they are converted to str in the Class.
+#In particular, isVectorEnabled is treated as bool by cast str '0' or '1' to int(bool).
+
 class SettingsManager:
     SETTING_GROUP = '/maptiler'
 
@@ -7,7 +11,8 @@ class SettingsManager:
         self._settings = {
             'apikey':'',
             'rastermaps':{},
-            'vectormaps':{}
+            'vectormaps':{},
+            'isVectorEnabled':'0'
         }
         self.load_settings()
 
