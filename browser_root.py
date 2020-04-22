@@ -2,12 +2,7 @@ import os
 import sip
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import (
-    Qgis,
-    QgsDataCollectionItem,
-    QgsDataItemProvider,
-    QgsDataProvider
-)
+from qgis.core import *
 
 from .browser_rastermaps import RasterCollection
 from .browser_vectormaps import VectorCollection
@@ -37,50 +32,50 @@ class RootCollection(QgsDataCollectionItem):
         self.setIcon(QIcon(os.path.join(ICON_PATH, "maptiler_icon.svg")))
     
     def createChildren(self):
-        #init default dataset
-        raster_standard_dataset = {
-            'Basic':r'https://api.maptiler.com/maps/basic/256/{z}/{x}/{y}.png?key=',
-            'Bright':r'https://api.maptiler.com/maps/bright/256/{z}/{x}/{y}.png?key='
-        }
-        raster_local_dataset = {
-            'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/256/{z}/{x}/{y}.png?key='
-        }
-        
-        #init Collections
-        raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
-        raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
-        raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
-
-        sip.transferto(raster_standard_collection, self)
-        sip.transferto(raster_local_collection, self)
-        sip.transferto(raster_user_collection, self)
-
         #judge vtile is available or not
         qgis_version_str = str(Qgis.QGIS_VERSION_INT) #e.g. QGIS3.10.4 -> 31004
         minor_ver = int(qgis_version_str[1:3])
 
         smanager = SettingsManager()
         isVectorEnabled = int(smanager.get_setting('isVectorEnabled'))
+
+        #Raster Mode
         if minor_ver < 13 or not isVectorEnabled:
+            #init default dataset
+            raster_standard_dataset = {
+                'Basic':r'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=',
+                'Bright':r'https://api.maptiler.com/maps/bright/{z}/{x}/{y}.png?key='
+            }
+            raster_local_dataset = {
+                'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key='
+            }
+            #init Collections
+            raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
+            raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
+            raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
+
+            sip.transferto(raster_standard_collection, self)
+            sip.transferto(raster_local_collection, self)
+            sip.transferto(raster_user_collection, self)
+
             return [raster_standard_collection, raster_local_collection, raster_user_collection]
 
-        #if vtile is available
-        vector_standard_collection = {
-            'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-        }
-        vector_standard_collection = VectorCollection('Standard Vector tile', vector_standard_collection)
-        sip.transferto(vector_standard_collection, self)
-        return [raster_standard_collection, raster_local_collection, raster_user_collection, vector_standard_collection]
+        #Vector Mode
+        else:
+            #init default dataset
+            vector_standard_collection = {
+                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
+            }
+            vector_local_collection = {
+                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
+            }
 
-    def actions(self, parent):
-        actions = []
+            vector_standard_collection = VectorCollection('Standard vector tile', vector_standard_collection)
+            vector_local_collection = VectorCollection('Local vector tile', vector_local_collection)
+            vector_user_collection = VectorCollection('User vector tile', {}, user_editable=True)
 
-        configue_action = QAction(QIcon(), 'Configue', parent)
-        configue_action.triggered.connect(self.open_configue_dialog)
-        actions.append(configue_action)
-
-        return actions
-
-    def open_configue_dialog(self):
-        configue_dialog = ConfigueDialog()
-        configue_dialog.exec_()
+            sip.transferto(vector_standard_collection, self)
+            sip.transferto(vector_local_collection, self)
+            sip.transferto(vector_user_collection, self)
+            
+            return [vector_standard_collection, vector_local_collection, vector_user_collection]

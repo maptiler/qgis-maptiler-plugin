@@ -3,15 +3,7 @@ import sip
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from qgis.core import (
-    QgsApplication,
-    QgsProject,
-    QgsRasterLayer,
-    QgsDataItem,
-    QgsDataCollectionItem,
-    QgsDataItemProvider,
-    QgsDataProvider
-)
+from qgis.core import *
 
 from .configue_dialog import ConfigueDialog
 from .new_connection_dialog import RasterNewConnectionDialog
@@ -63,8 +55,9 @@ class RasterCollection(QgsDataCollectionItem):
 class RasterMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/raster/" + parent.name() + '/' + name)
-        self.populate() #set this item as not-folder-like
+        self.populate() #set to treat Item as not-folder-like
 
+        self._parent = parent
         self._name = name
         self._url = url
         self._editable = editable
@@ -95,9 +88,9 @@ class RasterMapItem(QgsDataItem):
         return actions
 
     def _add_to_canvas(self):
+        #apikey validation
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
-
         if not utils.validate_key(apikey):
             self._openConfigueDialog()
             return True
@@ -110,15 +103,16 @@ class RasterMapItem(QgsDataItem):
     def _edit(self):
         edit_dialog = RasterEditConnectionDialog(self._name)
         edit_dialog.exec_()
-        self.parent().refreshConnections()
+        self._parent.refreshConnections()
 
     def _remove(self):
         smanager = SettingsManager()
         rastermaps = smanager.get_setting('rastermaps')
         del rastermaps[self._name]
         smanager.store_setting('rastermaps', rastermaps)
-        self.parent().refreshConnections()
+        self._parent.refreshConnections()
 
     def _openConfigueDialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
+        self._parent.parent().refreshConnections()

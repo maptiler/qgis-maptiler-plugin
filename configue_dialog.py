@@ -10,6 +10,7 @@ from .settings_manager import SettingsManager
 class ConfigueDialog(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
+
         self.ui = uic.loadUi(os.path.join(os.path.dirname(__file__), 'configue_dialog_base.ui'), self)
         self.ui.button_box.accepted.connect(self._accepted)
         self.ui.button_box.rejected.connect(self._rejected)

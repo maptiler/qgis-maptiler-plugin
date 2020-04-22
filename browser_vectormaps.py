@@ -5,8 +5,11 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
+from .configue_dialog import ConfigueDialog
 from .new_connection_dialog import VectorNewConnectionDialog
+from .edit_connection_dialog import VectorEditConnectionDialog
 from .settings_manager import SettingsManager
+from . import utils
 
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
@@ -40,6 +43,7 @@ class VectorCollection(QgsDataCollectionItem):
             new = QAction(QIcon(), 'Add new connection', parent)
             new.triggered.connect(self.openDialog)
             actions.append(new)
+            self.parent().refresh()
 
         return actions
 
@@ -53,6 +57,9 @@ class VectorCollection(QgsDataCollectionItem):
 class VectorMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/vector/" + parent.name() + '/' + name)
+        self.populate() #set to treat Item as not-folder-like
+        
+        self._parent = parent
         self._name = name
         self._url = url
         self._editable = editable
@@ -61,6 +68,13 @@ class VectorMapItem(QgsDataItem):
         return False
 
     def handleDoubleClick(self):
+        #apikey validation
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+        if not utils.validate_key(apikey):
+            self._openConfigueDialog()
+            return True
+
         proj = QgsProject().instance()
         url = self.reshape_url(self._url)
         vtlayer = QgsVectorTileLayer(url, self._name)
@@ -80,15 +94,29 @@ class VectorMapItem(QgsDataItem):
     def actions(self, parent):
         actions = []
         if self._editable:
+            edit_action = QAction(QIcon(), 'Edit', parent)
+            edit_action.triggered.connect(self._edit)
+            actions.append(edit_action)
+
             new = QAction(QIcon(), 'Remove', parent)
             new.triggered.connect(self._remove)
             actions.append(new)
         
         return actions
 
+    def _edit(self):
+        edit_dialog = VectorEditConnectionDialog(self._name)
+        edit_dialog.exec_()
+        self._parent.refreshConnections()
+
     def _remove(self):
         smanager = SettingsManager()
         vectormaps = smanager.get_setting('vectormaps')
         del vectormaps[self._name]
         smanager.store_setting('vectormaps', vectormaps)
-        self.parent().refreshConnections()
+        self._parent.refreshConnections()
+
+    def _openConfigueDialog(self):
+        configue_dialog = ConfigueDialog()
+        configue_dialog.exec_()
+        self._parent.parent().refreshConnections()

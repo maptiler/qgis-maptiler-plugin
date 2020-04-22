@@ -21,22 +21,14 @@
  *                                                                         *
  ***************************************************************************/
 """
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
-
-from qgis.core import (
-    QgsApplication,
-    QgsProject,
-    QgsCoordinateReferenceSystem,
-    QgsCoordinateTransform,
-    QgsPoint,
-    QgsRectangle,
-    QgsVectorLayer
-)
 
 import os.path
 import json
+
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
+from qgis.core import *
 
 from .browser_root import DataItemProvider
 from .geocoder import MapTilerGeocoder
@@ -147,6 +139,7 @@ class MapTiler:
     def open_configue_dialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
+        self.iface.reloadConnections()
 
     #LineEdit edited event
     def on_searchword_edited(self):
@@ -158,6 +151,9 @@ class MapTiler:
     def on_searchword_returned(self):
         searchword = self.search_line_edit.text()
         geojson_dict = self._fetch_geocoding_api(searchword)
+
+        if geojson_dict is None:
+            return
         
         self.result_features = geojson_dict['features']
 
