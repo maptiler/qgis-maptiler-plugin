@@ -15,8 +15,8 @@ class NewConnectionDialog(QtWidgets.QDialog):
         self._layertype = layertype
 
     def _accepted(self):
-        input_name = self.ui.user_txt.text()
-        input_url = self.ui.pass_txt.text()
+        input_name = self.ui.name_txt.text()
+        input_url = self.ui.url_txt.text()
 
         #when inputed URL includes APIKEY
         smanager = SettingsManager()

@@ -43,7 +43,6 @@ class VectorCollection(QgsDataCollectionItem):
             new = QAction(QIcon(), 'Add new connection', parent)
             new.triggered.connect(self.openDialog)
             actions.append(new)
-            self.parent().refresh()
 
         return actions
 
@@ -52,7 +51,6 @@ class VectorCollection(QgsDataCollectionItem):
         new_dialog.exec_()
         #reload browser
         self.parent().refreshConnections()
-
 
 class VectorMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
@@ -68,41 +66,39 @@ class VectorMapItem(QgsDataItem):
         return False
 
     def handleDoubleClick(self):
+        self._add_to_canvas()
+        return True
+
+    def actions(self, parent):
+        actions = []
+
+        add_action = QAction(QIcon(), 'Add to Canvas', parent)
+        add_action.triggered.connect(self._add_to_canvas)
+        actions.append(add_action)
+
+        if self._editable:
+            edit_action = QAction(QIcon(), 'Edit', parent)
+            edit_action.triggered.connect(self._edit)
+            actions.append(edit_action)
+
+            remove_action = QAction(QIcon(), 'Remove', parent)
+            remove_action.triggered.connect(self._remove)
+            actions.append(remove_action)
+        
+        return actions
+
+    def _add_to_canvas(self):
         #apikey validation
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
         if not utils.validate_key(apikey):
             self._openConfigueDialog()
             return True
-
+        
         proj = QgsProject().instance()
-        url = self.reshape_url(self._url)
+        url = "type=xyz&url=" + self._url + apikey
         vtlayer = QgsVectorTileLayer(url, self._name)
         proj.addMapLayer(vtlayer)
-        return True
-
-    def reshape_url(self, url):
-        smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-        
-        #when URL includes APIKEY
-        if url.endswith(apikey):
-            return "type=xyz&url=" + url
-
-        return "type=xyz&url=" + url + apikey
-
-    def actions(self, parent):
-        actions = []
-        if self._editable:
-            edit_action = QAction(QIcon(), 'Edit', parent)
-            edit_action.triggered.connect(self._edit)
-            actions.append(edit_action)
-
-            new = QAction(QIcon(), 'Remove', parent)
-            new.triggered.connect(self._remove)
-            actions.append(new)
-        
-        return actions
 
     def _edit(self):
         edit_dialog = VectorEditConnectionDialog(self._name)
