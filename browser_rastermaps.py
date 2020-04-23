@@ -39,6 +39,13 @@ RASTER_LOCAL_NL_DATASET = {
     'Cartiqo Topo':r'https://api.maptiler.com/maps/nl-cartiqo-topo/{z}/{x}/{y}.png?key='
 }
 
+RASTER_LOCAL_UK_DATASET = {
+    'OS Open Zoomstack Light':r'https://api.maptiler.com/maps/uk-openzoomstack-light/{z}/{x}/{y}.png?key=',
+    'OS Open Zoomstack Night':r'https://api.maptiler.com/maps/uk-openzoomstack-night/{z}/{x}/{y}.png?key=',
+    'OS Open Zoomstack Outdoor':r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/{z}/{x}/{y}.png?key=',
+    'OS Open Zoomstack Road':r'https://api.maptiler.com/maps/uk-openzoomstack-road/{z}/{x}/{y}.png?key='
+}
+
 class RasterCollection(QgsDataCollectionItem):
 
     def __init__(self, name):
@@ -50,7 +57,8 @@ class RasterCollection(QgsDataCollectionItem):
 
         all_datasets = dict(**RASTER_STANDARD_DATASET,
                             **RASTER_LOCAL_JP_DATASET,
-                            **RASTER_LOCAL_NL_DATASET)
+                            **RASTER_LOCAL_NL_DATASET,
+                            **RASTER_LOCAL_UK_DATASET)
         print(all_datasets)
         for key in all_datasets:
             #skip adding if it is not recently used
@@ -100,6 +108,10 @@ class RasterMoreCollection(QgsDataCollectionItem):
         sip.transferto(nl_collection, self)
         items.append(nl_collection)
 
+        uk_collection = RasterLocalCollection(RASTER_LOCAL_UK_DATASET, 'UK')
+        sip.transferto(uk_collection, self)
+        items.append(uk_collection)
+
         return items
 
 class RasterLocalCollection(QgsDataCollectionItem):
@@ -124,8 +136,8 @@ class RasterLocalCollection(QgsDataCollectionItem):
         return items
 
 class RasterUserCollection(QgsDataCollectionItem):
-    def __init__(self, name):
-        QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/raster/" + name)
+    def __init__(self):
+        QgsDataCollectionItem.__init__(self, None, "User Maps", "/MapTiler/raster/user")
         self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_user_collection_icon.png")))
 
     def createChildren(self):
@@ -152,7 +164,7 @@ class RasterUserCollection(QgsDataCollectionItem):
         new_dialog = RasterNewConnectionDialog()
         new_dialog.exec_()
         #reload browser
-        self.parent().refreshConnections()
+        self.refreshConnections()
 
 
 class RasterMapItem(QgsDataItem):
@@ -203,11 +215,14 @@ class RasterMapItem(QgsDataItem):
         raster = QgsRasterLayer(url, self._name, "wms")
         proj.addMapLayer(raster)
 
-        self._update_recentmaps()
+        if not self._editable:
+            self._update_recentmaps()
 
     def _edit(self):
         edit_dialog = RasterEditConnectionDialog(self._name)
         edit_dialog.exec_()
+        #to reload item's info, once delete item
+        self._parent.deleteChildItem(self)
         self._parent.refreshConnections()
 
     def _remove(self):
@@ -221,6 +236,7 @@ class RasterMapItem(QgsDataItem):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
         self._parent.parent().refreshConnections()
+        self._parent.refreshConnections()
 
     def _update_recentmaps(self):
         smanager = SettingsManager()

@@ -13,7 +13,7 @@ class SettingsManager:
             'rastermaps':{},
             'vectormaps':{},
             'isVectorEnabled':'0',
-            'recentmaps':[]
+            'recentmaps':['Basic', 'Hybrid', 'Streets']
         }
         self.load_settings()
 

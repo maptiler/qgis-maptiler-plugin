@@ -42,8 +42,8 @@ class RootCollection(QgsDataCollectionItem):
         #Raster Mode
         if minor_ver < 13 or not isVectorEnabled:
             #init Collections
-            raster_standard_collection = RasterCollection('Standard raster tile')
-            raster_user_collection = RasterUserCollection('User raster tile')
+            raster_standard_collection = RasterCollection('Maps')
+            raster_user_collection = RasterUserCollection()
 
             sip.transferto(raster_standard_collection, self)
             sip.transferto(raster_user_collection, self)
