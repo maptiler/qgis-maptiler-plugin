@@ -4,7 +4,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
-from .browser_rastermaps import RasterCollection
+from .browser_rastermaps import RasterCollection, RasterUserCollection
 from .browser_vectormaps import VectorCollection
 from .configue_dialog import ConfigueDialog
 from .settings_manager import SettingsManager
@@ -41,24 +41,14 @@ class RootCollection(QgsDataCollectionItem):
 
         #Raster Mode
         if minor_ver < 13 or not isVectorEnabled:
-            #init default dataset
-            raster_standard_dataset = {
-                'Basic':r'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=',
-                'Bright':r'https://api.maptiler.com/maps/bright/{z}/{x}/{y}.png?key='
-            }
-            raster_local_dataset = {
-                'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key='
-            }
             #init Collections
-            raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
-            raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
-            raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
+            raster_standard_collection = RasterCollection('Standard raster tile')
+            raster_user_collection = RasterUserCollection('User raster tile')
 
             sip.transferto(raster_standard_collection, self)
-            sip.transferto(raster_local_collection, self)
             sip.transferto(raster_user_collection, self)
 
-            return [raster_standard_collection, raster_local_collection, raster_user_collection]
+            return [raster_standard_collection, raster_user_collection]
 
         #Vector Mode
         else:
