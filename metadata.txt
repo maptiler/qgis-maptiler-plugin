@@ -1,0 +1,32 @@
+# This file contains metadata for your plugin.
+
+# This file should be included when you package your plugin.# Mandatory items:
+
+[general]
+name=MapTiler
+qgisMinimumVersion=3.0
+description=Show MapTiler cloud maps.
+version=0.1
+author=MIERUNE inc.
+email=info@mierune.co.jp
+
+about=Show MapTiler cloud maps.
+
+tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
+repository=https://github.com/maptiler/qgis-maptiler-plugin
+# End of mandatory metadata
+
+# Recommended items:
+
+hasProcessingProvider=no
+# Uncomment the following line and add your changelog:
+# changelog=
+
+# Tags are comma separated with spaces allowed
+tags=python, maptiler, raster, vector, tile
+
+homepage=https://github.com/maptiler/qgis-maptiler-plugin
+category=Web
+icon=./imgs/maptiler_icon.svg
+# experimental flag
+experimental=False
