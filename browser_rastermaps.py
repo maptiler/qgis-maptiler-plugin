@@ -1,8 +1,20 @@
+#RasterCollection
+#RasterMoreCollection
+#RasterUserCollection
+#RasterMapItem
+
+#RasterCollection has following structure
+#|-Recent used 3 maps : RasterMapItem
+#|-more... : RasterMoreCollection
+###|-standard maps : RasterMapItem
+###|-local maps : RasterMapItem
+
 import os
 import sip
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
+from PyQt5.QtXml import QDomDocument, QDomElement
 from qgis.core import *
 
 from .configue_dialog import ConfigueDialog
@@ -28,22 +40,22 @@ RASTER_STANDARD_DATASET = {
 }
 
 RASTER_LOCAL_JP_DATASET = {
-    'MIERUNE Streets':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key=',
-    'MIERUNE Dark':r'https://api.maptiler.com/maps/jp-mierune-dark/{z}/{x}/{y}.png?key=',
-    'MIERUNE Gray':r'https://api.maptiler.com/maps/jp-mierune-gray/{z}/{x}/{y}.png?key='
+    'JP MIERUNE Streets':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key=',
+    'JP MIERUNE Dark':r'https://api.maptiler.com/maps/jp-mierune-dark/{z}/{x}/{y}.png?key=',
+    'JP MIERUNE Gray':r'https://api.maptiler.com/maps/jp-mierune-gray/{z}/{x}/{y}.png?key='
 }
 
 RASTER_LOCAL_NL_DATASET = {
-    'Cartiqo Dark':r'https://api.maptiler.com/maps/nl-cartiqo-dark/{z}/{x}/{y}.png?key=',
-    'Cartiqo Light':r'https://api.maptiler.com/maps/nl-cartiqo-light/{z}/{x}/{y}.png?key=',
-    'Cartiqo Topo':r'https://api.maptiler.com/maps/nl-cartiqo-topo/{z}/{x}/{y}.png?key='
+    'NL Cartiqo Dark':r'https://api.maptiler.com/maps/nl-cartiqo-dark/{z}/{x}/{y}.png?key=',
+    'NL Cartiqo Light':r'https://api.maptiler.com/maps/nl-cartiqo-light/{z}/{x}/{y}.png?key=',
+    'NL Cartiqo Topo':r'https://api.maptiler.com/maps/nl-cartiqo-topo/{z}/{x}/{y}.png?key='
 }
 
 RASTER_LOCAL_UK_DATASET = {
-    'OS Open Zoomstack Light':r'https://api.maptiler.com/maps/uk-openzoomstack-light/{z}/{x}/{y}.png?key=',
-    'OS Open Zoomstack Night':r'https://api.maptiler.com/maps/uk-openzoomstack-night/{z}/{x}/{y}.png?key=',
-    'OS Open Zoomstack Outdoor':r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/{z}/{x}/{y}.png?key=',
-    'OS Open Zoomstack Road':r'https://api.maptiler.com/maps/uk-openzoomstack-road/{z}/{x}/{y}.png?key='
+    'UK OS Open Zoomstack Light':r'https://api.maptiler.com/maps/uk-openzoomstack-light/{z}/{x}/{y}.png?key=',
+    'UK OS Open Zoomstack Night':r'https://api.maptiler.com/maps/uk-openzoomstack-night/{z}/{x}/{y}.png?key=',
+    'UK OS Open Zoomstack Outdoor':r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/{z}/{x}/{y}.png?key=',
+    'UK OS Open Zoomstack Road':r'https://api.maptiler.com/maps/uk-openzoomstack-road/{z}/{x}/{y}.png?key='
 }
 
 class RasterCollection(QgsDataCollectionItem):
@@ -72,7 +84,9 @@ class RasterCollection(QgsDataCollectionItem):
             sip.transferto(item, self)
             items.append(item)
 
-        more_collection = RasterMoreCollection(RASTER_STANDARD_DATASET)
+        local_dataset = dict(**RASTER_LOCAL_JP_DATASET, **RASTER_LOCAL_NL_DATASET, **RASTER_LOCAL_UK_DATASET)
+
+        more_collection = RasterMoreCollection(RASTER_STANDARD_DATASET, local_dataset)
         sip.transferto(more_collection, self)
         items.append(more_collection)
 
@@ -80,10 +94,11 @@ class RasterCollection(QgsDataCollectionItem):
 
 
 class RasterMoreCollection(QgsDataCollectionItem):
-    def __init__(self, dataset):
+    def __init__(self, dataset, local_dataset):
         QgsDataCollectionItem.__init__(self, None, "more...", "/MapTiler/raster/more")
         self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_more_collection_icon.png")))
         self._dataset = dataset
+        self._local_dataset = local_dataset
 
     def createChildren(self):
         items = []
@@ -99,45 +114,24 @@ class RasterMoreCollection(QgsDataCollectionItem):
             sip.transferto(item, self)
             items.append(item)
 
-        #local map collections
-        jp_collection = RasterLocalCollection(RASTER_LOCAL_JP_DATASET, 'JP')
-        sip.transferto(jp_collection, self)
-        items.append(jp_collection)
-
-        nl_collection = RasterLocalCollection(RASTER_LOCAL_NL_DATASET, 'NL')
-        sip.transferto(nl_collection, self)
-        items.append(nl_collection)
-
-        uk_collection = RasterLocalCollection(RASTER_LOCAL_UK_DATASET, 'UK')
-        sip.transferto(uk_collection, self)
-        items.append(uk_collection)
-
-        return items
-
-class RasterLocalCollection(QgsDataCollectionItem):
-    def __init__(self, dataset, locale):
-        QgsDataCollectionItem.__init__(self, None, locale, "/MapTiler/raster/local/" + locale)
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_local_collection_icon.png")))
-        self._dataset = dataset
-
-    def createChildren(self):
-        items = []
-        for key in self._dataset:
+        for key in self._local_dataset:
             #add item only when it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
             if key in recentmaps:
                 continue
             
-            item = RasterMapItem(self, key, self._dataset[key])
+            #add space to put items above
+            item = RasterMapItem(self, key, self._local_dataset[key])
             sip.transferto(item, self)
             items.append(item)
 
         return items
 
+
 class RasterUserCollection(QgsDataCollectionItem):
-    def __init__(self):
-        QgsDataCollectionItem.__init__(self, None, "User Maps", "/MapTiler/raster/user")
+    def __init__(self, name="User Maps"):
+        QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/raster/user")
         self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_user_collection_icon.png")))
 
     def createChildren(self):
@@ -213,6 +207,13 @@ class RasterMapItem(QgsDataItem):
         proj = QgsProject().instance()
         url = "type=xyz&url=" + self._url + apikey
         raster = QgsRasterLayer(url, self._name, "wms")
+
+        #change resampler to bilinear
+        qml_str = self._qml_of(raster)
+        bilinear_qml = self._change_resampler_of(qml_str)
+        ls = QgsMapLayerStyle(bilinear_qml)
+        ls.writeToLayer(raster)
+
         proj.addMapLayer(raster)
 
         if not self._editable:
@@ -246,6 +247,7 @@ class RasterMapItem(QgsDataItem):
         key = self._name
         if key[0] == ' ':
             key = key[1:]
+        
         if not key in recentmaps:
             recentmaps.append(key)
 
@@ -256,3 +258,14 @@ class RasterMapItem(QgsDataItem):
         smanager.store_setting('recentmaps', recentmaps)
         self._parent.parent().refreshConnections()
         self._parent.refreshConnections()
+
+    def _qml_of(self, layer: QgsMapLayer):
+        ls = QgsMapLayerStyle()
+        ls.readFromLayer(layer)
+        return ls.xmlData()
+
+    def _change_resampler_of(self, qml_str):
+        default_resampler_xmltext = '<rasterresampler'
+        bilinear_resampler_xmltext = '<rasterresampler zoomedInResampler="bilinear"'
+        replaced = qml_str.replace(default_resampler_xmltext, bilinear_resampler_xmltext)
+        return replaced

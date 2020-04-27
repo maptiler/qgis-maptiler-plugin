@@ -72,18 +72,6 @@ class MapTiler:
         self.toolbar = self.iface.addToolBar(u'MapTiler')
         self.toolbar.setObjectName(u'MapTiler')
 
-        ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
-        icon = QIcon(os.path.join(ICON_PATH, "maptiler_icon.svg"))
-        icon_action = QAction(icon, '', self.toolbar)
-        icon_action.triggered.connect(self.open_configue_dialog)
-        self.toolbar.addAction(icon_action)
-
-        self.search_line_edit = QLineEdit()
-        self.search_line_edit.setPlaceholderText('Search Location')
-        self.search_line_edit.setMaximumWidth(500)
-        self.search_line_edit.setClearButtonEnabled(True)
-        self.toolbar.addWidget(self.search_line_edit)
-
         #init QCompleter
         self.completer = QCompleter([])
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
@@ -93,11 +81,14 @@ class MapTiler:
         self.completer.activated[QModelIndex].connect(self.on_result_clicked)
 
         #init LineEdit of searchword
+        self.search_line_edit = QLineEdit()
+        self.search_line_edit.setPlaceholderText('MapTiler Geocoding API')
+        self.search_line_edit.setMaximumWidth(300)
+        self.search_line_edit.setClearButtonEnabled(True)
         self.search_line_edit.setCompleter(self.completer)
         self.search_line_edit.textEdited.connect(self.on_searchword_edited)
         self.search_line_edit.returnPressed.connect(self.on_searchword_returned)
-
-        #print "** INITIALIZING MapTiler"
+        self.toolbar.addWidget(self.search_line_edit)
 
         self.pluginIsActive = False
 
@@ -136,11 +127,6 @@ class MapTiler:
 
     #--------------------------------------------------------------------------
 
-    def open_configue_dialog(self):
-        configue_dialog = ConfigueDialog()
-        configue_dialog.exec_()
-        self.iface.reloadConnections()
-
     #LineEdit edited event
     def on_searchword_edited(self):
         model = self.completer.model()
@@ -152,6 +138,7 @@ class MapTiler:
         searchword = self.search_line_edit.text()
         geojson_dict = self._fetch_geocoding_api(searchword)
 
+        #always dict is Non when apikey invalid
         if geojson_dict is None:
             return
         
