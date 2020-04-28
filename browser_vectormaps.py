@@ -13,34 +13,39 @@ from . import utils
 
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
-VECTOR_STANDARD_DATASET = {
-    'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
-}
-
-VECTOR_LOCAL_JP_DATASET = {
-}
-
-VECTOR_LOCAL_NL_DATASET = {
-}
-
-VECTOR_LOCAL_UK_DATASET = {
-}
 
 class VectorCollection(QgsDataCollectionItem):
+
+    STANDARD_DATASET = {
+    'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+    }
+
+    LOCAL_JP_DATASET = {
+    }
+
+    LOCAL_NL_DATASET = {
+    }
+
+    LOCAL_UK_DATASET = {
+    }
 
     def __init__(self, name):
         QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/vector/" + name)
         self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_collection_icon.png")))
 
+        self.ALL_DATASET = dict(**self.STANDARD_DATASET,
+                                **self.LOCAL_JP_DATASET,
+                                **self.LOCAL_NL_DATASET,
+                                **self.LOCAL_UK_DATASET)
+        
+        self.LOCAL_DATASET = dict(**self.LOCAL_JP_DATASET,
+                                    **self.LOCAL_NL_DATASET,
+                                    **self.LOCAL_UK_DATASET)
+
     def createChildren(self):
         items = []
-
-        all_datasets = dict(**VECTOR_STANDARD_DATASET,
-                            **VECTOR_LOCAL_JP_DATASET,
-                            **VECTOR_LOCAL_NL_DATASET,
-                            **VECTOR_LOCAL_UK_DATASET)
         
-        for key in all_datasets:
+        for key in self.ALL_DATASET:
             #skip adding if it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
@@ -48,13 +53,11 @@ class VectorCollection(QgsDataCollectionItem):
                 continue
             
             #add space to put items above
-            item = VectorMapItem(self, ' ' + key, all_datasets[key])
+            item = VectorMapItem(self, ' ' + key, self.ALL_DATASET[key])
             sip.transferto(item, self)
             items.append(item)
 
-        local_dataset = dict(**VECTOR_LOCAL_JP_DATASET, **VECTOR_LOCAL_NL_DATASET, **VECTOR_LOCAL_UK_DATASET)
-
-        more_collection = VectorMoreCollection(VECTOR_STANDARD_DATASET, local_dataset)
+        more_collection = VectorMoreCollection(self.STANDARD_DATASET, self.LOCAL_DATASET)
         sip.transferto(more_collection, self)
         items.append(more_collection)
 

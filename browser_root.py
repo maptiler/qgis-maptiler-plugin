@@ -54,11 +54,11 @@ class RootCollection(QgsDataCollectionItem):
 
         #Vector Mode
         else:
-            vector_standard_collection = VectorCollection(' Standard vector tile')
+            vector_standard_collection = VectorCollection(' Maps')
             sip.transferto(vector_standard_collection, self)
             children.append(vector_standard_collection)
 
-            vector_user_collection = VectorUserCollection(' User vector tile')
+            vector_user_collection = VectorUserCollection(' User Maps')
             sip.transferto(vector_user_collection, self)
             children.append(vector_user_collection)
             

@@ -14,7 +14,6 @@ import sip
 
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
-from PyQt5.QtXml import QDomDocument, QDomElement
 from qgis.core import *
 
 from .configue_dialog import ConfigueDialog
@@ -26,53 +25,57 @@ from . import utils
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
 
-RASTER_STANDARD_DATASET = {
-    'Basic':r'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=',
-    'Bright':r'https://api.maptiler.com/maps/bright/{z}/{x}/{y}.png?key=',
-    'Dark Matter':r'https://api.maptiler.com/maps/darkmatter/{z}/{x}/{y}.png?key=',
-    'Pastel':r'https://api.maptiler.com/maps/pastel/{z}/{x}/{y}.png?key=',
-    'Positron':r'https://api.maptiler.com/maps/positron/{z}/{x}/{y}.png?key=',
-    'Hybrid':r'https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=',
-    'Streets':r'https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=',
-    'Topo':r'https://api.maptiler.com/maps/topo/{z}/{x}/{y}.png?key=',
-    'Topographique':r'https://api.maptiler.com/maps/topographique/{z}/{x}/{y}.png?key=',
-    'Voyager':r'https://api.maptiler.com/maps/voyager/{z}/{x}/{y}.png?key='
-}
-
-RASTER_LOCAL_JP_DATASET = {
-    'JP MIERUNE Streets':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key=',
-    'JP MIERUNE Dark':r'https://api.maptiler.com/maps/jp-mierune-dark/{z}/{x}/{y}.png?key=',
-    'JP MIERUNE Gray':r'https://api.maptiler.com/maps/jp-mierune-gray/{z}/{x}/{y}.png?key='
-}
-
-RASTER_LOCAL_NL_DATASET = {
-    'NL Cartiqo Dark':r'https://api.maptiler.com/maps/nl-cartiqo-dark/{z}/{x}/{y}.png?key=',
-    'NL Cartiqo Light':r'https://api.maptiler.com/maps/nl-cartiqo-light/{z}/{x}/{y}.png?key=',
-    'NL Cartiqo Topo':r'https://api.maptiler.com/maps/nl-cartiqo-topo/{z}/{x}/{y}.png?key='
-}
-
-RASTER_LOCAL_UK_DATASET = {
-    'UK OS Open Zoomstack Light':r'https://api.maptiler.com/maps/uk-openzoomstack-light/{z}/{x}/{y}.png?key=',
-    'UK OS Open Zoomstack Night':r'https://api.maptiler.com/maps/uk-openzoomstack-night/{z}/{x}/{y}.png?key=',
-    'UK OS Open Zoomstack Outdoor':r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/{z}/{x}/{y}.png?key=',
-    'UK OS Open Zoomstack Road':r'https://api.maptiler.com/maps/uk-openzoomstack-road/{z}/{x}/{y}.png?key='
-}
-
 class RasterCollection(QgsDataCollectionItem):
+
+    STANDARD_DATASET = {
+        'Basic':r'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=',
+        'Bright':r'https://api.maptiler.com/maps/bright/{z}/{x}/{y}.png?key=',
+        'Dark Matter':r'https://api.maptiler.com/maps/darkmatter/{z}/{x}/{y}.png?key=',
+        'Pastel':r'https://api.maptiler.com/maps/pastel/{z}/{x}/{y}.png?key=',
+        'Positron':r'https://api.maptiler.com/maps/positron/{z}/{x}/{y}.png?key=',
+        'Hybrid':r'https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=',
+        'Streets':r'https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=',
+        'Topo':r'https://api.maptiler.com/maps/topo/{z}/{x}/{y}.png?key=',
+        'Topographique':r'https://api.maptiler.com/maps/topographique/{z}/{x}/{y}.png?key=',
+        'Voyager':r'https://api.maptiler.com/maps/voyager/{z}/{x}/{y}.png?key='
+    }
+
+    LOCAL_JP_DATASET = {
+        'JP MIERUNE Streets':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key=',
+        'JP MIERUNE Dark':r'https://api.maptiler.com/maps/jp-mierune-dark/{z}/{x}/{y}.png?key=',
+        'JP MIERUNE Gray':r'https://api.maptiler.com/maps/jp-mierune-gray/{z}/{x}/{y}.png?key='
+    }
+
+    LOCAL_NL_DATASET = {
+        'NL Cartiqo Dark':r'https://api.maptiler.com/maps/nl-cartiqo-dark/{z}/{x}/{y}.png?key=',
+        'NL Cartiqo Light':r'https://api.maptiler.com/maps/nl-cartiqo-light/{z}/{x}/{y}.png?key=',
+        'NL Cartiqo Topo':r'https://api.maptiler.com/maps/nl-cartiqo-topo/{z}/{x}/{y}.png?key='
+    }
+
+    LOCAL_UK_DATASET = {
+        'UK OS Open Zoomstack Light':r'https://api.maptiler.com/maps/uk-openzoomstack-light/{z}/{x}/{y}.png?key=',
+        'UK OS Open Zoomstack Night':r'https://api.maptiler.com/maps/uk-openzoomstack-night/{z}/{x}/{y}.png?key=',
+        'UK OS Open Zoomstack Outdoor':r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/{z}/{x}/{y}.png?key=',
+        'UK OS Open Zoomstack Road':r'https://api.maptiler.com/maps/uk-openzoomstack-road/{z}/{x}/{y}.png?key='
+    }
 
     def __init__(self, name):
         QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/raster/" + name)
         self.setIcon(QIcon(os.path.join(ICON_PATH, "raster_collection_icon.png")))
 
+        self.ALL_DATASET = dict(**self.STANDARD_DATASET,
+                                **self.LOCAL_JP_DATASET,
+                                **self.LOCAL_NL_DATASET,
+                                **self.LOCAL_UK_DATASET)
+
+        self.LOCAL_DATASET = dict(**self.LOCAL_JP_DATASET,
+                                **self.LOCAL_NL_DATASET,
+                                **self.LOCAL_UK_DATASET)
+    
     def createChildren(self):
         items = []
-
-        all_datasets = dict(**RASTER_STANDARD_DATASET,
-                            **RASTER_LOCAL_JP_DATASET,
-                            **RASTER_LOCAL_NL_DATASET,
-                            **RASTER_LOCAL_UK_DATASET)
         
-        for key in all_datasets:
+        for key in self.ALL_DATASET:
             #skip adding if it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
@@ -80,13 +83,11 @@ class RasterCollection(QgsDataCollectionItem):
                 continue
             
             #add space to put items above
-            item = RasterMapItem(self, ' ' + key, all_datasets[key])
+            item = RasterMapItem(self, ' ' + key, self.ALL_DATASET[key])
             sip.transferto(item, self)
             items.append(item)
 
-        local_dataset = dict(**RASTER_LOCAL_JP_DATASET, **RASTER_LOCAL_NL_DATASET, **RASTER_LOCAL_UK_DATASET)
-
-        more_collection = RasterMoreCollection(RASTER_STANDARD_DATASET, local_dataset)
+        more_collection = RasterMoreCollection(self.STANDARD_DATASET, self.LOCAL_DATASET)
         sip.transferto(more_collection, self)
         items.append(more_collection)
 
