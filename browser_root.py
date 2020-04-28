@@ -5,7 +5,7 @@ from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
 from .browser_rastermaps import RasterCollection, RasterUserCollection
-from .browser_vectormaps import VectorCollection
+from .browser_vectormaps import VectorCollection, VectorUserCollection
 from .configue_dialog import ConfigueDialog
 from .settings_manager import SettingsManager
 
@@ -54,23 +54,11 @@ class RootCollection(QgsDataCollectionItem):
 
         #Vector Mode
         else:
-            #init default dataset
-            vector_standard_collection = {
-                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-            }
-            vector_local_collection = {
-                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-            }
-
-            vector_standard_collection = VectorCollection('Standard vector tile', vector_standard_collection)
+            vector_standard_collection = VectorCollection(' Standard vector tile')
             sip.transferto(vector_standard_collection, self)
             children.append(vector_standard_collection)
 
-            vector_local_collection = VectorCollection('Local vector tile', vector_local_collection)
-            sip.transferto(vector_local_collection, self)
-            children.append(vector_local_collection)
-
-            vector_user_collection = VectorCollection('User vector tile', {}, user_editable=True)
+            vector_user_collection = VectorUserCollection(' User vector tile')
             sip.transferto(vector_user_collection, self)
             children.append(vector_user_collection)
             

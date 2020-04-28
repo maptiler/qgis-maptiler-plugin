@@ -13,36 +13,112 @@ from . import utils
 
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
+VECTOR_STANDARD_DATASET = {
+    'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+}
+
+VECTOR_LOCAL_JP_DATASET = {
+}
+
+VECTOR_LOCAL_NL_DATASET = {
+}
+
+VECTOR_LOCAL_UK_DATASET = {
+}
+
 class VectorCollection(QgsDataCollectionItem):
-    def __init__(self, name, dataset, user_editable=False):
+
+    def __init__(self, name):
         QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/vector/" + name)
         self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_collection_icon.png")))
+
+    def createChildren(self):
+        items = []
+
+        all_datasets = dict(**VECTOR_STANDARD_DATASET,
+                            **VECTOR_LOCAL_JP_DATASET,
+                            **VECTOR_LOCAL_NL_DATASET,
+                            **VECTOR_LOCAL_UK_DATASET)
+        
+        for key in all_datasets:
+            #skip adding if it is not recently used
+            smanager = SettingsManager()
+            recentmaps = smanager.get_setting('recentmaps')
+            if not key in recentmaps:
+                continue
+            
+            #add space to put items above
+            item = VectorMapItem(self, ' ' + key, all_datasets[key])
+            sip.transferto(item, self)
+            items.append(item)
+
+        local_dataset = dict(**VECTOR_LOCAL_JP_DATASET, **VECTOR_LOCAL_NL_DATASET, **VECTOR_LOCAL_UK_DATASET)
+
+        more_collection = VectorMoreCollection(VECTOR_STANDARD_DATASET, local_dataset)
+        sip.transferto(more_collection, self)
+        items.append(more_collection)
+
+        return items
+
+
+class VectorMoreCollection(QgsDataCollectionItem):
+    def __init__(self, dataset, local_dataset):
+        QgsDataCollectionItem.__init__(self, None, "more...", "/MapTiler/vector/more")
+        self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_more_collection_icon.png")))
         self._dataset = dataset
-        self._user_editable = user_editable
+        self._local_dataset = local_dataset
 
     def createChildren(self):
         items = []
         for key in self._dataset:
-            item = VectorMapItem(self, key, self._dataset[key])
+            #add item only when it is not recently used
+            smanager = SettingsManager()
+            recentmaps = smanager.get_setting('recentmaps')
+            if key in recentmaps:
+                continue
+            
+            #add space to put items above
+            item = VectorMapItem(self, ' ' + key, self._dataset[key])
             sip.transferto(item, self)
             items.append(item)
-        
-        if self._user_editable:
+
+        for key in self._local_dataset:
+            #add item only when it is not recently used
             smanager = SettingsManager()
-            vectormaps = smanager.get_setting('vectormaps')
-            for key in vectormaps:
-                item = VectorMapItem(self, key, vectormaps[key], editable=True)
-                sip.transferto(item, self)
-                items.append(item)
+            recentmaps = smanager.get_setting('recentmaps')
+            if key in recentmaps:
+                continue
+            
+            #add space to put items above
+            item = VectorMapItem(self, key, self._local_dataset[key])
+            sip.transferto(item, self)
+            items.append(item)
+
+        return items
+
+
+class VectorUserCollection(QgsDataCollectionItem):
+    def __init__(self, name="User Maps"):
+        QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/vector/user")
+        self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_user_collection_icon.png")))
+
+    def createChildren(self):
+        items = []
+
+        smanager = SettingsManager()
+        vectormaps = smanager.get_setting('vectormaps')
+        for key in vectormaps:
+            item = VectorMapItem(self, key, vectormaps[key], editable=True)
+            sip.transferto(item, self)
+            items.append(item)
 
         return items
 
     def actions(self, parent):
         actions = []
-        if self._user_editable:
-            new = QAction(QIcon(), 'Add new connection', parent)
-            new.triggered.connect(self.openDialog)
-            actions.append(new)
+        new = QAction(QIcon(), 'Add new connection', parent)
+        new.triggered.connect(self.openDialog)
+        actions.append(new)
 
         return actions
 
@@ -50,13 +126,14 @@ class VectorCollection(QgsDataCollectionItem):
         new_dialog = VectorNewConnectionDialog()
         new_dialog.exec_()
         #reload browser
-        self.parent().refreshConnections()
+        self.refreshConnections()
+
 
 class VectorMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/vector/" + parent.name() + '/' + name)
         self.populate() #set to treat Item as not-folder-like
-        
+
         self._parent = parent
         self._name = name
         self._url = url
@@ -97,12 +174,18 @@ class VectorMapItem(QgsDataItem):
         
         proj = QgsProject().instance()
         url = "type=xyz&url=" + self._url + apikey
-        vtlayer = QgsVectorTileLayer(url, self._name)
-        proj.addMapLayer(vtlayer)
+        vector = QgsVectorTileLayer(url, self._name)
+
+        proj.addMapLayer(vector)
+
+        if not self._editable:
+            self._update_recentmaps()
 
     def _edit(self):
         edit_dialog = VectorEditConnectionDialog(self._name)
         edit_dialog.exec_()
+        #to reload item's info, once delete item
+        self._parent.deleteChildItem(self)
         self._parent.refreshConnections()
 
     def _remove(self):
@@ -116,3 +199,24 @@ class VectorMapItem(QgsDataItem):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
         self._parent.parent().refreshConnections()
+        self._parent.refreshConnections()
+
+    def _update_recentmaps(self):
+        smanager = SettingsManager()
+        recentmaps = smanager.get_setting('recentmaps')
+
+        #clean item name spacer
+        key = self._name
+        if key[0] == ' ':
+            key = key[1:]
+        
+        if not key in recentmaps:
+            recentmaps.append(key)
+
+        MAX_RECENT_MAPS = 3
+        if len(recentmaps) > MAX_RECENT_MAPS:
+            recentmaps.pop(0)
+        
+        smanager.store_setting('recentmaps', recentmaps)
+        self._parent.parent().refreshConnections()
+        self._parent.refreshConnections()

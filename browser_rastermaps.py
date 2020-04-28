@@ -71,7 +71,7 @@ class RasterCollection(QgsDataCollectionItem):
                             **RASTER_LOCAL_JP_DATASET,
                             **RASTER_LOCAL_NL_DATASET,
                             **RASTER_LOCAL_UK_DATASET)
-        print(all_datasets)
+        
         for key in all_datasets:
             #skip adding if it is not recently used
             smanager = SettingsManager()
