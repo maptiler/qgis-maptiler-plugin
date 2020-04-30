@@ -47,7 +47,7 @@ Once install this plugin, MapTiler Toolbar for Geocoding API added to your QGIS.
 
 <img src='imgs/readme_03.png'>
 
-Input a place you want to find and press return-key. MapTiler Geocoding API response list of locations.
+Input a place you want to find and press return-key. MapTiler Geocoding API respond a list of locations.
 When you click one of list, the mapcanvas move to it and Geometry added to your project.
 
 <img src='imgs/readme_04.png'>  
