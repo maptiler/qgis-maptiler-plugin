@@ -4,8 +4,8 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
-from .browser_rastermaps import RasterCollection
-from .browser_vectormaps import VectorCollection
+from .browser_rastermaps import RasterCollection, RasterUserCollection
+from .browser_vectormaps import VectorCollection, VectorUserCollection
 from .configue_dialog import ConfigueDialog
 from .settings_manager import SettingsManager
 
@@ -26,12 +26,15 @@ class DataItemProvider(QgsDataItemProvider):
         sip.transferto(root, None)
         return root
 
+
 class RootCollection(QgsDataCollectionItem):
     def __init__(self):
         QgsDataCollectionItem.__init__(self, None, "MapTiler", "/MapTiler")
         self.setIcon(QIcon(os.path.join(ICON_PATH, "maptiler_icon.svg")))
     
     def createChildren(self):
+        children = []
+
         #judge vtile is available or not
         qgis_version_str = str(Qgis.QGIS_VERSION_INT) #e.g. QGIS3.10.4 -> 31004
         minor_ver = int(qgis_version_str[1:3])
@@ -41,41 +44,49 @@ class RootCollection(QgsDataCollectionItem):
 
         #Raster Mode
         if minor_ver < 13 or not isVectorEnabled:
-            #init default dataset
-            raster_standard_dataset = {
-                'Basic':r'https://api.maptiler.com/maps/basic/{z}/{x}/{y}.png?key=',
-                'Bright':r'https://api.maptiler.com/maps/bright/{z}/{x}/{y}.png?key='
-            }
-            raster_local_dataset = {
-                'JP MIERUNE Street':r'https://api.maptiler.com/maps/jp-mierune-streets/{z}/{x}/{y}.png?key='
-            }
-            #init Collections
-            raster_standard_collection = RasterCollection('Standard raster tile', raster_standard_dataset)
-            raster_local_collection = RasterCollection('Local raster tile', raster_local_dataset)
-            raster_user_collection = RasterCollection('User raster tile', {}, user_editable=True)
-
+            raster_standard_collection = RasterCollection(' Maps')
             sip.transferto(raster_standard_collection, self)
-            sip.transferto(raster_local_collection, self)
-            sip.transferto(raster_user_collection, self)
+            children.append(raster_standard_collection)
 
-            return [raster_standard_collection, raster_local_collection, raster_user_collection]
+            raster_user_collection = RasterUserCollection(' User Maps')
+            sip.transferto(raster_user_collection, self)
+            children.append(raster_user_collection)
 
         #Vector Mode
         else:
-            #init default dataset
-            vector_standard_collection = {
-                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-            }
-            vector_local_collection = {
-                'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key='
-            }
-
-            vector_standard_collection = VectorCollection('Standard vector tile', vector_standard_collection)
-            vector_local_collection = VectorCollection('Local vector tile', vector_local_collection)
-            vector_user_collection = VectorCollection('User vector tile', {}, user_editable=True)
-
+            vector_standard_collection = VectorCollection(' Maps')
             sip.transferto(vector_standard_collection, self)
-            sip.transferto(vector_local_collection, self)
+            children.append(vector_standard_collection)
+
+            vector_user_collection = VectorUserCollection(' User Maps')
             sip.transferto(vector_user_collection, self)
+            children.append(vector_user_collection)
             
-            return [vector_standard_collection, vector_local_collection, vector_user_collection]
+        config_action = RootOpenConfigItem(self)
+        sip.transferto(config_action, self)
+        children.append(config_action)
+
+        return children
+
+class RootOpenConfigItem(QgsDataItem):
+    def __init__(self, parent):
+        QgsDataItem.__init__(self, QgsDataItem.Custom, parent, "Account", "/MapTiler/config" )
+        self.populate()
+
+    def handleDoubleClick(self):
+        self.open_configue_dialog()
+        return True
+
+    def actions(self, parent):
+        actions = []
+
+        config_action = QAction(QIcon(), 'Open', parent)
+        config_action.triggered.connect(self.open_configue_dialog)
+        actions.append(config_action)
+        
+        return actions
+
+    def open_configue_dialog(self):
+        configue_dialog = ConfigueDialog()
+        configue_dialog.exec_()
+        self.parent().refreshConnections()

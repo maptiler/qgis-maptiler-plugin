@@ -12,7 +12,8 @@ class SettingsManager:
             'apikey':'',
             'rastermaps':{},
             'vectormaps':{},
-            'isVectorEnabled':'0'
+            'isVectorEnabled':'0',
+            'recentmaps':['Basic', 'Hybrid', 'Streets']
         }
         self.load_settings()
 

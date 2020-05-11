@@ -7,6 +7,7 @@ from qgis.core import Qgis
 
 from .settings_manager import SettingsManager
 
+
 class ConfigueDialog(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
