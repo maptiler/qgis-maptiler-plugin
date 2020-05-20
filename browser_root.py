@@ -75,6 +75,7 @@ class RootOpenConfigItem(QgsDataItem):
     def __init__(self, parent):
         QgsDataItem.__init__(self, QgsDataItem.Custom,
                              parent, "Account", "/MapTiler/config")
+        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_account_light.svg")))
         self.populate()
 
     def handleDoubleClick(self):
