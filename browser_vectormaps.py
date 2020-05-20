@@ -22,6 +22,7 @@ class VectorCollection(QgsDataCollectionItem):
 
     STANDARD_DATASET = {
     'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+    'BasicMap': r'https://api.maptiler.com/maps/basic/style.json?key=',
     }
 
     LOCAL_JP_DATASET = {
