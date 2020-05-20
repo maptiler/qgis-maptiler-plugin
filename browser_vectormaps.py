@@ -11,6 +11,10 @@ from .edit_connection_dialog import VectorEditConnectionDialog
 from .settings_manager import SettingsManager
 from . import utils
 
+import json
+import requests
+from .mapbox2qgis import *
+
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
 
@@ -18,6 +22,7 @@ class VectorCollection(QgsDataCollectionItem):
 
     STANDARD_DATASET = {
     'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+    'BasicMap': r'https://api.maptiler.com/maps/basic/style.json?key=',
     }
 
     LOCAL_JP_DATASET = {
@@ -174,11 +179,18 @@ class VectorMapItem(QgsDataItem):
         if not utils.validate_key(apikey):
             self._openConfigueDialog()
             return True
-        
+
+        style_json_url = self._url + apikey
+        url_zxy = self.parse_style_json(style_json_url, apikey)
+
         proj = QgsProject().instance()
-        url = "type=xyz&url=" + self._url + apikey
+        url = "type=xyz&url=" + url_zxy + apikey
         vector = QgsVectorTileLayer(url, self._name)
 
+        style_json_str = requests.get(style_json_url).text
+        renderer, labeling = parse_json(style_json_str)
+        vector.setRenderer(renderer)
+        vector.setLabeling(labeling)
         proj.addMapLayer(vector)
 
         if not self._editable:
@@ -223,3 +235,22 @@ class VectorMapItem(QgsDataItem):
         smanager.store_setting('recentmaps', recentmaps)
         self._parent.parent().refreshConnections()
         self._parent.refreshConnections()
+
+    def parse_style_json(self, style_json_url, apikey):
+        # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
+        if style_json_url.split("?")[0].endswith(".json"):
+            style_json_data = json.loads(requests.get(style_json_url).text)
+            layer_sources = style_json_data.get("sources")
+            for layer_name, layer_data in layer_sources.items():
+                grouped_name = f"{self._name}_{layer_name}"
+                tile_json_url = layer_data.get("url")
+                tile_json_data = json.loads(requests.get(tile_json_url).text)
+                layer_zxy_url = tile_json_data.get("tiles")[0]
+
+                if apikey:
+                    if layer_zxy_url.endswith(apikey):
+                        apikey_char_count = len(apikey) * -1
+                        layer_zxy_url = layer_zxy_url[:apikey_char_count]
+                return layer_zxy_url
+        else:
+            return self._url
