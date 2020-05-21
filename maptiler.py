@@ -34,6 +34,7 @@ from .browser_root import DataItemProvider
 from .geocoder import MapTilerGeocoder
 from .configue_dialog import ConfigueDialog
 
+
 class MapTiler:
     """QGIS Plugin Implementation."""
 
@@ -72,7 +73,7 @@ class MapTiler:
         self.toolbar = self.iface.addToolBar(u'MapTiler')
         self.toolbar.setObjectName(u'MapTiler')
 
-        #init QCompleter
+        # init QCompleter
         self.completer = QCompleter([])
         self.completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.completer.setMaxVisibleItems(30)
@@ -80,20 +81,21 @@ class MapTiler:
         self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
         self.completer.activated[QModelIndex].connect(self.on_result_clicked)
 
-        #init LineEdit of searchword
+        # init LineEdit of searchword
         self.search_line_edit = QLineEdit()
         self.search_line_edit.setPlaceholderText('MapTiler Geocoding API')
         self.search_line_edit.setMaximumWidth(300)
         self.search_line_edit.setClearButtonEnabled(True)
         self.search_line_edit.setCompleter(self.completer)
         self.search_line_edit.textEdited.connect(self.on_searchword_edited)
-        self.search_line_edit.returnPressed.connect(self.on_searchword_returned)
+        self.search_line_edit.returnPressed.connect(
+            self.on_searchword_returned)
         self.toolbar.addWidget(self.search_line_edit)
 
         self.pluginIsActive = False
 
-
     # noinspection PyMethodMayBeStatic
+
     def tr(self, message):
         """Get the translation for a string using Qt translation API.
 
@@ -109,86 +111,91 @@ class MapTiler:
         return QCoreApplication.translate('MapTiler', message)
 
     def initGui(self):
-        #add MapTiler Collection to Browser
-        dip = DataItemProvider()
-        QgsApplication.instance().dataItemProviderRegistry().addProvider(dip)
+        # add MapTiler Collection to Browser
+        self.dip = DataItemProvider()
+        QgsApplication.instance().dataItemProviderRegistry().addProvider(self.dip)
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
 
-        #remove MapTiler Collection to Browser
-        dip = DataItemProvider()
-        QgsApplication.instance().dataItemProviderRegistry().removeProvider(dip)
+        # remove MapTiler Collection to Browser
+        QgsApplication.instance().dataItemProviderRegistry().removeProvider(self.dip)
+        self.dip = None
 
         # remove the toolbar
         del self.toolbar
 
-    #--------------------------------------------------------------------------
+    # --------------------------------------------------------------------------
 
-    #LineEdit edited event
+    # LineEdit edited event
     def on_searchword_edited(self):
         model = self.completer.model()
         model.setStringList([])
         self.completer.complete()
-    
-    #LineEdit returned event
+
+    # LineEdit returned event
     def on_searchword_returned(self):
         searchword = self.search_line_edit.text()
         geojson_dict = self._fetch_geocoding_api(searchword)
 
-        #always dict is Non when apikey invalid
+        # always dict is Non when apikey invalid
         if geojson_dict is None:
             return
-        
+
         self.result_features = geojson_dict['features']
 
         result_list = []
         for feature in self.result_features:
-            result_list.append('%s:%s'%(feature['text'],feature['place_name']))
+            result_list.append('%s:%s' %
+                               (feature['text'], feature['place_name']))
 
         model = self.completer.model()
         model.setStringList(result_list)
         self.completer.complete()
 
     def _fetch_geocoding_api(self, searchword):
-        #get a center point of MapCanvas
+        # get a center point of MapCanvas
         center = self.iface.mapCanvas().center()
         center_as_qgspoint = QgsPoint(center.x(), center.y())
 
-        #transform the center point to EPSG:4326
+        # transform the center point to EPSG:4326
         target_crs = QgsCoordinateReferenceSystem('EPSG:4326')
-        transform = QgsCoordinateTransform(self.proj.crs(), target_crs, self.proj)
+        transform = QgsCoordinateTransform(
+            self.proj.crs(), target_crs, self.proj)
         center_as_qgspoint.transform(transform)
         center_lonlat = [center_as_qgspoint.x(), center_as_qgspoint.y()]
 
-        #start Geocoding
+        # start Geocoding
         geocoder = MapTilerGeocoder()
         geojson_dict = geocoder.geocoding(searchword, center_lonlat)
         return geojson_dict
 
     def on_result_clicked(self, result_index):
-        #add selected feature to Project
+        # add selected feature to Project
         selected_feature = self.result_features[result_index.row()]
         geojson_str = json.dumps(selected_feature)
-        vlayer = QgsVectorLayer(geojson_str, selected_feature['place_name'], 'ogr')
+        vlayer = QgsVectorLayer(
+            geojson_str, selected_feature['place_name'], 'ogr')
         self.proj.addMapLayer(vlayer)
 
-        #get leftbottom and righttop points of vlayer
+        # get leftbottom and righttop points of vlayer
         vlayer_extent_rect = vlayer.extent()
-        vlayer_extent_leftbottom = QgsPoint(vlayer_extent_rect.xMinimum(), vlayer_extent_rect.yMinimum()) 
-        vlayer_extent_righttop = QgsPoint(vlayer_extent_rect.xMaximum(), vlayer_extent_rect.yMaximum()) 
-        
-        #transform 2points to project CRS
+        vlayer_extent_leftbottom = QgsPoint(
+            vlayer_extent_rect.xMinimum(), vlayer_extent_rect.yMinimum())
+        vlayer_extent_righttop = QgsPoint(
+            vlayer_extent_rect.xMaximum(), vlayer_extent_rect.yMaximum())
+
+        # transform 2points to project CRS
         current_crs = vlayer.sourceCrs()
         target_crs = self.proj.crs()
         transform = QgsCoordinateTransform(current_crs, target_crs, self.proj)
         vlayer_extent_leftbottom.transform(transform)
         vlayer_extent_righttop.transform(transform)
 
-        #make rectangle same to new extent by transformed 2points
+        # make rectangle same to new extent by transformed 2points
         target_extent_rect = QgsRectangle(vlayer_extent_leftbottom.x(), vlayer_extent_leftbottom.y(),
-                         vlayer_extent_righttop.x(), vlayer_extent_righttop.y() )
+                                          vlayer_extent_righttop.x(), vlayer_extent_righttop.y())
 
         self.iface.mapCanvas().zoomToFeatureExtent(target_extent_rect)
