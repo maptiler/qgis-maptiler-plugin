@@ -193,11 +193,10 @@ class VectorMapItem(QgsDataItem):
             url = "type=xyz&url=" + source_zxy_url
             grouped_name = f"{self._name}_{source_name}"
             vector = QgsVectorTileLayer(url, grouped_name)
+            renderer, labeling = converter.get_renderer_labeling(style_json_data)
+            # vector.setLabeling(labeling)
+            # vector.setRenderer(renderer)
             proj.addMapLayer(vector)
-        # style_json_str = requests.get(style_json_url).text
-        # renderer, labeling = convert()
-        # vector.setRenderer(renderer)
-        # vector.setLabeling(labeling)
 
         if not self._editable:
             self._update_recentmaps()

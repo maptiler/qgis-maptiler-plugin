@@ -48,22 +48,6 @@ def get_background_color(text):
         bg_color = "#{0:02x}{1:02x}{2:02x}".format(colors[0], colors[1], colors[2])
     return bg_color
 
-
-def generate_styles(style_json: StrOrDict) -> dict:
-    """
-     * Creates and exports the styles
-    :param style_json:
-    :return:
-    """
-    try:
-        style_json = json.loads(style_json)
-    except:
-        pass
-    layers = parse_json(style_json)
-
-    return layers
-
-
 def _apply_source_layer(layer, all_layers):
     """
      * Recursivly applies all properties except 'paint' from the layer specified by 'ref'.
@@ -85,9 +69,8 @@ def _apply_source_layer(layer, all_layers):
             _apply_source_layer(target_layer, all_layers)
 
 
-def parse_json(style_json):
+def parse_json(style_json: dict):
     """
-     * Creates the style definitions and returns them mapped by filename
     :param style_json:
     :return:
     """
@@ -685,7 +668,7 @@ def get_zxy_dict_from_style_json(style_json_data: dict) -> dict:
     return source_zxy_dict
 
 
-def get_style_json(style_json_url) -> dict:
+def get_style_json(style_json_url: str) -> dict:
     # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith(".json"):
@@ -695,3 +678,11 @@ def get_style_json(style_json_url) -> dict:
         print(f"Url to tiles, not to style supplied: {style_json_url}")
     else:
         print(f"Invalid url: {style_json_url}")
+
+
+def get_renderer_labeling(style_json_data: dict):
+    layers = parse_json(style_json_data)
+    print(layers)
+    renderer, labeling = None, None
+    # renderer, labeling = write_styles(layers=layers))
+    return renderer, labeling
