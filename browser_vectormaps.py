@@ -13,7 +13,7 @@ from . import utils
 
 import json
 import requests
-from .mapboxGL2qgis.convert import convert
+from .mapboxGL2qgis import converter
 
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
@@ -196,17 +196,23 @@ class VectorMapItem(QgsDataItem):
             return True
 
         style_json_url = self._url + apikey
-        url_zxy = self.parse_style_json(style_json_url, apikey)
+        style_json_data = converter.get_style_json(style_json_url)
+        if style_json_data:
+            sources = converter.get_zxy_dict_from_style_json(style_json_data)
+        else:
+            sources = {self._name: style_json_url}
 
         proj = QgsProject().instance()
-        url = "type=xyz&url=" + url_zxy + apikey
-        vector = QgsVectorTileLayer(url, self._name)
 
-        style_json_str = requests.get(style_json_url).text
-        renderer, labeling = convert()
-        vector.setRenderer(renderer)
-        vector.setLabeling(labeling)
-        proj.addMapLayer(vector)
+        for source_name, source_zxy_url in sources.items():
+            url = "type=xyz&url=" + source_zxy_url
+            grouped_name = f"{self._name}_{source_name}"
+            vector = QgsVectorTileLayer(url, grouped_name)
+            proj.addMapLayer(vector)
+        # style_json_str = requests.get(style_json_url).text
+        # renderer, labeling = convert()
+        # vector.setRenderer(renderer)
+        # vector.setLabeling(labeling)
 
         if not self._editable:
             self._update_recentmaps()
@@ -250,22 +256,3 @@ class VectorMapItem(QgsDataItem):
         smanager.store_setting('recentmaps', recentmaps)
         self._parent.parent().refreshConnections()
         self._parent.refreshConnections()
-
-    def parse_style_json(self, style_json_url, apikey):
-        # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
-        if style_json_url.split("?")[0].endswith(".json"):
-            style_json_data = json.loads(requests.get(style_json_url).text)
-            layer_sources = style_json_data.get("sources")
-            for layer_name, layer_data in layer_sources.items():
-                grouped_name = f"{self._name}_{layer_name}"
-                tile_json_url = layer_data.get("url")
-                tile_json_data = json.loads(requests.get(tile_json_url).text)
-                layer_zxy_url = tile_json_data.get("tiles")[0]
-
-                if apikey:
-                    if layer_zxy_url.endswith(apikey):
-                        apikey_char_count = len(apikey) * -1
-                        layer_zxy_url = layer_zxy_url[:apikey_char_count]
-                return layer_zxy_url
-        else:
-            return self._url
