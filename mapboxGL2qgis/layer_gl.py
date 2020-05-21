@@ -1,6 +1,5 @@
 from abc import ABCMeta, abstractmethod
 from enum import Enum
-from typing import Type
 
 
 class LayerType(Enum):
@@ -168,47 +167,3 @@ def layer2Layer(layer_name: str, layer_data: dict):
 
     print("Done")
     return layerGL
-
-def dokopirotva():
-    json_paint = json_layer['paint']
-
-    if 'fill-color' not in json_paint:
-        print("skipping fill without fill-color", json_paint)
-        return
-
-    json_fill_color = json_paint['fill-color']
-    if not isinstance(json_fill_color, str):
-        print("skipping non-string color", json_fill_color)
-        return
-
-    fill_color = parse_color(json_fill_color)
-
-    fill_outline_color = fill_color
-
-    if 'fill-outline-color' in json_paint:
-        json_fill_outline_color = json_paint['fill-outline-color']
-        if isinstance(json_fill_outline_color, str):
-            fill_outline_color = parse_color(json_fill_outline_color)
-        else:
-            print("skipping non-string color", json_fill_outline_color)
-
-    fill_opacity = 1.0
-    if 'fill-opacity' in json_paint:
-        json_fill_opacity = json_paint['fill-opacity']
-        if isinstance(json_fill_opacity, (float, int)):
-            fill_opacity = float(json_fill_opacity)
-        else:
-            print("skipping non-float opacity", json_fill_opacity)
-
-    # TODO: fill-translate
-
-    sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
-    fill_symbol = sym.symbolLayer(0)
-    fill_symbol.setColor(fill_color)
-    fill_symbol.setStrokeColor(fill_outline_color)
-    sym.setOpacity(fill_opacity)
-
-    st = QgsVectorTileBasicRendererStyle()
-    st.setGeometryType(QgsWkbTypes.PolygonGeometry)
-    st.setSymbol(sym)
-    return st

@@ -1,41 +1,33 @@
-import base64
 import colorsys
 import copy
 import json
-import os
-import shutil
+import requests
 from itertools import groupby
 from typing import Dict, Tuple, TypeVar
+import sys
+sys.path.append("/home/adam/dev/qgis_plugin/qgis-maptiler-plugin/mapboxGL2qgis")
 import layer_gl
 
-# from qgis.core import (
-#     QgsPalLayerSettings,
-#     QgsProperty,
-#     QgsPropertyCollection,
-#     QgsSymbol,
-#     QgsSymbolLayer,
-#     QgsTextBufferSettings,
-#     QgsTextFormat,
-#     QgsUnitTypes,
-#     QgsVectorTileBasicLabeling,
-#     QgsVectorTileBasicLabelingStyle,
-#     QgsVectorTileBasicRenderer,
-#     QgsVectorTileBasicRendererStyle,
-#     QgsWkbTypes,
-# )
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QColor
+from qgis.core import \
+    QgsPalLayerSettings, \
+    QgsProperty, \
+    QgsPropertyCollection, \
+    QgsSymbol, \
+    QgsSymbolLayer, \
+    QgsTextBufferSettings, \
+    QgsTextFormat, \
+    QgsUnitTypes, \
+    QgsVectorTileBasicLabeling, \
+    QgsVectorTileBasicLabelingStyle, \
+    QgsVectorTileBasicRenderer, \
+    QgsVectorTileBasicRendererStyle, \
+    QgsWkbTypes
 
-# from qgis.core import QgsExpression
-
-# from ...util.network_helper import http_get
-# from .data import qgis_functions
+from qgis.core import QgsSymbol
 
 StrOrDict = TypeVar("StrOrDict", str, dict)
-
-
-# def register_qgis_expressions():
-#     QgsExpression.registerFunction(qgis_functions.get_zoom_for_scale)
-#     QgsExpression.registerFunction(qgis_functions.if_not_exists)
-#     QgsExpression.registerFunction(qgis_functions.interpolate_exp)
 
 
 def get_background_color(text):
@@ -150,77 +142,6 @@ def parse_json(style_json):
     return styles_by_name
 
 
-def create_icons(style, output_directory):
-    """
-    Loads the sprites defined by sprites.json and sprites.data and extracts the specific items by creating
-    svg icons that clip the defined region (defined in sprites.json) from the sprites.png so that only one icons
-    remains.
-    :param style:
-    :param output_directory:
-    :return:
-    """
-
-    # image_data, image_definition_data = _load_sprite_data(style)
-    # if image_data and image_definition_data:
-    #     _create_icons(image_data, image_definition_data, output_directory)
-    pass
-
-def _create_icons(image_base64, image_definition_data, output_directory):
-    icons_directory = os.path.join(output_directory, "icons")
-    if not os.path.isdir(icons_directory):
-        os.makedirs(icons_directory)
-
-    with open(os.path.join(icons_directory, "sprite.json"), "w") as f:
-        f.write(json.dumps(image_definition_data))
-
-    src_icon_path = os.path.join(os.path.dirname(__file__), "data", "icons", "empty.svg")
-    shutil.copy2(src_icon_path, icons_directory)
-
-    template_path = os.path.join(os.path.dirname(__file__), "data", "svg_template.svg")
-    assert os.path.isfile(template_path)
-    with open(template_path, "r") as f:
-        template_data = f.read()
-    for name in image_definition_data:
-        img_def = image_definition_data[name]
-        file_name = "{}.svg".format(name)
-        if isinstance(image_base64, bytes):
-            image_base64 = image_base64.decode("utf-8")
-        svg_data = template_data.format(
-            width=img_def["width"], height=img_def["height"], x=img_def["x"], y=img_def["y"], base64_data=image_base64
-        )
-        target_file = os.path.join(icons_directory, file_name)
-        with open(target_file, "w") as f:
-            f.write(svg_data)
-
-
-def _load_sprite_data(style: dict) -> Tuple:
-    image_data = None
-    image_definition_data = None
-    if "sprite" in style:
-        image_url = "{}.png".format(style["sprite"])
-        image_definitions_url = "{}.json".format(style["sprite"])
-        if not image_url.startswith("http") or not image_definitions_url.startswith("http"):
-            return None, None
-
-        # _, image_data = http_get(image_url)
-        # _, image_definition_data = http_get(image_definitions_url)
-        if not image_data:
-            raise "No image found at: {}".format(image_url)
-        else:
-            image_data = base64.b64encode(image_data)
-
-        if not image_definition_data:
-            raise "No image definitions found at: {}".format(image_definition_data)
-        else:
-            image_definition_data = json.loads(str(image_definition_data))
-    return image_data, image_definition_data
-
-
-def _add_default_transparency_styles(style: dict):
-    for t in ["point", "linestring", "polygon"]:
-        file_name = "transparent.{}.qml".format(t)
-        style[file_name] = {"styles": [], "file_name": file_name, "layer-transparency": 100, "type": None}
-
 
 def write_styles(layers: Dict[str, dict]):
     """
@@ -229,28 +150,32 @@ def write_styles(layers: Dict[str, dict]):
     """
     renderer_styles = []
     labeling_styles = []
-    for layer_name, layer_data in layers.items():
-        layer = layer_gl.layer2Layer(layer_name, layer_data)
-
-        for style in layer.get_styles():
-            fill_color = style.getattr("fill-color", None)
-            rndr_stl = None
-            sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
-            fill_symbol = sym.symbolLayer(0)
-            fill_symbol.setColor(style.getattr("fill-color", None))
-            fill_symbol.setStrokeColor(style.)
-            sym.setOpacity(fill_opacity)
-        #
-        # rndr_stl = QgsVectorTileBasicRendererStyle()
-        # rndr_stl.setGeometryType(QgsWkbTypes.PolygonGeometry)
-        # rndr_stl.setSymbol(sym)
-        # renderer_styles.append(rndr_stl)
-    # renderer = QgsVectorTileBasicRenderer()
-    # labeling = QgsVectorTileBasicLabeling()
-    # renderer.setStyles(renderer_styles)
-    # labeling.setStyles(labeling_styles)
     renderer, labeling = None, None
+    for layer_name, layer_data in layers.items():
+        if layer_data.get("type") == "fill":
+            print(layer_data.get("type"))
+            layer = layer_gl.layer2Layer(layer_name, layer_data)
+
+            for style in layer.get_styles():
+                fill_color = getattr(style, "fill-color", "transparent")
+                fill_outline_color = getattr(style, "fill-outline-color", fill_color)
+                fill_opacity = float(getattr(style, "fill-opacity", 1.0))
+                sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
+                fill_symbol = sym.symbolLayer(0)
+                fill_symbol.setColor(QColor(fill_color))
+                fill_symbol.setStrokeColor(QColor(fill_outline_color))
+                sym.setOpacity(fill_opacity)
+                rndr_stl = QgsVectorTileBasicRendererStyle()
+                rndr_stl.setGeometryType(QgsWkbTypes.PolygonGeometry)
+                rndr_stl.setSymbol(sym)
+                renderer_styles.append(rndr_stl)
+    renderer = QgsVectorTileBasicRenderer()
+    labeling = QgsVectorTileBasicLabeling()
+    renderer.setStyles(renderer_styles)
+    labeling.setStyles(labeling_styles)
+
     return renderer, labeling
+
 
 _comparision_operators = {"match": "=", "==": "=", "<=": "<=", ">=": ">=", "<": "<", ">": ">", "!=": "!="}
 
@@ -295,53 +220,6 @@ upper_bound_map_scales_by_zoom_level = {
     23: 100,
     24: 0,
 }
-
-
-def parse_fill_layer(layer_name, layer_data):
-    json_paint = layer['paint']
-
-    if 'fill-color' not in json_paint:
-        print("skipping fill without fill-color", json_paint)
-        return
-
-    json_fill_color = json_paint['fill-color']
-    if not isinstance(json_fill_color, str):
-        print("skipping non-string color", json_fill_color)
-        return
-
-    fill_color = parse_color(json_fill_color)
-
-    fill_outline_color = fill_color
-
-    if 'fill-outline-color' in json_paint:
-        json_fill_outline_color = json_paint['fill-outline-color']
-        if isinstance(json_fill_outline_color, str):
-            fill_outline_color = parse_color(json_fill_outline_color)
-        else:
-            print("skipping non-string color", json_fill_outline_color)
-
-    fill_opacity = 1.0
-    if 'fill-opacity' in json_paint:
-        json_fill_opacity = json_paint['fill-opacity']
-        if isinstance(json_fill_opacity, (float, int)):
-            fill_opacity = float(json_fill_opacity)
-        else:
-            print("skipping non-float opacity", json_fill_opacity)
-
-    # TODO: fill-translate
-
-    sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
-    fill_symbol = sym.symbolLayer(0)
-    fill_symbol.setColor(fill_color)
-    fill_symbol.setStrokeColor(fill_outline_color)
-    sym.setOpacity(fill_opacity)
-
-    st = QgsVectorTileBasicRendererStyle()
-    st.setGeometryType(QgsWkbTypes.PolygonGeometry)
-    st.setSymbol(sym)
-    return st
-
-
 
 def get_styles(layer):
     layer_id = layer["id"]
@@ -793,3 +671,27 @@ def _get_existential_expr(mb_filter):
     op = _existential_operators[mb_filter[0]]
     key = mb_filter[1]
     return "attribute($currentfeature, '{key}') {op}".format(key=key, op=op)
+
+
+def get_zxy_dict_from_style_json(style_json_data: dict) -> dict:
+    layer_sources = style_json_data.get("sources")
+    source_zxy_dict = {}
+    for layer_name, layer_data in layer_sources.items():
+        if layer_data.get("type") == "vector":
+            tile_json_url = layer_data.get("url")
+            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+            source_zxy_dict[layer_name] = layer_zxy_url
+    return source_zxy_dict
+
+
+def get_style_json(style_json_url) -> dict:
+    # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
+    url_endpoint = style_json_url.split("?")[0]
+    if url_endpoint.endswith(".json"):
+        style_json_data = json.loads(requests.get(style_json_url).text)
+        return style_json_data
+    elif url_endpoint.endswith(".pbf"):
+        print(f"Url to tiles, not to style supplied: {style_json_url}")
+    else:
+        print(f"Invalid url: {style_json_url}")
