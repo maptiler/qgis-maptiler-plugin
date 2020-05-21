@@ -13,7 +13,7 @@ from . import utils
 
 import json
 import requests
-from .mapbox2qgis import *
+from .mapboxGL2qgis.convert import convert
 
 ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
@@ -188,7 +188,7 @@ class VectorMapItem(QgsDataItem):
         vector = QgsVectorTileLayer(url, self._name)
 
         style_json_str = requests.get(style_json_url).text
-        renderer, labeling = parse_json(style_json_str)
+        renderer, labeling = convert()
         vector.setRenderer(renderer)
         vector.setLabeling(labeling)
         proj.addMapLayer(vector)
