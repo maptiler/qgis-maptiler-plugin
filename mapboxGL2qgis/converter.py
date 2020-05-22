@@ -660,10 +660,18 @@ def get_zxy_dict_from_style_json(style_json_data: dict) -> dict:
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
     for layer_name, layer_data in layer_sources.items():
+
         tile_json_url = layer_data.get("url")
         tile_json_data = json.loads(requests.get(tile_json_url).text)
         layer_zxy_url = tile_json_data.get("tiles")[0]
         source_zxy_dict[layer_name] = layer_zxy_url
+
+        if layer_data.get("type") == "vector":
+            tile_json_url = layer_data.get("url")
+            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+            source_zxy_dict[layer_name] = layer_zxy_url
+
     return source_zxy_dict
 
 
@@ -677,6 +685,7 @@ def get_style_json(style_json_url: str) -> dict:
         print(f"Url to tiles, not to style supplied: {style_json_url}")
     else:
         print(f"Invalid url: {style_json_url}")
+
 
 
 def get_renderer_labeling(source_name: str, style_json_data: dict):
