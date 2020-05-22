@@ -244,16 +244,16 @@ class VectorMapItem(QgsDataItem):
 
         if style_json_data:
             sources = converter.get_sources_dict_from_style_json(style_json_data)
-            list_of_layers = converter.json2styles(style_json_data)
+            # list_of_layers = converter.json2styles(style_json_data)
             for source_name, source_data in sources.items():
                 url = "type=xyz&url=" + source_data["zxy_url"]
                 grouped_name = f"{self._name} - {source_name}"
 
                 if source_data["type"] == "vector":
                     vector = QgsVectorTileLayer(url, grouped_name)
-                    renderer, labeling = converter.get_renderer_labeling(source_name, list_of_layers[source_name])
-                    # vector.setLabeling(labeling)
-                    # vector.setRenderer(renderer)
+                    renderer, labeling = converter.get_renderer_labeling(source_name, style_json_data)
+                    vector.setLabeling(labeling)
+                    vector.setRenderer(renderer)
                     proj.addMapLayer(vector)
                 elif source_data["type"] == "raster-dem":
                     # TODO solve layer style
