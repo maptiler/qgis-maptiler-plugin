@@ -12,6 +12,9 @@
 import os
 import sip
 
+import json
+import requests
+
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
@@ -237,7 +240,10 @@ class RasterMapItem(QgsDataItem):
             return True
 
         proj = QgsProject().instance()
-        url = "type=xyz&url=" + self._url + apikey
+        tile_json_url = self._url + apikey
+        tile_json_data = json.loads(requests.get(tile_json_url).text)
+        layer_zxy_url = tile_json_data.get("tiles")[0]
+        url = "type=xyz&url=" + layer_zxy_url
         raster = QgsRasterLayer(url, self._name, "wms")
 
         # change resampler to bilinear
