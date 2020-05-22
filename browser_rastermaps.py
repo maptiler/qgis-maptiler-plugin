@@ -22,7 +22,14 @@ from .edit_connection_dialog import RasterEditConnectionDialog
 from .settings_manager import SettingsManager
 from . import utils
 
-ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+
+
+def maps_icon_path():
+    icon_path = os.path.join(IMGS_PATH, "icon_maps_light.svg")
+    if utils.is_in_darkmode():
+        icon_path = os.path.join(IMGS_PATH, "icon_maps_dark.svg")
+    return icon_path
 
 
 class RasterCollection(QgsDataCollectionItem):
@@ -62,7 +69,8 @@ class RasterCollection(QgsDataCollectionItem):
     def __init__(self, name):
         QgsDataCollectionItem.__init__(
             self, None, name, "/MapTiler/raster/" + name)
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
 
         self.ALL_DATASET = dict(**self.STANDARD_DATASET,
                                 **self.LOCAL_JP_DATASET,
@@ -100,7 +108,8 @@ class RasterMoreCollection(QgsDataCollectionItem):
     def __init__(self, dataset, local_dataset):
         QgsDataCollectionItem.__init__(
             self, None, "more...", "/MapTiler/raster/more")
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
         self._dataset = dataset
         self._local_dataset = local_dataset
 
@@ -137,8 +146,8 @@ class RasterUserCollection(QgsDataCollectionItem):
     def __init__(self, name="User Maps"):
         QgsDataCollectionItem.__init__(
             self, None, name, "/MapTiler/raster/user")
-        self.setIcon(
-            QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
 
     def createChildren(self):
         items = []

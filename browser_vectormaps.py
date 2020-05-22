@@ -15,7 +15,14 @@ import json
 import requests
 from .mapbox2qgis import *
 
-ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+
+
+def maps_icon_path():
+    icon_path = os.path.join(IMGS_PATH, "icon_maps_light.svg")
+    if utils.is_in_darkmode():
+        icon_path = os.path.join(IMGS_PATH, "icon_maps_dark.svg")
+    return icon_path
 
 
 class VectorCollection(QgsDataCollectionItem):
@@ -36,7 +43,8 @@ class VectorCollection(QgsDataCollectionItem):
     def __init__(self, name):
         QgsDataCollectionItem.__init__(
             self, None, name, "/MapTiler/vector/" + name)
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
 
         self.ALL_DATASET = dict(**self.STANDARD_DATASET,
                                 **self.LOCAL_JP_DATASET,
@@ -74,8 +82,9 @@ class VectorMoreCollection(QgsDataCollectionItem):
     def __init__(self, dataset, local_dataset):
         QgsDataCollectionItem.__init__(
             self, None, "more...", "/MapTiler/vector/more")
-        self.setIcon(
-            QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
+
         self._dataset = dataset
         self._local_dataset = local_dataset
 
@@ -112,8 +121,8 @@ class VectorUserCollection(QgsDataCollectionItem):
     def __init__(self, name="User Maps"):
         QgsDataCollectionItem.__init__(
             self, None, name, "/MapTiler/vector/user")
-        self.setIcon(
-            QIcon(os.path.join(ICON_PATH, "icon_maps_light.svg")))
+
+        self.setIcon(QIcon(maps_icon_path()))
 
     def createChildren(self):
         items = []
