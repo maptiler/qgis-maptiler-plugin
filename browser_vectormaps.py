@@ -42,12 +42,22 @@ class VectorCollection(QgsDataCollectionItem):
     }
 
     LOCAL_JP_DATASET = {
+        'MIERUNE Dark': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json?key=',
+        'MIERUNE Gray': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json?key=',
+        'MIERUNE Streets': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json?key='
     }
 
     LOCAL_NL_DATASET = {
+        'Cartigo Dark': r'https://api.maptiler.com/maps/nl-cartiqo-dark/style.json?key=',
+        'Cartigo Light': r'https://api.maptiler.com/maps/nl-cartiqo-light/style.json?key=',
+        'Cartigo Topo': r'https://api.maptiler.com/maps/nl-cartiqo-topo/style.json?key='
     }
 
     LOCAL_UK_DATASET = {
+        'OS Open Zoomstack Light': r'https://api.maptiler.com/maps/uk-openzoomstack-light/style.json?key=',
+        'OS Open Zoomstack Night': r'https://api.maptiler.com/maps/uk-openzoomstack-night/style.json?key=',
+        'OS Open Zoomstack Outdoor': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/style.json?key=',
+        'OS Open Zoomstack Road': r'https://api.maptiler.com/maps/uk-openzoomstack-road/style.json?key='
     }
 
     def __init__(self, name):
