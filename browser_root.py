@@ -8,8 +8,9 @@ from .browser_rastermaps import RasterCollection, RasterUserCollection
 from .browser_vectormaps import VectorCollection, VectorUserCollection
 from .configue_dialog import ConfigueDialog
 from .settings_manager import SettingsManager
+from . import utils
 
-ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
 
 class DataItemProvider(QgsDataItemProvider):
@@ -31,7 +32,8 @@ class DataItemProvider(QgsDataItemProvider):
 class RootCollection(QgsDataCollectionItem):
     def __init__(self):
         QgsDataCollectionItem.__init__(self, None, "MapTiler", "/MapTiler")
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_maptiler.svg")))
+
+        self.setIcon(QIcon(os.path.join(IMGS_PATH, "icon_maptiler.svg")))
 
     def createChildren(self):
         children = []
@@ -75,7 +77,11 @@ class RootOpenConfigItem(QgsDataItem):
     def __init__(self, parent):
         QgsDataItem.__init__(self, QgsDataItem.Custom,
                              parent, "Account", "/MapTiler/config")
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "icon_account_light.svg")))
+
+        icon_path = os.path.join(IMGS_PATH, "icon_account_light.svg")
+        if utils.is_in_darkmode():
+            icon_path = os.path.join(IMGS_PATH, "icon_account_dark.svg")
+        self.setIcon(QIcon(icon_path))
         self.populate()
 
     def handleDoubleClick(self):
