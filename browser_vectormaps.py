@@ -28,7 +28,17 @@ def maps_icon_path():
 class VectorCollection(QgsDataCollectionItem):
 
     STANDARD_DATASET = {
-        'Basic': r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+        'Basic': r'https://api.maptiler.com/maps/basic/style.json?key=',
+        'Bright': r'https://api.maptiler.com/maps/bright/style.json?key=',
+        'Dark Matter': r'https://api.maptiler.com/maps/darkmatter/style.json?key=',
+        'Pastel': r'https://api.maptiler.com/maps/pastel/style.json?key=',
+        'Positron': r'https://api.maptiler.com/maps/positron/style.json?key=',
+        'Satellite Hybrid': r'https://api.maptiler.com/maps/hybrid/style.json?key=',
+        'Streets': r'https://api.maptiler.com/maps/streets/style.json?key=',
+        'Toner': r'https://api.maptiler.com/maps/toner/style.json?key=',
+        'Topo': r'https://api.maptiler.com/maps/topo/style.json?key=',
+        'Topographique': r'https://api.maptiler.com/maps/topographique/style.json?key=',
+        'Voyager': r'https://api.maptiler.com/maps/voyager/style.json?key='
     }
 
     LOCAL_JP_DATASET = {
