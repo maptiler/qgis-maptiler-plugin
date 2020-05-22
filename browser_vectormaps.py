@@ -196,21 +196,34 @@ class VectorMapItem(QgsDataItem):
             return True
 
         style_json_url = self._url + apikey
-        style_json_data = converter.get_style_json(style_json_url)
-        if style_json_data:
-            sources = converter.get_zxy_dict_from_style_json(style_json_data)
-        else:
-            sources = {self._name: style_json_url}
+        style_json_data = {}
+        try:
+            style_json_data = converter.get_style_json(style_json_url)
+        except Exception as e:
+            print(e)
 
         proj = QgsProject().instance()
 
-        for source_name, source_zxy_url in sources.items():
-            url = "type=xyz&url=" + source_zxy_url
-            grouped_name = f"{self._name}_{source_name}"
-            vector = QgsVectorTileLayer(url, grouped_name)
-            renderer, labeling = converter.get_renderer_labeling(source_name, style_json_data)
-            # vector.setLabeling(labeling)
-            # vector.setRenderer(renderer)
+        if style_json_data:
+            sources = converter.get_sources_dict_from_style_json(style_json_data)
+            list_of_layers = converter.json2styles(style_json_data)
+            for source_name, source_data in sources.items():
+                url = "type=xyz&url=" + source_data["zxy_url"]
+                grouped_name = f"{self._name} - {source_name}"
+
+                if source_data["type"] == "vector":
+                    vector = QgsVectorTileLayer(url, grouped_name)
+                    renderer, labeling = converter.get_renderer_labeling(source_name, list_of_layers[source_name])
+                    # vector.setLabeling(labeling)
+                    # vector.setRenderer(renderer)
+                    proj.addMapLayer(vector)
+                elif source_data["type"] == "raster-dem":
+                    # TODO solve layer style
+                    raster = QgsRasterLayer(url, grouped_name, "wms")
+                    proj.addMapLayer(raster)
+        else:
+            url = "type=xyz&url=" + self._url + apikey
+            vector = QgsVectorTileLayer(url, self._name)
             proj.addMapLayer(vector)
 
         if not self._editable:

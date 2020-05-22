@@ -69,7 +69,7 @@ def _apply_source_layer(layer, all_layers):
             _apply_source_layer(target_layer, all_layers)
 
 
-def parse_json(style_json: dict):
+def json2styles(style_json: dict) -> dict:
     """
     :param style_json:
     :return:
@@ -85,6 +85,7 @@ def parse_json(style_json: dict):
         if "source-layer" not in l:
             continue
         source_layer = l["source-layer"]
+        source = l["source"]
         layer_type = l["type"]
         if source_layer:
             if layer_type == "fill":
@@ -96,30 +97,36 @@ def parse_json(style_json: dict):
             else:
                 continue
 
-            if source_layer not in styles_by_name:
-                styles_by_name[source_layer] = {"source_layer": source_layer, "type": layer_type, "styles": []}
+            if source in styles_by_name:
+                if source_layer not in styles_by_name[source]:
+                    styles_by_name[source][source_layer] = {"source_layer": source_layer, "type": layer_type,
+                                                            "styles": []}
+            else:
+                styles_by_name[source] = {source_layer: {"source_layer": source_layer, "type": layer_type,
+                                                         "styles": []}}
             qgis_styles = get_styles(l)
             filter_expr = None
             if "filter" in l:
                 filter_expr = get_qgis_rule(l["filter"])
             for s in qgis_styles:
                 s["rule"] = filter_expr
-            styles_by_name[source_layer]["styles"].extend(qgis_styles)
+            styles_by_name[source][source_layer]["styles"].extend(qgis_styles)
 
-    for layer_name in styles_by_name:
-        styles = styles_by_name[layer_name]["styles"]
-        for index, style in enumerate(styles):
-            rule = style["rule"]
-            name = style["name"]
-            zoom = style["zoom_level"]
-            styles_with_same_target = list(
-                filter(
-                    lambda st: st["name"] != name and st["rule"] == rule and zoom and st["zoom_level"] <= zoom,
-                    styles[:index],
+    for source in styles_by_name:
+        for layer_name in styles_by_name[source]:
+            styles = styles_by_name[source][layer_name]["styles"]
+            for index, style in enumerate(styles):
+                rule = style["rule"]
+                name = style["name"]
+                zoom = style["zoom_level"]
+                styles_with_same_target = list(
+                    filter(
+                        lambda st: st["name"] != name and st["rule"] == rule and zoom and st["zoom_level"] <= zoom,
+                        styles[:index],
+                    )
                 )
-            )
-            groups_by_name = list(groupby(styles_with_same_target, key=lambda st: st["name"]))
-            style["rendering_pass"] = len(groups_by_name)
+                groups_by_name = list(groupby(styles_with_same_target, key=lambda st: st["name"]))
+                style["rendering_pass"] = len(groups_by_name)
 
     # _add_default_transparency_styles(styles)
     return styles_by_name
@@ -656,21 +663,15 @@ def _get_existential_expr(mb_filter):
     return "attribute($currentfeature, '{key}') {op}".format(key=key, op=op)
 
 
-def get_zxy_dict_from_style_json(style_json_data: dict) -> dict:
+def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
-    for layer_name, layer_data in layer_sources.items():
-
-        tile_json_url = layer_data.get("url")
+    for source_name, source_data in layer_sources.items():
+        tile_json_url = source_data.get("url")
+        source_type = source_data.get("type")
         tile_json_data = json.loads(requests.get(tile_json_url).text)
         layer_zxy_url = tile_json_data.get("tiles")[0]
-        source_zxy_dict[layer_name] = layer_zxy_url
-
-        if layer_data.get("type") == "vector":
-            tile_json_url = layer_data.get("url")
-            tile_json_data = json.loads(requests.get(tile_json_url).text)
-            layer_zxy_url = tile_json_data.get("tiles")[0]
-            source_zxy_dict[layer_name] = layer_zxy_url
+        source_zxy_dict[source_name] = {"name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
 
     return source_zxy_dict
 
@@ -683,14 +684,15 @@ def get_style_json(style_json_url: str) -> dict:
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
         print(f"Url to tiles, not to style supplied: {style_json_url}")
+        return None
     else:
-        print(f"Invalid url: {style_json_url}")
+        raise Exception(f"Invalid url: {style_json_url}")
 
 
+def get_renderer_labeling(source_name: str, source_json_data: dict):
+    # styles = parse_json(single_layer_style)
+    # print(styles)
 
-def get_renderer_labeling(source_name: str, style_json_data: dict):
-    layers = parse_json(style_json_data)
-    print(layers)
-    renderer, labeling = None, None
     # renderer, labeling = write_styles(layers=layers))
+    renderer, labeling = None, None
     return renderer, labeling
