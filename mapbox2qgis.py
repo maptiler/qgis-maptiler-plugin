@@ -9,22 +9,7 @@ Licensed under the terms of MIT license (see LICENSE file)
 import json
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
-from qgis.core import (
-    QgsPalLayerSettings,
-    QgsProperty,
-    QgsPropertyCollection,
-    QgsSymbol,
-    QgsSymbolLayer,
-    QgsTextBufferSettings,
-    QgsTextFormat,
-    QgsUnitTypes,
-    QgsVectorTileBasicLabeling,
-    QgsVectorTileBasicLabelingStyle,
-    QgsVectorTileBasicRenderer,
-    QgsVectorTileBasicRendererStyle,
-    QgsWkbTypes,
-)
-
+from qgis.core import *
 
 PX_TO_MM = 0.26  # TODO: some good conversion ratio
 
@@ -46,7 +31,7 @@ def parse_color(json_color):
         sat = float(lst[1][:-1]) / 100. * 255
         lig = float(lst[2][:-1]) / 100. * 255
         alpha = float(lst[3]) * 255
-        #print(hue,sat,lig,alpha)
+        # print(hue,sat,lig,alpha)
         return QColor.fromHsl(hue, sat, lig, alpha)
     elif json_color.startswith('hsl'):
         x = json_color[4:-1]
@@ -55,7 +40,7 @@ def parse_color(json_color):
         hue = int(lst[0])
         sat = float(lst[1][:-1]) / 100. * 255
         lig = float(lst[2][:-1]) / 100. * 255
-        #print(hue,sat,lig)
+        # print(hue,sat,lig)
         return QColor.fromHsl(hue, sat, lig)
     elif json_color.startswith('rgba'):
         x = json_color[5:-1]
@@ -74,18 +59,18 @@ def parse_color(json_color):
 def parse_line_cap(json_line_cap):
     """ Return value from Qt.PenCapStyle enum from JSON value """
     if json_line_cap == "round":
-      return Qt.RoundCap
+        return Qt.RoundCap
     if json_line_cap == "square":
-      return Qt.SquareCap
+        return Qt.SquareCap
     return Qt.FlatCap   # "butt" is default
 
 
 def parse_line_join(json_line_join):
     """ Return value from Qt.PenJoinStyle enum from JSON value """
     if json_line_join == "bevel":
-      return Qt.BevelJoin
+        return Qt.BevelJoin
     if json_line_join == "round":
-      return Qt.RoundJoin
+        return Qt.RoundJoin
     return Qt.MiterJoin  # "miter" is default
 
 
@@ -184,9 +169,11 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']  # TODO: use intermediate stops
     if base == 1:
-        scale_expr = "scale_linear(@zoom_level, {}, {}, {}, {})".format(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1])
+        scale_expr = "scale_linear(@zoom_level, {}, {}, {}, {})".format(
+            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1])
     else:
-        scale_expr = "scale_exp(@zoom_level, {}, {}, {}, {}, {})".format(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)
+        scale_expr = "scale_exp(@zoom_level, {}, {}, {}, {}, {})".format(
+            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)
     return scale_expr + " * {}".format(multiplier)
 
 
@@ -212,7 +199,8 @@ def parse_line_layer(json_layer):
         if isinstance(json_line_width, (float, int)):
             line_width = float(json_line_width)
         elif isinstance(json_line_width, dict):
-            dd_properties[QgsSymbolLayer.PropertyWidth] = parse_interpolate_by_zoom(json_line_width, PX_TO_MM)
+            dd_properties[QgsSymbolLayer.PropertyWidth] = parse_interpolate_by_zoom(
+                json_line_width, PX_TO_MM)
         else:
             print("skipping non-float line-width", json_line_width)
 
@@ -248,7 +236,8 @@ def parse_line_layer(json_layer):
         line_symbol.setCustomDashVector(dash_vector)
         line_symbol.setUseCustomDashPattern(True)
     for dd_key, dd_expression in dd_properties.items():
-        line_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+        line_symbol.setDataDefinedProperty(
+            dd_key, QgsProperty.fromExpression(dd_expression))
     sym.setOpacity(line_opacity)
 
     st = QgsVectorTileBasicRendererStyle()
@@ -272,7 +261,8 @@ def parse_symbol_layer(json_layer):
         if isinstance(json_text_size, (float, int)):
             text_size = json_text_size
         elif isinstance(json_text_size, dict):
-            dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(json_text_size, TEXT_SIZE_MULTIPLIER)
+            dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
+                json_text_size, TEXT_SIZE_MULTIPLIER)
         else:
             print("skipping non-float text-size", json_text_size)
 
@@ -306,7 +296,7 @@ def parse_symbol_layer(json_layer):
     format.setColor(text_color)
     format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
     format.setSizeUnit(QgsUnitTypes.RenderPixels)
-    #format.setFont(font)
+    # format.setFont(font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
@@ -325,7 +315,8 @@ def parse_symbol_layer(json_layer):
     if dd_properties:
         for dd_key, dd_expression in dd_properties.items():
             prop_collection = QgsPropertyCollection()
-            prop_collection.setProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+            prop_collection.setProperty(
+                dd_key, QgsProperty.fromExpression(dd_expression))
         label_settings.setDataDefinedProperties(prop_collection)
 
     lb = QgsVectorTileBasicLabelingStyle()
@@ -342,7 +333,8 @@ def parse_layers(json_layers):
 
     for json_layer in json_layers:
         layer_type = json_layer['type']
-        if layer_type == 'background': continue   # TODO: parse background color
+        if layer_type == 'background':
+            continue   # TODO: parse background color
         style_id = json_layer['id']
         layer_name = json_layer['source-layer']
         min_zoom = json_layer['minzoom'] if 'minzoom' in json_layer else -1
