@@ -38,7 +38,8 @@ class VectorCollection(QgsDataCollectionItem):
         'Toner': r'https://api.maptiler.com/maps/toner/style.json?key=',
         'Topo': r'https://api.maptiler.com/maps/topo/style.json?key=',
         'Topographique': r'https://api.maptiler.com/maps/topographique/style.json?key=',
-        'Voyager': r'https://api.maptiler.com/maps/voyager/style.json?key='
+        'Voyager': r'https://api.maptiler.com/maps/voyager/style.json?key=',
+        'Landcover Test': r'https://api.maptiler.com/maps/6026cc5f-350c-4307-b702-5d31dbbf36c5/style.json?key='
     }
 
     LOCAL_JP_DATASET = {
@@ -255,6 +256,10 @@ class VectorMapItem(QgsDataItem):
                     # vector.setRenderer(renderer)
                     proj.addMapLayer(vector)
                 elif source_data["type"] == "raster-dem":
+                    # TODO solve layer style
+                    raster = QgsRasterLayer(url, grouped_name, "wms")
+                    proj.addMapLayer(raster)
+                elif source_data["type"] == "raster":
                     # TODO solve layer style
                     raster = QgsRasterLayer(url, grouped_name, "wms")
                     proj.addMapLayer(raster)

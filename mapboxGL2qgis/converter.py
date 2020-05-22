@@ -132,7 +132,6 @@ def json2styles(style_json: dict) -> dict:
     return styles_by_name
 
 
-
 def write_styles(layers: Dict[str, dict]):
     """
     :param layers:
@@ -143,21 +142,37 @@ def write_styles(layers: Dict[str, dict]):
     renderer, labeling = None, None
     for layer_name, layer_data in layers.items():
         if layer_data.get("type") == "fill":
-            print(layer_data.get("type"))
-            layer = layer_gl.layer2Layer(layer_name, layer_data)
 
-            for style in layer.get_styles():
-                fill_color = getattr(style, "fill-color", "transparent")
-                fill_outline_color = getattr(style, "fill-outline-color", fill_color)
-                fill_opacity = float(getattr(style, "fill-opacity", 1.0))
+            # layer = layer_gl.layer2Layer(layer_name, layer_data)
+
+            for style in layer_data.get("styles"):
+                fill_color = style.get("fill-color", "0,0,0,0")
+                fill_outline_color = style.get("fill-outline-color", fill_color)
+                fill_opacity = float(style.get("fill-opacity", 1.0))
                 sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
                 fill_symbol = sym.symbolLayer(0)
-                fill_symbol.setColor(QColor(fill_color))
+                fill_symbol.setColor(QColor(253,247,230,255))
                 fill_symbol.setStrokeColor(QColor(fill_outline_color))
                 sym.setOpacity(fill_opacity)
                 rndr_stl = QgsVectorTileBasicRendererStyle()
                 rndr_stl.setGeometryType(QgsWkbTypes.PolygonGeometry)
                 rndr_stl.setSymbol(sym)
+
+                enabled = True
+                rndr_stl.setStyleName(style.get("name"))
+                rndr_stl.setLayerName(layer_name)
+                rndr_stl.setFilterExpression(style.get("rule"))
+                if style.get("min_scale_denom"):
+                    zoom = style.get("min_scale_denom")
+                else:
+                    zoom = -1
+                rndr_stl.setMinZoomLevel(zoom)
+                if style.get("max_scale_denom"):
+                    zoom = style.get("min_scale_denom")
+                else:
+                    zoom = -1
+                rndr_stl.setMaxZoomLevel(zoom)
+                rndr_stl.setEnabled(enabled)
                 renderer_styles.append(rndr_stl)
     renderer = QgsVectorTileBasicRenderer()
     labeling = QgsVectorTileBasicLabeling()
@@ -680,7 +695,10 @@ def get_style_json(style_json_url: str) -> dict:
     # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith(".json"):
-        style_json_data = json.loads(requests.get(style_json_url).text)
+        # TODO remove, it's just for testing purposes
+        with open("/home/adam/tmp/landcover_atomic.json") as fp:
+            style_json_data = json.loads(fp.read())
+        # style_json_data = json.loads(requests.get(style_json_url).text)
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
         print(f"Url to tiles, not to style supplied: {style_json_url}")
@@ -690,9 +708,6 @@ def get_style_json(style_json_url: str) -> dict:
 
 
 def get_renderer_labeling(source_name: str, source_json_data: dict):
-    # styles = parse_json(single_layer_style)
-    # print(styles)
-
-    # renderer, labeling = write_styles(layers=layers))
-    renderer, labeling = None, None
+    renderer, labeling = write_styles(source_json_data)
+    # renderer, labeling = None, None
     return renderer, labeling
