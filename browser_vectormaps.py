@@ -15,13 +15,20 @@ import json
 import requests
 from .mapbox2qgis import *
 
-ICON_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+
+
+def maps_icon_path():
+    icon_path = os.path.join(IMGS_PATH, "icon_maps_light.svg")
+    if utils.is_in_darkmode():
+        icon_path = os.path.join(IMGS_PATH, "icon_maps_dark.svg")
+    return icon_path
 
 
 class VectorCollection(QgsDataCollectionItem):
 
     STANDARD_DATASET = {
-    'Basic':r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+        'Basic': r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
     }
 
     LOCAL_JP_DATASET = {
@@ -34,34 +41,37 @@ class VectorCollection(QgsDataCollectionItem):
     }
 
     def __init__(self, name):
-        QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/vector/" + name)
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_collection_icon.png")))
+        QgsDataCollectionItem.__init__(
+            self, None, name, "/MapTiler/vector/" + name)
+
+        self.setIcon(QIcon(maps_icon_path()))
 
         self.ALL_DATASET = dict(**self.STANDARD_DATASET,
                                 **self.LOCAL_JP_DATASET,
                                 **self.LOCAL_NL_DATASET,
                                 **self.LOCAL_UK_DATASET)
-        
+
         self.LOCAL_DATASET = dict(**self.LOCAL_JP_DATASET,
-                                    **self.LOCAL_NL_DATASET,
-                                    **self.LOCAL_UK_DATASET)
+                                  **self.LOCAL_NL_DATASET,
+                                  **self.LOCAL_UK_DATASET)
 
     def createChildren(self):
         items = []
-        
+
         for key in self.ALL_DATASET:
-            #skip adding if it is not recently used
+            # skip adding if it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
             if not key in recentmaps:
                 continue
-            
-            #add space to put items above
+
+            # add space to put items above
             item = VectorMapItem(self, ' ' + key, self.ALL_DATASET[key])
             sip.transferto(item, self)
             items.append(item)
 
-        more_collection = VectorMoreCollection(self.STANDARD_DATASET, self.LOCAL_DATASET)
+        more_collection = VectorMoreCollection(
+            self.STANDARD_DATASET, self.LOCAL_DATASET)
         sip.transferto(more_collection, self)
         items.append(more_collection)
 
@@ -70,33 +80,36 @@ class VectorCollection(QgsDataCollectionItem):
 
 class VectorMoreCollection(QgsDataCollectionItem):
     def __init__(self, dataset, local_dataset):
-        QgsDataCollectionItem.__init__(self, None, "more...", "/MapTiler/vector/more")
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_more_collection_icon.png")))
+        QgsDataCollectionItem.__init__(
+            self, None, "more...", "/MapTiler/vector/more")
+
+        self.setIcon(QIcon(maps_icon_path()))
+
         self._dataset = dataset
         self._local_dataset = local_dataset
 
     def createChildren(self):
         items = []
         for key in self._dataset:
-            #add item only when it is not recently used
+            # add item only when it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
             if key in recentmaps:
                 continue
-            
-            #add space to put items above
+
+            # add space to put items above
             item = VectorMapItem(self, ' ' + key, self._dataset[key])
             sip.transferto(item, self)
             items.append(item)
 
         for key in self._local_dataset:
-            #add item only when it is not recently used
+            # add item only when it is not recently used
             smanager = SettingsManager()
             recentmaps = smanager.get_setting('recentmaps')
             if key in recentmaps:
                 continue
-            
-            #add space to put items above
+
+            # add space to put items above
             item = VectorMapItem(self, key, self._local_dataset[key])
             sip.transferto(item, self)
             items.append(item)
@@ -106,8 +119,10 @@ class VectorMoreCollection(QgsDataCollectionItem):
 
 class VectorUserCollection(QgsDataCollectionItem):
     def __init__(self, name="User Maps"):
-        QgsDataCollectionItem.__init__(self, None, name, "/MapTiler/vector/user")
-        self.setIcon(QIcon(os.path.join(ICON_PATH, "vector_user_collection_icon.png")))
+        QgsDataCollectionItem.__init__(
+            self, None, name, "/MapTiler/vector/user")
+
+        self.setIcon(QIcon(maps_icon_path()))
 
     def createChildren(self):
         items = []
@@ -132,14 +147,15 @@ class VectorUserCollection(QgsDataCollectionItem):
     def openDialog(self):
         new_dialog = VectorNewConnectionDialog()
         new_dialog.exec_()
-        #reload browser
+        # reload browser
         self.refreshConnections()
 
 
 class VectorMapItem(QgsDataItem):
     def __init__(self, parent, name, url, editable=False):
-        QgsDataItem.__init__(self, QgsDataItem.Custom, parent, name, "/MapTiler/vector/" + parent.name() + '/' + name)
-        self.populate() #set to treat Item as not-folder-like
+        QgsDataItem.__init__(self, QgsDataItem.Custom, parent,
+                             name, "/MapTiler/vector/" + parent.name() + '/' + name)
+        self.populate()  # set to treat Item as not-folder-like
 
         self._parent = parent
         self._name = name
@@ -168,11 +184,11 @@ class VectorMapItem(QgsDataItem):
             remove_action = QAction(QIcon(), 'Remove', parent)
             remove_action.triggered.connect(self._remove)
             actions.append(remove_action)
-        
+
         return actions
 
     def _add_to_canvas(self):
-        #apikey validation
+        # apikey validation
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
         if not utils.validate_key(apikey):
@@ -198,7 +214,7 @@ class VectorMapItem(QgsDataItem):
     def _edit(self):
         edit_dialog = VectorEditConnectionDialog(self._name)
         edit_dialog.exec_()
-        #to reload item's info, once delete item
+        # to reload item's info, once delete item
         self._parent.deleteChildItem(self)
         self._parent.refreshConnections()
 
@@ -219,18 +235,18 @@ class VectorMapItem(QgsDataItem):
         smanager = SettingsManager()
         recentmaps = smanager.get_setting('recentmaps')
 
-        #clean item name spacer
+        # clean item name spacer
         key = self._name
         if key[0] == ' ':
             key = key[1:]
-        
+
         if not key in recentmaps:
             recentmaps.append(key)
 
         MAX_RECENT_MAPS = 3
         if len(recentmaps) > MAX_RECENT_MAPS:
             recentmaps.pop(0)
-        
+
         smanager.store_setting('recentmaps', recentmaps)
         self._parent.parent().refreshConnections()
         self._parent.refreshConnections()

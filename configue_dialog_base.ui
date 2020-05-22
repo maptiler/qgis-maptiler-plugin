@@ -53,7 +53,7 @@
       <enum>Qt::RichText</enum>
      </property>
      <property name="pixmap">
-      <pixmap>imgs/maptiler_logo.svg</pixmap>
+      <pixmap>imgs/logo_maptiler_light.svg</pixmap>
      </property>
      <property name="scaledContents">
       <bool>true</bool>
