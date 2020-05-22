@@ -71,9 +71,9 @@ class VectorCollection(QgsDataCollectionItem):
                                 **self.LOCAL_NL_DATASET,
                                 **self.LOCAL_UK_DATASET)
 
-        self.LOCAL_DATASET = dict(**self.LOCAL_JP_DATASET,
-                                  **self.LOCAL_NL_DATASET,
-                                  **self.LOCAL_UK_DATASET)
+        self.LOCAL_DATASET = {"JP": self.LOCAL_JP_DATASET,
+                              "NL": self.LOCAL_NL_DATASET,
+                              "UK": self.LOCAL_UK_DATASET}
 
     def createChildren(self):
         items = []
@@ -104,7 +104,6 @@ class VectorMoreCollection(QgsDataCollectionItem):
             self, None, "more...", "/MapTiler/vector/more")
 
         self.setIcon(QIcon(maps_icon_path()))
-
         self._dataset = dataset
         self._local_dataset = local_dataset
 
@@ -122,6 +121,24 @@ class VectorMoreCollection(QgsDataCollectionItem):
             sip.transferto(item, self)
             items.append(item)
 
+        for dataset_name, dataset in self._local_dataset.items():
+            local_collection = VectorLocalCollection(dataset, dataset_name)
+            sip.transferto(local_collection, self)
+            items.append(local_collection)
+
+        return items
+
+
+class VectorLocalCollection(QgsDataCollectionItem):
+    def __init__(self, local_dataset, dataset_name):
+        QgsDataCollectionItem.__init__(
+            self, None, dataset_name, f"/MapTiler/vector/more/{dataset_name}")
+
+        self.setIcon(QIcon(maps_icon_path()))
+        self._local_dataset = local_dataset
+
+    def createChildren(self):
+        items = []
         for key in self._local_dataset:
             # add item only when it is not recently used
             smanager = SettingsManager()
