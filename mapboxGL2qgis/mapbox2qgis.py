@@ -142,7 +142,11 @@ def parse_opacity(json_opacity):
 
 
 def parse_fill_layer(json_layer):
-    json_paint = json_layer['paint']
+    try:
+        json_paint = json_layer['paint']
+    except KeyError as e:
+        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        return
 
     # Fill color
     if 'fill-color' not in json_paint:
@@ -209,7 +213,11 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
 
 
 def parse_line_layer(json_layer):
-    json_paint = json_layer['paint']
+    try:
+        json_paint = json_layer['paint']
+    except KeyError as e:
+        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        return
 
     if 'line-color' not in json_paint:
         print("skipping line without line-color", json_paint)
@@ -281,9 +289,16 @@ def parse_line_layer(json_layer):
 
 
 def parse_symbol_layer(json_layer):
-
-    json_layout = json_layer['layout']
-    json_paint = json_layer['paint']
+    try:
+        json_paint = json_layer['paint']
+    except KeyError as e:
+        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        return
+    try:
+        json_layout = json_layer['layout']
+    except KeyError as e:
+        print(f'Style layer {json_layer["id"]} has not layout property, skipping...')
+        return
 
     dd_properties = {}
 
