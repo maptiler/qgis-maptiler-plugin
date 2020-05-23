@@ -1,6 +1,6 @@
 import json
 import requests
-import mapbox2qgis
+from .mapbox2qgis import parse_layers
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -17,15 +17,9 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 
 
 def get_style_json(style_json_url: str) -> dict:
-    # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith("style.json"):
-        # TODO remove, it's just for testing purposes
-        # with open("/home/adam/tmp/landcover_atomic.json") as fp:
-        #     style_json_data = json.loads(fp.read())
         style_json_data = json.loads(requests.get(style_json_url).text)
-        with open("/home/adam/tmp/tmp_style.json", "w") as fp_tmp:
-            fp_tmp.write(json.dumps(style_json_data))
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
         print(f"Url to tiles, not to style supplied: {style_json_url}")
@@ -42,6 +36,5 @@ def get_renderer_labeling(source_name: str, style_json_data: dict):
             continue
         source_layers.append(layer)
 
-    renderer, labeling = mapbox2qgis.parse_layers(source_layers)
-
+    renderer, labeling = parse_layers(source_layers)
     return renderer, labeling

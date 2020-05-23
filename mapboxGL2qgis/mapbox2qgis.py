@@ -101,9 +101,16 @@ def parse_expression(json_expr):
     elif op == 'any':
         lst = [parse_value(v) for v in json_expr[1:]]
         return "({})".format(") OR (".join(lst))
+    elif op == 'none':
+        lst = [parse_value(v) for v in json_expr[1:]]
+        return "NOT ({})".format(") AND NOT (".join(lst))
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         if op == "==":
             op = "="   # we use single '=' not '=='
+            # TODO fix filter item ["==", "$type", "Polygon/Linestring/Point"]
+            # Right now it is not filtering by $type
+            if json_expr[1] == "$type":
+                return "TRUE"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
@@ -120,36 +127,63 @@ def parse_expression(json_expr):
     raise ValueError(json_expr)
 
 
+def parse_paint(json_paint):
+    # TODO implement!
+    return Qt.white
+
+
+def parse_opacity(json_opacity):
+    # TODO fix parsing opacity
+    base = json_opacity['base'] if 'base' in json_opacity else 1
+    stops = json_opacity['stops']
+    opacity = float((stops[0][1] + stops[1][1]) / 2)
+
+    return opacity
+
+
 def parse_fill_layer(json_layer):
     json_paint = json_layer['paint']
 
+    # Fill color
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
         return
+    else:
+        json_fill_color = json_paint['fill-color']
+        if not isinstance(json_fill_color, str):
+            fill_color = parse_paint(json_fill_color)
+            fill_color = Qt.white
+        else:
+            fill_color = parse_color(json_fill_color)
 
-    json_fill_color = json_paint['fill-color']
-    if not isinstance(json_fill_color, str):
-        print("skipping non-string color", json_fill_color)
-        return
+        # if json_layer["id"] == "landcover-glacier":
+        #     print(fill_color.name())
+        #     print(json_fill_color)
 
-    fill_color = parse_color(json_fill_color)
-
-    fill_outline_color = fill_color
-
-    if 'fill-outline-color' in json_paint:
+    # Fill outline color
+    if 'fill-outline-color' not in json_paint:
+        fill_outline_color = fill_color
+    else:
         json_fill_outline_color = json_paint['fill-outline-color']
         if isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color)
         else:
-            print("skipping non-string color", json_fill_outline_color)
+            fill_outline_color = parse_paint(json_fill_outline_color)
+            fill_outline_color = Qt.white
 
-    fill_opacity = 1.0
-    if 'fill-opacity' in json_paint:
+    # Fill opacity
+    if 'fill-opacity' not in json_paint:
+        fill_opacity = 1.0
+    else:
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
+        elif isinstance(json_fill_opacity, dict):
+            # TODO FIX parse opacity
+            fill_opacity = parse_opacity(json_fill_opacity)
         else:
-            print("skipping non-float opacity", json_fill_opacity)
+            print(f"Could not parse opacity: {json_fill_opacity}")
+
 
     # TODO: fill-translate
 
@@ -209,8 +243,11 @@ def parse_line_layer(json_layer):
         json_line_opacity = json_paint['line-opacity']
         if isinstance(json_line_opacity, (float, int)):
             line_opacity = float(json_line_opacity)
+        elif isinstance(json_line_opacity, dict):
+            # TODO FIX parse opacity
+            line_opacity = parse_opacity(json_line_opacity)
         else:
-            print("skipping non-float line-opacity", json_line_opacity)
+            print("skipping non-float line-opacity", json_line_opacity, type(json_line_opacity))
 
     dash_vector = None
     if 'line-dasharray' in json_paint:
@@ -327,7 +364,6 @@ def parse_symbol_layer(json_layer):
 
 def parse_layers(json_layers):
     """ Parse list of layers from JSON and return QgsVectorTileBasicRenderer + QgsVectorTileBasicLabeling in a tuple """
-
     renderer_styles = []
     labeling_styles = []
 
@@ -340,13 +376,18 @@ def parse_layers(json_layers):
         min_zoom = json_layer['minzoom'] if 'minzoom' in json_layer else -1
         max_zoom = json_layer['maxzoom'] if 'maxzoom' in json_layer else -1
 
-        enabled = True
         if 'visibility' in json_layer and json_layer['visibility'] == 'none':
             enabled = False
+        else:
+            enabled = True
 
         filter_expr = ''
         if 'filter' in json_layer:
+            # TODO fix expressions
             filter_expr = parse_expression(json_layer['filter'])
+            # TODO fix water styling
+            if style_id == "water":
+                filter_expr = "TRUE"
 
         st, lb = None, None
         if layer_type == 'fill':

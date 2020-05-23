@@ -244,7 +244,6 @@ class VectorMapItem(QgsDataItem):
 
         if style_json_data:
             sources = converter.get_sources_dict_from_style_json(style_json_data)
-            # list_of_layers = converter.json2styles(style_json_data)
             for source_name, source_data in sources.items():
                 url = "type=xyz&url=" + source_data["zxy_url"]
                 grouped_name = f"{self._name} - {source_name}"
