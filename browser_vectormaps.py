@@ -243,35 +243,40 @@ class VectorMapItem(QgsDataItem):
             print(e)
 
         proj = QgsProject().instance()
+        root = proj.layerTreeRoot()
+        node_map = root.addGroup(self._name)
+        node_map.setExpanded(False)
 
         if style_json_data:
-            # Add background layer
-            bg_renderer = converter.get_bg_renderer(style_json_data)
-            if bg_renderer:
-                bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "Background", "ogr")
-                bg_vector.setRenderer(bg_renderer)
-                proj.addMapLayer(bg_vector)
-
             # Add other layers from sources
             sources = converter.get_sources_dict_from_style_json(style_json_data)
             for source_name, source_data in sources.items():
                 url = "type=xyz&url=" + source_data["zxy_url"]
-                grouped_name = f"{self._name} - {source_name}"
 
                 if source_data["type"] == "vector":
-                    vector = QgsVectorTileLayer(url, grouped_name)
+                    vector = QgsVectorTileLayer(url, source_name)
                     renderer, labeling = converter.get_renderer_labeling(source_name, style_json_data)
                     vector.setLabeling(labeling)
                     vector.setRenderer(renderer)
-                    proj.addMapLayer(vector)
+                    proj.addMapLayer(vector, False)
+                    node_map.addLayer(vector)
                 elif source_data["type"] == "raster-dem":
                     # TODO solve layer style
-                    raster = QgsRasterLayer(url, grouped_name, "wms")
-                    proj.addMapLayer(raster)
+                    raster = QgsRasterLayer(url, source_name, "wms")
+                    proj.addMapLayer(raster, False)
+                    node_map.addLayer(raster)
                 elif source_data["type"] == "raster":
                     # TODO solve layer style
-                    raster = QgsRasterLayer(url, grouped_name, "wms")
-                    proj.addMapLayer(raster)
+                    raster = QgsRasterLayer(url, source_name, "wms")
+                    proj.addMapLayer(raster, False)
+                    node_map.addLayer(raster)
+            # Add background layer as last if exists
+            bg_renderer = converter.get_bg_renderer(style_json_data)
+            if bg_renderer:
+                bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "background", "ogr")
+                bg_vector.setRenderer(bg_renderer)
+                proj.addMapLayer(bg_vector, False)
+                node_map.insertLayer(-1, bg_vector)
         else:
             url = "type=xyz&url=" + self._url + apikey
             vector = QgsVectorTileLayer(url, self._name)
