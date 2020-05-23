@@ -16,6 +16,8 @@ import requests
 from .mapboxGL2qgis import converter
 
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
+BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
 
 
 def maps_icon_path():
@@ -243,6 +245,14 @@ class VectorMapItem(QgsDataItem):
         proj = QgsProject().instance()
 
         if style_json_data:
+            # Add background layer
+            bg_renderer = converter.get_bg_renderer(style_json_data)
+            if bg_renderer:
+                bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "Background", "ogr")
+                bg_vector.setRenderer(bg_renderer)
+                proj.addMapLayer(bg_vector)
+
+            # Add other layers from sources
             sources = converter.get_sources_dict_from_style_json(style_json_data)
             for source_name, source_data in sources.items():
                 url = "type=xyz&url=" + source_data["zxy_url"]

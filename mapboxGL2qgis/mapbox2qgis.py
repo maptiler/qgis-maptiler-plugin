@@ -151,14 +151,11 @@ def parse_fill_layer(json_layer):
     else:
         json_fill_color = json_paint['fill-color']
         if not isinstance(json_fill_color, str):
+            # TODO implement color of type dict
             fill_color = parse_paint(json_fill_color)
             fill_color = Qt.white
         else:
             fill_color = parse_color(json_fill_color)
-
-        # if json_layer["id"] == "landcover-glacier":
-        #     print(fill_color.name())
-        #     print(json_fill_color)
 
     # Fill outline color
     if 'fill-outline-color' not in json_paint:
@@ -431,3 +428,23 @@ def parse_json(json_str):
     json_data = json.loads(json_str)
     json_layers = json_data['layers']
     return parse_layers(json_layers)
+
+
+def parse_background(bg_layer_data: dict):
+    json_paint = bg_layer_data.get("paint")
+    renderer = None
+    if "background-color" in json_paint:
+        json_background_color = json_paint.get("background-color")
+        if not isinstance(json_background_color, str):
+            # TODO implement color of type dict
+            bg_color = parse_paint(json_background_color)
+        else:
+            bg_color = parse_color(json_background_color)
+        sym = QgsFillSymbol()
+        sym.setColor(bg_color)
+        if "background-opacity" in json_paint:
+            json_background_opacity = json_paint.get("background-opacity")
+            bg_opacity = parse_opacity(json_background_opacity)
+            sym.setOpacity(bg_opacity)
+        renderer = QgsSingleSymbolRenderer(sym)
+    return renderer

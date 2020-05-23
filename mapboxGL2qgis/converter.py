@@ -1,6 +1,6 @@
 import json
 import requests
-from .mapbox2qgis import parse_layers
+from .mapbox2qgis import parse_layers, parse_background
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -38,3 +38,14 @@ def get_renderer_labeling(source_name: str, style_json_data: dict):
 
     renderer, labeling = parse_layers(source_layers)
     return renderer, labeling
+
+
+def get_bg_renderer(style_json_data: dict):
+    layers = style_json_data.get("layers")
+    renderer = None
+    for layer in layers:
+        if layer["id"] == "background":
+            renderer = parse_background(layer)
+    if not renderer:
+        print("No background layer in style.json.")
+    return renderer
