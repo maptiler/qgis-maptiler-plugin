@@ -257,7 +257,10 @@ def parse_line_layer(json_layer):
     dash_vector = None
     if 'line-dasharray' in json_paint:
         json_dasharray = json_paint['line-dasharray']
-        dash_vector = list(map(float, json_dasharray))
+        if isinstance(json_dasharray, list):
+            dash_vector = list(map(float, json_dasharray))
+        if isinstance(json_dasharray, dict):
+            print("skipping dasharray in dict", json_dasharray)
 
     pen_cap_style = Qt.FlatCap
     pen_join_style = Qt.MiterJoin
