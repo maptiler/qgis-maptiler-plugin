@@ -60,6 +60,8 @@
          <property name="font">
           <font>
            <pointsize>9</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
           </font>
          </property>
          <property name="text">
@@ -98,7 +100,7 @@
           <bool>true</bool>
          </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -106,7 +108,7 @@
          <property name="minimumSize">
           <size>
            <width>400</width>
-           <height>0</height>
+           <height>22</height>
           </size>
          </property>
          <property name="maxLength">
@@ -120,7 +122,7 @@
           <bool>true</bool>
          </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -128,7 +130,7 @@
          <property name="minimumSize">
           <size>
            <width>400</width>
-           <height>0</height>
+           <height>22</height>
           </size>
          </property>
          <property name="text">
