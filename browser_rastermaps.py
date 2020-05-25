@@ -43,7 +43,7 @@ class RasterCollection(QgsDataCollectionItem):
         'Dark Matter': r'https://api.maptiler.com/maps/darkmatter/tiles.json?key=',
         'Pastel': r'https://api.maptiler.com/maps/pastel/tiles.json?key=',
         'Positron': r'https://api.maptiler.com/maps/positron/tiles.json?key=',
-        'Hybrid': r'https://api.maptiler.com/maps/hybrid/{z}/{x}/{y}.jpg?key=',
+        'Hybrid': r'https://api.maptiler.com/maps/hybrid/tiles.json?key=',
         'Streets': r'https://api.maptiler.com/maps/streets/tiles.json?key=',
         'Topo': r'https://api.maptiler.com/maps/topo/tiles.json?key=',
         'Topographique': r'https://api.maptiler.com/maps/topographique/tiles.json?key=',
@@ -139,7 +139,8 @@ class RasterMoreCollection(QgsDataCollectionItem):
 
 class RasterLocalCollection(QgsDataCollectionItem):
     def __init__(self, local_dataset, name_dataset_name):
-        QgsDataCollectionItem.__init__(self, None, name_dataset_name, f"/MapTiler/raster/more/{name_dataset_name}")
+        QgsDataCollectionItem.__init__(
+            self, None, name_dataset_name, f"/MapTiler/raster/more/{name_dataset_name}")
 
         self.setIcon(QIcon(maps_icon_path()))
         self._local_dataset = local_dataset

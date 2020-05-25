@@ -7,14 +7,26 @@
     <x>0</x>
     <y>0</y>
     <width>483</width>
-    <height>116</height>
+    <height>128</height>
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+   <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
+  <property name="maximumSize">
+   <size>
+    <width>16777215</width>
+    <height>16777215</height>
+   </size>
   </property>
   <property name="windowTitle">
    <string>New Connection</string>
@@ -22,6 +34,18 @@
   <layout class="QVBoxLayout" name="verticalLayout_3">
    <item>
     <widget class="QLabel" name="label_3">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="minimumSize">
+      <size>
+       <width>0</width>
+       <height>25</height>
+      </size>
+     </property>
      <property name="text">
       <string>Load map from MapTiler Cloud. Add url to style for map or TileJSON url for raster mode of a plugin.</string>
      </property>
@@ -39,9 +63,17 @@
       <layout class="QVBoxLayout" name="verticalLayout_5">
        <item>
         <widget class="QLabel" name="label">
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="font">
           <font>
            <pointsize>9</pointsize>
+           <weight>50</weight>
+           <bold>false</bold>
           </font>
          </property>
          <property name="text">
@@ -53,6 +85,12 @@
         <widget class="QLabel" name="label_2">
          <property name="enabled">
           <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
          <property name="font">
           <font>
@@ -73,6 +111,12 @@
          <property name="enabled">
           <bool>true</bool>
          </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
+         </property>
          <property name="minimumSize">
           <size>
            <width>400</width>
@@ -80,7 +124,7 @@
           </size>
          </property>
          <property name="maxLength">
-          <number>100</number>
+          <number>200</number>
          </property>
         </widget>
        </item>
@@ -88,6 +132,12 @@
         <widget class="QLineEdit" name="url_txt">
          <property name="enabled">
           <bool>true</bool>
+         </property>
+         <property name="sizePolicy">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+           <horstretch>0</horstretch>
+           <verstretch>0</verstretch>
+          </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
@@ -99,7 +149,7 @@
           <string/>
          </property>
          <property name="maxLength">
-          <number>100</number>
+          <number>200</number>
          </property>
         </widget>
        </item>
