@@ -15,6 +15,7 @@ class ConfigueDialog(QtWidgets.QDialog):
 
         self.ui = uic.loadUi(os.path.join(os.path.dirname(
             __file__), 'configue_dialog_base.ui'), self)
+
         self.ui.button_box.accepted.connect(self._accepted)
         self.ui.button_box.rejected.connect(self._rejected)
 
