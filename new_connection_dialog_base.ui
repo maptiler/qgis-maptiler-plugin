@@ -100,7 +100,7 @@
           <bool>true</bool>
          </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -108,7 +108,7 @@
          <property name="minimumSize">
           <size>
            <width>400</width>
-           <height>22</height>
+           <height>0</height>
           </size>
          </property>
          <property name="maxLength">
@@ -122,7 +122,7 @@
           <bool>true</bool>
          </property>
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -130,7 +130,7 @@
          <property name="minimumSize">
           <size>
            <width>400</width>
-           <height>22</height>
+           <height>0</height>
           </size>
          </property>
          <property name="text">
