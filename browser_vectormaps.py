@@ -13,9 +13,11 @@ from . import utils
 
 import json
 import requests
-from .mapbox2qgis import *
+from .mapboxGL2qgis import converter
 
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
+DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
+BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
 
 
 def maps_icon_path():
@@ -28,16 +30,36 @@ def maps_icon_path():
 class VectorCollection(QgsDataCollectionItem):
 
     STANDARD_DATASET = {
-        'Basic': r'https://api.maptiler.com/tiles/v3/{z}/{x}/{y}.pbf?key=',
+        'Basic': r'https://api.maptiler.com/maps/basic/style.json?key=',
+        'Bright': r'https://api.maptiler.com/maps/bright/style.json?key=',
+        'Dark Matter': r'https://api.maptiler.com/maps/darkmatter/style.json?key=',
+        'Pastel': r'https://api.maptiler.com/maps/pastel/style.json?key=',
+        'Positron': r'https://api.maptiler.com/maps/positron/style.json?key=',
+        'Satellite Hybrid': r'https://api.maptiler.com/maps/hybrid/style.json?key=',
+        'Streets': r'https://api.maptiler.com/maps/streets/style.json?key=',
+        'Toner': r'https://api.maptiler.com/maps/toner/style.json?key=',
+        'Topo': r'https://api.maptiler.com/maps/topo/style.json?key=',
+        'Topographique': r'https://api.maptiler.com/maps/topographique/style.json?key=',
+        'Voyager': r'https://api.maptiler.com/maps/voyager/style.json?key='
     }
 
     LOCAL_JP_DATASET = {
+        'MIERUNE Dark': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json?key=',
+        'MIERUNE Gray': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json?key=',
+        'MIERUNE Streets': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json?key='
     }
 
     LOCAL_NL_DATASET = {
+        'Cartigo Dark': r'https://api.maptiler.com/maps/nl-cartiqo-dark/style.json?key=',
+        'Cartigo Light': r'https://api.maptiler.com/maps/nl-cartiqo-light/style.json?key=',
+        'Cartigo Topo': r'https://api.maptiler.com/maps/nl-cartiqo-topo/style.json?key='
     }
 
     LOCAL_UK_DATASET = {
+        'OS Open Zoomstack Light': r'https://api.maptiler.com/maps/uk-openzoomstack-light/style.json?key=',
+        'OS Open Zoomstack Night': r'https://api.maptiler.com/maps/uk-openzoomstack-night/style.json?key=',
+        'OS Open Zoomstack Outdoor': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/style.json?key=',
+        'OS Open Zoomstack Road': r'https://api.maptiler.com/maps/uk-openzoomstack-road/style.json?key='
     }
 
     def __init__(self, name):
@@ -51,9 +73,9 @@ class VectorCollection(QgsDataCollectionItem):
                                 **self.LOCAL_NL_DATASET,
                                 **self.LOCAL_UK_DATASET)
 
-        self.LOCAL_DATASET = dict(**self.LOCAL_JP_DATASET,
-                                  **self.LOCAL_NL_DATASET,
-                                  **self.LOCAL_UK_DATASET)
+        self.LOCAL_DATASET = {"JP": self.LOCAL_JP_DATASET,
+                              "NL": self.LOCAL_NL_DATASET,
+                              "UK": self.LOCAL_UK_DATASET}
 
     def createChildren(self):
         items = []
@@ -84,7 +106,6 @@ class VectorMoreCollection(QgsDataCollectionItem):
             self, None, "more...", "/MapTiler/vector/more")
 
         self.setIcon(QIcon(maps_icon_path()))
-
         self._dataset = dataset
         self._local_dataset = local_dataset
 
@@ -102,6 +123,24 @@ class VectorMoreCollection(QgsDataCollectionItem):
             sip.transferto(item, self)
             items.append(item)
 
+        for dataset_name, dataset in self._local_dataset.items():
+            local_collection = VectorLocalCollection(dataset, dataset_name)
+            sip.transferto(local_collection, self)
+            items.append(local_collection)
+
+        return items
+
+
+class VectorLocalCollection(QgsDataCollectionItem):
+    def __init__(self, local_dataset, dataset_name):
+        QgsDataCollectionItem.__init__(
+            self, None, dataset_name, f"/MapTiler/vector/more/{dataset_name}")
+
+        self.setIcon(QIcon(maps_icon_path()))
+        self._local_dataset = local_dataset
+
+    def createChildren(self):
+        items = []
         for key in self._local_dataset:
             # add item only when it is not recently used
             smanager = SettingsManager()
@@ -196,17 +235,51 @@ class VectorMapItem(QgsDataItem):
             return True
 
         style_json_url = self._url + apikey
-        url_zxy = self.parse_style_json(style_json_url, apikey)
+        style_json_data = {}
+        try:
+            style_json_data = converter.get_style_json(style_json_url)
+        except Exception as e:
+            print(e)
 
         proj = QgsProject().instance()
-        url = "type=xyz&url=" + url_zxy + apikey
-        vector = QgsVectorTileLayer(url, self._name)
+        root = proj.layerTreeRoot()
+        node_map = root.addGroup(self._name)
+        node_map.setExpanded(False)
 
-        style_json_str = requests.get(style_json_url).text
-        renderer, labeling = parse_json(style_json_str)
-        vector.setRenderer(renderer)
-        vector.setLabeling(labeling)
-        proj.addMapLayer(vector)
+        if style_json_data:
+            # Add other layers from sources
+            sources = converter.get_sources_dict_from_style_json(style_json_data)
+            for source_name, source_data in sources.items():
+                url = "type=xyz&url=" + source_data["zxy_url"]
+
+                if source_data["type"] == "vector":
+                    vector = QgsVectorTileLayer(url, source_name)
+                    renderer, labeling = converter.get_renderer_labeling(source_name, style_json_data)
+                    vector.setLabeling(labeling)
+                    vector.setRenderer(renderer)
+                    proj.addMapLayer(vector, False)
+                    node_map.addLayer(vector)
+                elif source_data["type"] == "raster-dem":
+                    # TODO solve layer style
+                    raster = QgsRasterLayer(url, source_name, "wms")
+                    proj.addMapLayer(raster, False)
+                    node_map.addLayer(raster)
+                elif source_data["type"] == "raster":
+                    # TODO solve layer style
+                    raster = QgsRasterLayer(url, source_name, "wms")
+                    proj.addMapLayer(raster, False)
+                    node_map.addLayer(raster)
+            # Add background layer as last if exists
+            bg_renderer = converter.get_bg_renderer(style_json_data)
+            if bg_renderer:
+                bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "background", "ogr")
+                bg_vector.setRenderer(bg_renderer)
+                proj.addMapLayer(bg_vector, False)
+                node_map.insertLayer(-1, bg_vector)
+        else:
+            url = "type=xyz&url=" + self._url + apikey
+            vector = QgsVectorTileLayer(url, self._name)
+            proj.addMapLayer(vector)
 
         if not self._editable:
             self._update_recentmaps()
@@ -250,22 +323,3 @@ class VectorMapItem(QgsDataItem):
         smanager.store_setting('recentmaps', recentmaps)
         self._parent.parent().refreshConnections()
         self._parent.refreshConnections()
-
-    def parse_style_json(self, style_json_url, apikey):
-        # https://api.maptiler.com/maps/basic/style.json?key=m6dxIgKVTnvERWrCmvUm
-        if style_json_url.split("?")[0].endswith(".json"):
-            style_json_data = json.loads(requests.get(style_json_url).text)
-            layer_sources = style_json_data.get("sources")
-            for layer_name, layer_data in layer_sources.items():
-                grouped_name = f"{self._name}_{layer_name}"
-                tile_json_url = layer_data.get("url")
-                tile_json_data = json.loads(requests.get(tile_json_url).text)
-                layer_zxy_url = tile_json_data.get("tiles")[0]
-
-                if apikey:
-                    if layer_zxy_url.endswith(apikey):
-                        apikey_char_count = len(apikey) * -1
-                        layer_zxy_url = layer_zxy_url[:apikey_char_count]
-                return layer_zxy_url
-        else:
-            return self._url
