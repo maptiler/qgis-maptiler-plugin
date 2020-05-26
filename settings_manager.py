@@ -12,9 +12,8 @@ class SettingsManager:
         self._settings = {
             'apikey': '',
             'selectedmaps': ['Basic', 'Bright', 'Dark Matter'],
-            'isVectorEnabled': '0',
-            'custommaps': {},
-            'recentmaps': ['Basic', 'Hybrid', 'Streets']
+            'prefervector': '0',
+            'custommaps': {}
         }
         self.load_settings()
 

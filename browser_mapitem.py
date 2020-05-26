@@ -3,7 +3,7 @@ import sip
 import json
 import requests
 from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction
+from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.core import *
 
 from .gl2qgis import converter
@@ -35,31 +35,50 @@ class MapDataItem(QgsDataItem):
         self._dataset = dataset
         self._editable = editable
 
+    def is_apikey_valid(self):
+        # apikey validation
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+
+        if not utils.validate_key(apikey):
+            QMessageBox.warning(
+                None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your API-key.')
+            return False
+
+        return True
+
     def handleDoubleClick(self):
-        self._add_raster_to_canvas()
+        smanager = SettingsManager()
+        prefervector = int(smanager.get_setting('prefervector'))
+
+        if 'custom' in self._dataset:
+            self._add_custom_to_canvas()
+        elif utils.is_vectortile_api_enable() and prefervector:
+            self._add_vector_to_canvas()
+        else:
+            self._add_raster_to_canvas()
         return True
 
     def actions(self, parent):
         actions = []
 
-        # judge vtile is available or not
-        # e.g. QGIS3.10.4 -> 31004
-        qgis_version_str = str(Qgis.QGIS_VERSION_INT)
-        minor_ver = int(qgis_version_str[1:3])
+        if 'raster' in self._dataset:
+            add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
+            add_raster_action.triggered.connect(
+                lambda: self._add_raster_to_canvas())
+            actions.append(add_raster_action)
 
-        smanager = SettingsManager()
-        isVectorEnabled = int(smanager.get_setting('isVectorEnabled'))
-
-        # Vector Enable
-        if minor_ver >= 13 and self._dataset['vector']:
+        if utils.is_vectortile_api_enable() and 'vector' in self._dataset:
             add_vector_action = QAction(QIcon(), 'Add as Vector', parent)
-            add_vector_action.triggered.connect(self._add_vector_to_canvas)
+            add_vector_action.triggered.connect(
+                lambda: self._add_vector_to_canvas())
             actions.append(add_vector_action)
 
-        if self._dataset['raster']:
-            add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
-            add_raster_action.triggered.connect(self._add_raster_to_canvas)
-            actions.append(add_raster_action)
+        if 'custom' in self._dataset:
+            add_custom_action = QAction(QIcon(), 'Add Layer', parent)
+            add_custom_action.triggered.connect(
+                lambda: self._add_custom_to_canvas())
+            actions.append(add_custom_action)
 
         if self._editable:
             edit_action = QAction(QIcon(), 'Edit', parent)
@@ -76,16 +95,16 @@ class MapDataItem(QgsDataItem):
 
         return actions
 
-    def _add_raster_to_canvas(self):
-        # apikey validation
+    def _add_raster_to_canvas(self, data_key='raster'):
+        if not self.is_apikey_valid():
+            self._openConfigueDialog()
+            return
+
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
-        if not utils.validate_key(apikey):
-            self._openConfigueDialog()
-            return True
 
         proj = QgsProject().instance()
-        tile_json_url = self._dataset['raster'] + apikey
+        tile_json_url = self._dataset[data_key] + apikey
         tile_json_data = json.loads(requests.get(tile_json_url).text)
         layer_zxy_url = tile_json_data.get("tiles")[0]
         url = "type=xyz&url=" + layer_zxy_url
@@ -99,18 +118,15 @@ class MapDataItem(QgsDataItem):
 
         proj.addMapLayer(raster)
 
-        if not self._editable:
-            self._update_recentmaps()
+    def _add_vector_to_canvas(self, data_key='vector'):
+        if not self.is_apikey_valid():
+            self._openConfigueDialog()
+            return
 
-    def _add_vector_to_canvas(self):
-        # apikey validation
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
-        if not utils.validate_key(apikey):
-            self._openConfigueDialog()
-            return True
 
-        style_json_url = self._dataset['vector'] + apikey
+        style_json_url = self._dataset[data_key] + apikey
         style_json_data = {}
         try:
             style_json_data = converter.get_style_json(style_json_url)
@@ -155,12 +171,23 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(bg_vector, False)
                 node_map.insertLayer(-1, bg_vector)
         else:
-            url = "type=xyz&url=" + self._dataset['vector'] + apikey
+            url = "type=xyz&url=" + self._dataset[data_key] + apikey
             vector = QgsVectorTileLayer(url, self._name)
             proj.addMapLayer(vector)
 
-        if not self._editable:
-            self._update_recentmaps()
+    def _add_custom_to_canvas(self):
+        try:
+            self._add_raster_to_canvas(data_key='custom')
+        except:
+            if utils.is_vectortile_api_enable():
+                try:
+                    self._add_vector_to_canvas(data_key='custom')
+                except:
+                    QMessageBox.warning(None, 'Layer Loading Error',
+                                        '\nLayer Loading Error. \nPlease confirm URL to map.')
+            else:
+                QMessageBox.warning(None, 'Layer Loading Error',
+                                    '\nLayer Loading Error. \nPlease confirm URL to map.')
 
     def _edit(self):
         edit_dialog = EditConnectionDialog(self._name)
@@ -174,39 +201,19 @@ class MapDataItem(QgsDataItem):
         custommaps = smanager.get_setting('custommaps')
         del custommaps[self._name]
         smanager.store_setting('custommaps', custommaps)
-        self._parent.refreshConnections()
+        self.refreshConnections()
 
     def _remove(self):
         smanager = SettingsManager()
         selectedmaps = smanager.get_setting('selectedmaps')
         selectedmaps.remove(self._name)
         smanager.store_setting('selectedmaps', selectedmaps)
-        self._parent.refreshConnections()
+        self.refreshConnections()
 
     def _openConfigueDialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
-        self._parent.parent().refreshConnections()
-        self._parent.refreshConnections()
-
-    def _update_recentmaps(self):
-        smanager = SettingsManager()
-        recentmaps = smanager.get_setting('recentmaps')
-
-        # clean item name spacer
-        key = self._name
-        if key[0] == ' ':
-            key = key[1:]
-
-        if not key in recentmaps:
-            recentmaps.append(key)
-
-        MAX_RECENT_MAPS = 3
-        if len(recentmaps) > MAX_RECENT_MAPS:
-            recentmaps.pop(0)
-
-        smanager.store_setting('recentmaps', recentmaps)
-        self._parent.refreshConnections()
+        self.refreshConnections()
 
     def _qml_of(self, layer: QgsMapLayer):
         ls = QgsMapLayerStyle()

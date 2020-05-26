@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>504</width>
+    <width>506</width>
     <height>191</height>
    </rect>
   </property>
@@ -56,34 +56,6 @@
    </item>
    <item>
     <layout class="QGridLayout" name="gridLayout">
-     <item row="0" column="1">
-      <widget class="QLineEdit" name="nameLineEdit">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>400</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>16777215</width>
-         <height>16777215</height>
-        </size>
-       </property>
-       <property name="maxLength">
-        <number>200</number>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="label">
        <property name="sizePolicy">
@@ -119,12 +91,40 @@
         </font>
        </property>
        <property name="text">
-        <string>Raster URL</string>
+        <string>URL to map</string>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="nameLineEdit">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="minimumSize">
+        <size>
+         <width>400</width>
+         <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>16777215</height>
+        </size>
+       </property>
+       <property name="maxLength">
+        <number>200</number>
        </property>
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="rasterLineEdit">
+      <widget class="QLineEdit" name="jsonLineEdit">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -153,16 +153,6 @@
         <number>200</number>
        </property>
       </widget>
-     </item>
-     <item row="2" column="0">
-      <widget class="QLabel" name="label_4">
-       <property name="text">
-        <string>Vector URL</string>
-       </property>
-      </widget>
-     </item>
-     <item row="2" column="1">
-      <widget class="QLineEdit" name="vectorLineEdit"/>
      </item>
     </layout>
    </item>
