@@ -1,6 +1,19 @@
+# -*- coding: utf-8 -*-
+"""
+/***************************************************************************
+ gl2qgis library
+
+ Helps parse a GL style for vector tiles implementation in QGIS.
+                              -------------------
+        begin                : 2020-05-20
+        copyright            : (C) 2020 by MapTiler AG.
+        author               : MapTiler Team
+ ***************************************************************************/
+"""
+
 import json
 import requests
-from .mapbox2qgis import parse_layers, parse_background
+from .gl2qgis import parse_layers, parse_background
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
