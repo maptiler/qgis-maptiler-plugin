@@ -13,7 +13,7 @@ from . import utils
 
 import json
 import requests
-from .gl2gis import converter
+from .gl2qgis import converter
 
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
