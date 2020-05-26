@@ -4,26 +4,59 @@ from PyQt5 import uic, QtWidgets, QtCore
 import os
 
 from .settings_manager import SettingsManager
+from . import mapdatasets
 
 
-class EditConnectionDialog(QtWidgets.QDialog):
-    def __init__(self, current_name):
+class AddConnectionDialog(QtWidgets.QDialog):
+
+    STANDARD_DATASET = mapdatasets.STANDARD_DATASET
+    LOCAL_JP_DATASET = mapdatasets.LOCAL_JP_DATASET
+    LOCAL_NL_DATASET = mapdatasets.LOCAL_NL_DATASET
+    LOCAL_UK_DATASET = mapdatasets.LOCAL_UK_DATASET
+
+    def __init__(self):
         super().__init__()
         self.ui = uic.loadUi(os.path.join(os.path.dirname(
-            __file__), 'edit_connection_dialog_base.ui'), self)
+            __file__), 'add_connection_dialog_base.ui'), self)
+
+        self._init_list()
         self.ui.button_box.accepted.connect(self._accepted)
         self.ui.button_box.rejected.connect(self._rejected)
 
-        self._current_name = current_name
+    def _init_list(self):
+        # support multiple selection
+        self.ui.listWidget.setSelectionMode(
+            QtWidgets.QAbstractItemView.ExtendedSelection)
+
+        DATASETS = dict(**self.STANDARD_DATASET,
+                        **self.LOCAL_JP_DATASET,
+                        **self.LOCAL_NL_DATASET,
+                        **self.LOCAL_UK_DATASET
+                        )
+
         smanager = SettingsManager()
-        custommaps = smanager.get_setting('custommaps')
-        self._current_data = custommaps[self._current_name]
+        selectedmaps = smanager.get_setting('selectedmaps')
+        for key in DATASETS:
+            if key in selectedmaps:
+                continue
+            self.ui.listWidget.addItem(key)
 
-        self.ui.nameLineEdit.setText(self._current_name)
-        self.ui.rasterLineEdit.setText(self._current_data['raster'])
-        self.ui.vectorLineEdit.setText(self._current_data['vector'])
+    def _maptiler_tab_action(self):
+        selecteditems = self.ui.listWidget.selectedItems()
 
-    def _accepted(self):
+        smanager = SettingsManager()
+        selectedmaps = smanager.get_setting('selectedmaps')
+
+        for item in selecteditems:
+            # this lines is not runned in normal
+            if item.text() in selectedmaps:
+                print('Selected map already exist in Browser')
+                return
+
+            selectedmaps.append(item.text())
+            smanager.store_setting('selectedmaps', selectedmaps)
+
+    def _custom_tab_action(self):
         name = self.ui.nameLineEdit.text()
         raster_url = self.ui.rasterLineEdit.text()
         vector_url = self.ui.vectorLineEdit.text()
@@ -35,6 +68,8 @@ class EditConnectionDialog(QtWidgets.QDialog):
             if raster_url.endswith(apikey):
                 apikey_char_count = len(apikey) * -1
                 raster_url = raster_url[:apikey_char_count]
+
+        if apikey:
             if vector_url.endswith(apikey):
                 apikey_char_count = len(apikey) * -1
                 vector_url = vector_url[:apikey_char_count]
@@ -43,12 +78,18 @@ class EditConnectionDialog(QtWidgets.QDialog):
             return
 
         custommaps = smanager.get_setting('custommaps')
-        del custommaps[self._current_name]
         custommaps[name] = {
             'raster': raster_url,
             'vector': vector_url
         }
         smanager.store_setting('custommaps', custommaps)
+
+    def _accepted(self):
+        if self.ui.tabWidget.currentIndex() == 0:
+            self._maptiler_tab_action()
+        else:
+            self._custom_tab_action()
+
         self.close()
 
     def _rejected(self):
@@ -74,7 +115,7 @@ class EditConnectionDialog(QtWidgets.QDialog):
 
         smanager = SettingsManager()
         custommaps = smanager.get_setting('custommaps')
-        if not name == self._current_name and name in custommaps:
+        if name in custommaps:
             is_existing_name = True
             error_message += str('"' + name + '"' +
                                  ' already exists, please input other name.\n')

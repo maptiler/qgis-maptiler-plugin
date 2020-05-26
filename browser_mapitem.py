@@ -9,6 +9,7 @@ from qgis.core import *
 from .mapboxGL2qgis import converter
 
 from .configue_dialog import ConfigueDialog
+from .edit_connection_dialog import EditConnectionDialog
 from .settings_manager import SettingsManager
 from . import utils
 
@@ -18,7 +19,7 @@ BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
 
 
 class MapDataItem(QgsDataItem):
-    def __init__(self, parent, name, map_dataset, editable=False):
+    def __init__(self, parent, name, dataset, editable=False):
         QgsDataItem.__init__(self, QgsDataItem.Custom,
                              parent, name, "/MapTiler/maps/" + name)
 
@@ -31,7 +32,7 @@ class MapDataItem(QgsDataItem):
 
         self._parent = parent
         self._name = name
-        self._dataset = map_dataset
+        self._dataset = dataset
         self._editable = editable
 
     def handleDoubleClick(self):
@@ -40,10 +41,6 @@ class MapDataItem(QgsDataItem):
 
     def actions(self, parent):
         actions = []
-
-        add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
-        add_raster_action.triggered.connect(self._add_raster_to_canvas)
-        actions.append(add_raster_action)
 
         # judge vtile is available or not
         # e.g. QGIS3.10.4 -> 31004
@@ -54,17 +51,26 @@ class MapDataItem(QgsDataItem):
         isVectorEnabled = int(smanager.get_setting('isVectorEnabled'))
 
         # Vector Enable
-        if minor_ver >= 13 and isVectorEnabled:
+        if minor_ver >= 13 and self._dataset['vector']:
             add_vector_action = QAction(QIcon(), 'Add as Vector', parent)
             add_vector_action.triggered.connect(self._add_vector_to_canvas)
             actions.append(add_vector_action)
+
+        if self._dataset['raster']:
+            add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
+            add_raster_action.triggered.connect(self._add_raster_to_canvas)
+            actions.append(add_raster_action)
 
         if self._editable:
             edit_action = QAction(QIcon(), 'Edit', parent)
             edit_action.triggered.connect(self._edit)
             actions.append(edit_action)
 
-            remove_action = QAction(QIcon(), 'Delete', parent)
+            delete_action = QAction(QIcon(), 'Delete', parent)
+            delete_action.triggered.connect(self._delete)
+            actions.append(delete_action)
+        else:
+            remove_action = QAction(QIcon(), 'Remove', parent)
             remove_action.triggered.connect(self._remove)
             actions.append(remove_action)
 
@@ -157,17 +163,24 @@ class MapDataItem(QgsDataItem):
             self._update_recentmaps()
 
     def _edit(self):
-        edit_dialog = RasterEditConnectionDialog(self._name)
+        edit_dialog = EditConnectionDialog(self._name)
         edit_dialog.exec_()
         # to reload item's info, once delete item
         self._parent.deleteChildItem(self)
         self._parent.refreshConnections()
 
+    def _delete(self):
+        smanager = SettingsManager()
+        custommaps = smanager.get_setting('custommaps')
+        del custommaps[self._name]
+        smanager.store_setting('custommaps', custommaps)
+        self._parent.refreshConnections()
+
     def _remove(self):
         smanager = SettingsManager()
-        rastermaps = smanager.get_setting('rastermaps')
-        del rastermaps[self._name]
-        smanager.store_setting('rastermaps', rastermaps)
+        selectedmaps = smanager.get_setting('selectedmaps')
+        selectedmaps.remove(self._name)
+        smanager.store_setting('selectedmaps', selectedmaps)
         self._parent.refreshConnections()
 
     def _openConfigueDialog(self):

@@ -5,7 +5,7 @@ from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
 from .browser_mapitem import MapDataItem
-from .new_connection_dialog import NewConnectionDialog
+from .add_connection_dialog import AddConnectionDialog
 from .configue_dialog import ConfigueDialog
 from .settings_manager import SettingsManager
 from . import mapdatasets
@@ -47,10 +47,21 @@ class RootCollection(QgsDataCollectionItem):
         DATASETS = dict(**self.STANDARD_DATASET,
                         **self.LOCAL_JP_DATASET,
                         **self.LOCAL_NL_DATASET,
-                        **self.LOCAL_UK_DATASET)
+                        **self.LOCAL_UK_DATASET,
+                        )
+        smanager = SettingsManager()
+        selectedmaps = smanager.get_setting('selectedmaps')
 
         for key in DATASETS:
+            if not key in selectedmaps:
+                continue
             md_item = MapDataItem(self, key, DATASETS[key])
+            sip.transferto(md_item, self)
+            children.append(md_item)
+
+        custommaps = smanager.get_setting('custommaps')
+        for key in custommaps:
+            md_item = MapDataItem(self, key, custommaps[key], editable=True)
             sip.transferto(md_item, self)
             children.append(md_item)
 
@@ -63,16 +74,16 @@ class RootCollection(QgsDataCollectionItem):
     def actions(self, parent):
         actions = []
 
-        new_action = QAction(QIcon(), 'Add a new map...', parent)
-        new_action.triggered.connect(self.open_new_dialog)
-        actions.append(new_action)
+        add_action = QAction(QIcon(), 'Add a new map...', parent)
+        add_action.triggered.connect(self._open_add_dialog)
+        actions.append(add_action)
 
         return actions
 
-    def open_new_dialog(self):
-        new_dialog = NewConnectionDialog()
-        new_dialog.exec_()
-        self.parent().refreshConnections()
+    def _open_add_dialog(self):
+        add_dialog = AddConnectionDialog()
+        add_dialog.exec_()
+        self.refreshConnections()
 
 
 class OpenConfigItem(QgsDataItem):
