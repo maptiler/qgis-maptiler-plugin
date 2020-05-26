@@ -6,7 +6,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction
 from qgis.core import *
 
-from .gl2qgis import converter
+from .gl2gis import converter
 
 from .configue_dialog import ConfigueDialog
 from .edit_connection_dialog import EditConnectionDialog
