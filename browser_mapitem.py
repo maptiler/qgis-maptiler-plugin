@@ -36,7 +36,7 @@ class MapDataItem(QgsDataItem):
         self._editable = editable
 
     def handleDoubleClick(self):
-        self._add_vector_to_canvas()
+        self._add_raster_to_canvas()
         return True
 
     def actions(self, parent):
