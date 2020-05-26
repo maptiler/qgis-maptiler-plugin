@@ -8,7 +8,6 @@
         begin                : 2020-05-20
         copyright            : (C) 2020 by MapTiler AG.
         author               : MapTiler Team
-        credits              : Martin Tobias and his GL style parser (MIT)
  ***************************************************************************/
 """
 
