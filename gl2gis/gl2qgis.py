@@ -1,9 +1,15 @@
+# -*- coding: utf-8 -*-
 """
-Parser of Mapbox GL styles for QGIS vector tile layer implementation
+/***************************************************************************
+ gl2qgis library
 
-Copyright 2020 Martin Dobias
-
-Licensed under the terms of MIT license (see LICENSE file)
+ Helps parse a GL style for vector tiles implementation in QGIS.
+                              -------------------
+        begin                : 2020-05-20
+        copyright            : (C) 2020 by MapTiler AG.
+        author               : MapTiler Team
+        credits              : Martin Tobias and his GL style parser (MIT)
+ ***************************************************************************/
 """
 
 import json
