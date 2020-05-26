@@ -48,7 +48,7 @@ LOCAL_JP_DATASET = {
     },
     'JP MIERUNE Dark': {
         'raster': r'https://api.maptiler.com/maps/jp-mierune-dark/tiles.json?key=',
-        'vecotr': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json?key='
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json?key='
     },
     'JP MIERUNE Gray': {
         'raster': r'https://api.maptiler.com/maps/jp-mierune-gray/tiles.json?key=',
