@@ -65,10 +65,6 @@ class RootCollection(QgsDataCollectionItem):
             sip.transferto(md_item, self)
             children.append(md_item)
 
-        config_action = OpenConfigItem(self)
-        sip.transferto(config_action, self)
-        children.append(config_action)
-
         return children
 
     def actions(self, parent):
@@ -78,6 +74,10 @@ class RootCollection(QgsDataCollectionItem):
         add_action.triggered.connect(self._open_add_dialog)
         actions.append(add_action)
 
+        configue_action = QAction(QIcon(), 'Account Settings', parent)
+        configue_action.triggered.connect(self._open_configue_dialog)
+        actions.append(configue_action)
+
         return actions
 
     def _open_add_dialog(self):
@@ -85,32 +85,7 @@ class RootCollection(QgsDataCollectionItem):
         add_dialog.exec_()
         self.refreshConnections()
 
-
-class OpenConfigItem(QgsDataItem):
-    def __init__(self, parent):
-        QgsDataItem.__init__(self, QgsDataItem.Custom,
-                             parent, "Account", "/MapTiler/config")
-
-        icon_path = os.path.join(IMGS_PATH, "icon_account_light.svg")
-        if utils.is_in_darkmode():
-            icon_path = os.path.join(IMGS_PATH, "icon_account_dark.svg")
-        self.setIcon(QIcon(icon_path))
-        self.populate()
-
-    def handleDoubleClick(self):
-        self.open_configue_dialog()
-        return True
-
-    def actions(self, parent):
-        actions = []
-
-        config_action = QAction(QIcon(), 'Open', parent)
-        config_action.triggered.connect(self.open_configue_dialog)
-        actions.append(config_action)
-
-        return actions
-
-    def open_configue_dialog(self):
+    def _open_configue_dialog(self):
         configue_dialog = ConfigueDialog()
         configue_dialog.exec_()
-        self.parent().refreshConnections()
+        self.refreshConnections()
