@@ -42,8 +42,8 @@ class CopyrightDecorator:
         font.setFamily(self._font)
         font.setPointSize(self._fontsize)
         text.setDefaultFont(font)
-        style = "<style type=\"text/css\"> p {color: " + \
-            self._color + "}</style>"
+        style = "<style type=\"text/css\"> a, p {color: " + \
+            self._color + "; text-decoration: none; }</style>"
         text.setHtml(style + "<p>" + self._text + "</p>")
         return text
 
