@@ -113,7 +113,7 @@ class MapTiler:
 
     def initGui(self):
         # add MapTiler Collection to Browser
-        self.dip = DataItemProvider(self.iface)
+        self.dip = DataItemProvider()
         QgsApplication.instance().dataItemProviderRegistry().addProvider(self.dip)
 
         # connect signals to show copyright

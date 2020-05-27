@@ -31,7 +31,6 @@ class MapDataItem(QgsDataItem):
 
         self.populate()  # set to treat Item as not-folder-like
 
-        self._iface = parent._iface
         self._parent = parent
         self._name = name
         self._dataset = dataset

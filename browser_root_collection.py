@@ -15,9 +15,8 @@ IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 
 
 class DataItemProvider(QgsDataItemProvider):
-    def __init__(self, iface):
+    def __init__(self):
         QgsDataItemProvider.__init__(self)
-        self._iface = iface
 
     def name(self):
         return "MapTilerProvider"
@@ -26,7 +25,7 @@ class DataItemProvider(QgsDataItemProvider):
         return QgsDataProvider.Net
 
     def createDataItem(self, path, parentItem):
-        root = RootCollection(self._iface)
+        root = RootCollection()
         sip.transferto(root, None)
         return root
 
@@ -37,11 +36,10 @@ class RootCollection(QgsDataCollectionItem):
     LOCAL_NL_DATASET = mapdatasets.LOCAL_NL_DATASET
     LOCAL_UK_DATASET = mapdatasets.LOCAL_UK_DATASET
 
-    def __init__(self, iface):
+    def __init__(self):
         QgsDataCollectionItem.__init__(self, None, "MapTiler", "/MapTiler")
 
         self.setIcon(QIcon(os.path.join(IMGS_PATH, "icon_maptiler.svg")))
-        self._iface = iface
 
     def createChildren(self):
         children = []
