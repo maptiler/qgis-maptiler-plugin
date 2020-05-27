@@ -23,7 +23,7 @@ class CopyrightDecorator:
         self._canvas.refresh()
 
     def remove_from_canvas(self):
-        self._canvas.renderComplete.disconnect()
+        self._canvas.renderComplete.disconnect(self._on_render_complete)
         self._canvas.refresh()
 
     def _make_copyright_textdocument(self) -> QTextDocument:
