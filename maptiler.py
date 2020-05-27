@@ -117,16 +117,27 @@ class MapTiler:
         QgsApplication.instance().dataItemProviderRegistry().addProvider(self.dip)
 
         # connect signals to show copyright
+        # show a attribution of selected layer in the tree
         self.cr_decorator = CopyrightDecorator(self.iface.mapCanvas())
-        self.iface.currentLayerChanged.connect(self._refresh_copyright)
+        self.iface.layerTreeView().clicked.connect(
+            self._refresh_copyright)
+        self.iface.layerTreeView().currentLayerChanged.connect(
+            self._refresh_copyright)
+        self.proj.layersAdded.connect(self._refresh_copyright)
+        self.proj.layerRemoved.connect(self._refresh_copyright)
 
     # --------------------------------------------------------------------------
 
     def _refresh_copyright(self):
         attribution_text = ''
+
+        current_group = self.iface.layerTreeView().currentGroupNode()
         if self.iface.activeLayer():
             attribution_text = self.iface.activeLayer().attribution()
-
+        elif current_group.findLayers():
+            attribution_text = current_group.findLayers()[
+                0].layer().attribution()
+        print(attribution_text)
         self.cr_decorator.remove_from_canvas()
         self.cr_decorator.set_text(attribution_text)
         self.cr_decorator.add_to_canvas()
