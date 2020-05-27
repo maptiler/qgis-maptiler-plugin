@@ -17,13 +17,15 @@ class CopyrightDecorator:
         self._font = font
         self._fontsize = fontsize
         self._color = color
+        self._lambda_function = None
 
     def add_to_canvas(self):
-        self._canvas.renderComplete.connect(self._on_render_complete)
+        self._lambda_function = lambda p: self._on_render_complete(p)
+        self._canvas.renderComplete.connect(self._lambda_function)
         self._canvas.refresh()
 
     def remove_from_canvas(self):
-        self._canvas.renderComplete.disconnect(self._on_render_complete)
+        self._canvas.renderComplete.disconnect(self._lambda_function)
         self._canvas.refresh()
 
     def _make_copyright_textdocument(self) -> QTextDocument:
