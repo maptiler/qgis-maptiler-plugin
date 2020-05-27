@@ -22,7 +22,6 @@ class CopyrightDecorator:
 
     def set_text(self, text):
         self._text = text
-        self._canvas.refresh()
 
     def add_to_canvas(self):
         self._canvas.renderComplete.connect(self._copyright_render_function)
