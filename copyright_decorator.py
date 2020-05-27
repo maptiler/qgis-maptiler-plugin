@@ -6,7 +6,8 @@ from qgis.gui import QgsMapCanvas
 
 class CopyrightDecorator:
 
-    def __init__(self, canvas: QgsMapCanvas, text: str,
+    def __init__(self, canvas: QgsMapCanvas,
+                 text='',
                  position='bottom-right',
                  font='Sans Serif',
                  fontsize=13,
@@ -17,15 +18,22 @@ class CopyrightDecorator:
         self._font = font
         self._fontsize = fontsize
         self._color = color
-        self._lambda_function = None
+        self._copyright_render_function = lambda p: self._on_render_complete(p)
+
+    def set_text(self, text):
+        self._text = text
+        self._canvas.refresh()
 
     def add_to_canvas(self):
-        self._lambda_function = lambda p: self._on_render_complete(p)
-        self._canvas.renderComplete.connect(self._lambda_function)
+        self._canvas.renderComplete.connect(self._copyright_render_function)
         self._canvas.refresh()
 
     def remove_from_canvas(self):
-        self._canvas.renderComplete.disconnect(self._lambda_function)
+        try:
+            self._canvas.renderComplete.disconnect(
+                self._copyright_render_function)
+        except:
+            print("function empty")
         self._canvas.refresh()
 
     def _make_copyright_textdocument(self) -> QTextDocument:

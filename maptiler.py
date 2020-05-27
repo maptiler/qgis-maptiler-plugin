@@ -33,6 +33,7 @@ from qgis.core import *
 from .browser_root_collection import DataItemProvider
 from .geocoder import MapTilerGeocoder
 from .configue_dialog import ConfigueDialog
+from .copyright_decorator import CopyrightDecorator
 
 
 class MapTiler:
@@ -112,10 +113,23 @@ class MapTiler:
 
     def initGui(self):
         # add MapTiler Collection to Browser
-        self.dip = DataItemProvider()
+        self.dip = DataItemProvider(self.iface)
         QgsApplication.instance().dataItemProviderRegistry().addProvider(self.dip)
 
+        # connect signals to show copyright
+        self.cr_decorator = CopyrightDecorator(self.iface.mapCanvas())
+        self.iface.currentLayerChanged.connect(self._refresh_copyright)
+
     # --------------------------------------------------------------------------
+
+    def _refresh_copyright(self):
+        attribution_text = ''
+        if self.iface.activeLayer():
+            attribution_text = self.iface.activeLayer().attribution()
+
+        self.cr_decorator.remove_from_canvas()
+        self.cr_decorator.set_text(attribution_text)
+        self.cr_decorator.add_to_canvas()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -126,6 +140,8 @@ class MapTiler:
 
         # remove the toolbar
         del self.toolbar
+
+        self.iface.currentLayerChanged.disconnect(self._refresh_copyright)
 
     # --------------------------------------------------------------------------
 

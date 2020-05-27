@@ -10,6 +10,7 @@ from .gl2qgis import converter
 
 from .configue_dialog import ConfigueDialog
 from .edit_connection_dialog import EditConnectionDialog
+from .copyright_decorator import CopyrightDecorator
 from .settings_manager import SettingsManager
 from . import utils
 
@@ -30,6 +31,7 @@ class MapDataItem(QgsDataItem):
 
         self.populate()  # set to treat Item as not-folder-like
 
+        self._iface = parent._iface
         self._parent = parent
         self._name = name
         self._dataset = dataset
@@ -115,6 +117,10 @@ class MapDataItem(QgsDataItem):
         bilinear_qml = self._change_resampler_of(qml_str)
         ls = QgsMapLayerStyle(bilinear_qml)
         ls.writeToLayer(raster)
+
+        # add Copyright
+        attribution_text = tile_json_data.get("attribution")
+        raster.setAttribution(attribution_text)
 
         proj.addMapLayer(raster)
 
