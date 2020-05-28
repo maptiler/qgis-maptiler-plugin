@@ -1,19 +1,19 @@
 from PyQt5.QtCore import QSettings
 
-#QSettings holds variables as list or dict or str.
-#if int or bool value is set, they are converted to str in the Class.
-#In particular, isVectorEnabled is treated as bool by cast str '0' or '1' to int(bool).
+# QSettings holds variables as list or dict or str.
+# if int or bool value is set, they are converted to str in the Class.
+# In particular, isVectorEnabled is treated as bool by cast str '0' or '1' to int(bool).
+
 
 class SettingsManager:
     SETTING_GROUP = '/maptiler'
 
     def __init__(self):
         self._settings = {
-            'apikey':'',
-            'rastermaps':{},
-            'vectormaps':{},
-            'isVectorEnabled':'0',
-            'recentmaps':['Basic', 'Hybrid', 'Streets']
+            'apikey': '',
+            'selectedmaps': ['Basic', 'Bright', 'Dark Matter'],
+            'prefervector': '0',
+            'custommaps': {}
         }
         self.load_settings()
 

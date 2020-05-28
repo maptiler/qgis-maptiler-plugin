@@ -30,7 +30,7 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
 from qgis.core import *
 
-from .browser_root import DataItemProvider
+from .browser_root_collection import DataItemProvider
 from .geocoder import MapTilerGeocoder
 from .configue_dialog import ConfigueDialog
 

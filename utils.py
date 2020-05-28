@@ -2,6 +2,7 @@ import urllib.request
 import urllib.error
 
 from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import Qgis
 
 
 def validate_key(apikey='') -> bool:
@@ -13,6 +14,14 @@ def validate_key(apikey='') -> bool:
     except urllib.error.HTTPError as e:
         print(e.code, e.msg)
         return False
+
+
+def is_vectortile_api_enable():
+    # judge vtile is available or not
+    # e.g. QGIS3.10.4 -> 31004
+    qgis_version_str = str(Qgis.QGIS_VERSION_INT)
+    minor_ver = int(qgis_version_str[1:3])
+    return minor_ver >= 13
 
 
 def is_in_darkmode(threshold=383):

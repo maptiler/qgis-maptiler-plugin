@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>479</width>
-    <height>126</height>
+    <width>506</width>
+    <height>191</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -35,7 +35,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Preferred" vsizetype="Minimum">
+      <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -64,18 +64,29 @@
          <verstretch>0</verstretch>
         </sizepolicy>
        </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
        <property name="text">
         <string>Name</string>
        </property>
       </widget>
      </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="label_2">
+       <property name="enabled">
+        <bool>true</bool>
+       </property>
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="text">
+        <string>URL to map</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="1">
-      <widget class="QLineEdit" name="name_txt">
+      <widget class="QLineEdit" name="nameLineEdit">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -102,29 +113,8 @@
        </property>
       </widget>
      </item>
-     <item row="1" column="0">
-      <widget class="QLabel" name="label_2">
-       <property name="enabled">
-        <bool>true</bool>
-       </property>
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="font">
-        <font>
-         <pointsize>9</pointsize>
-        </font>
-       </property>
-       <property name="text">
-        <string>Url to map</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="1">
-      <widget class="QLineEdit" name="url_txt">
+      <widget class="QLineEdit" name="jsonLineEdit">
        <property name="enabled">
         <bool>true</bool>
        </property>
