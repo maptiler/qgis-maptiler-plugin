@@ -193,7 +193,7 @@ class MapDataItem(QgsDataItem):
         try:
             self._add_raster_to_canvas(data_key='custom')
         except:
-            if utils.is_vectortile_api_enable():
+            if utils.is_qgs_vectortile_api_enable():
                 try:
                     self._add_vector_to_canvas(data_key='custom')
                 except:
