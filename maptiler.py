@@ -133,7 +133,6 @@ class MapTiler:
         self._deactivate_copyrights()
 
     def _activate_copyrights(self):
-
         self.iface.layerTreeView().clicked.connect(
             self._write_copyright_entries)
         self.iface.layerTreeView().currentLayerChanged.connect(
@@ -145,7 +144,7 @@ class MapTiler:
         self.iface.layerTreeView().clicked.disconnect(
             self._write_copyright_entries)
         self.proj.layersAdded.disconnect(self._write_copyright_entries)
-        self.proj.layerRemoved.disconnect(self._write_copyright_entries)
+        self.proj.layersRemoved.disconnect(self._write_copyright_entries)
         QgsProject.instance().writeEntry(
             "CopyrightLabel", "/Label", self._default_copyright)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
