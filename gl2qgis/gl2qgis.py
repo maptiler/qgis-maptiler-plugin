@@ -150,7 +150,8 @@ def parse_fill_layer(json_layer):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
-        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        print(
+            f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
 
     # Fill color
@@ -190,7 +191,6 @@ def parse_fill_layer(json_layer):
         else:
             print(f"Could not parse opacity: {json_fill_opacity}")
 
-
     # TODO: fill-translate
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
@@ -221,7 +221,8 @@ def parse_line_layer(json_layer):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
-        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        print(
+            f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
 
     if 'line-color' not in json_paint:
@@ -243,7 +244,7 @@ def parse_line_layer(json_layer):
         if isinstance(json_line_width, (float, int)):
             line_width = float(json_line_width)
         elif isinstance(json_line_width, dict):
-            dd_properties[QgsSymbolLayer.PropertyWidth] = parse_interpolate_by_zoom(
+            dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
                 json_line_width, PX_TO_MM)
         else:
             print("skipping non-float line-width", json_line_width)
@@ -257,7 +258,8 @@ def parse_line_layer(json_layer):
             # TODO FIX parse opacity
             line_opacity = parse_opacity(json_line_opacity)
         else:
-            print("skipping non-float line-opacity", json_line_opacity, type(json_line_opacity))
+            print("skipping non-float line-opacity",
+                  json_line_opacity, type(json_line_opacity))
 
     dash_vector = None
     if 'line-dasharray' in json_paint:
@@ -300,12 +302,14 @@ def parse_symbol_layer(json_layer):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
-        print(f'Style layer {json_layer["id"]} has not paint property, skipping...')
+        print(
+            f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
     try:
         json_layout = json_layer['layout']
     except KeyError as e:
-        print(f'Style layer {json_layer["id"]} has not layout property, skipping...')
+        print(
+            f'Style layer {json_layer["id"]} has not layout property, skipping...')
         return
 
     dd_properties = {}
