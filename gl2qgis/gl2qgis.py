@@ -467,8 +467,9 @@ def parse_background(bg_layer_data: dict):
             bg_color = parse_paint(json_background_color)
         else:
             bg_color = parse_color(json_background_color)
-        sym = QgsFillSymbol()
+        sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
         sym.setColor(bg_color)
+        sym.symbolLayer(0).setStrokeColor(QColor("transparent"))
         if "background-opacity" in json_paint:
             json_background_opacity = json_paint.get("background-opacity")
             bg_opacity = parse_opacity(json_background_opacity)
