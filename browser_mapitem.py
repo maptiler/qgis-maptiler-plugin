@@ -147,10 +147,10 @@ class MapDataItem(QgsDataItem):
             custom_json_data = json.loads(requests.get(custom_json_url).text)
             attribution_text = custom_json_data.get("attribution", "")
 
-        style_json_url = self._dataset[data_key] + apikey
+        json_url = self._dataset[data_key] + apikey
         style_json_data = {}
         try:
-            style_json_data = converter.get_style_json(style_json_url)
+            style_json_data = converter.get_style_json(json_url)
         except Exception as e:
             print(e)
         proj = QgsProject().instance()
@@ -158,6 +158,7 @@ class MapDataItem(QgsDataItem):
         node_map = root.addGroup(self._name)
         node_map.setExpanded(False)
 
+        # style_json_data can be None only when user custom maps.
         if style_json_data:
             # Add other layers from sources
             sources = converter.get_sources_dict_from_style_json(
@@ -194,11 +195,23 @@ class MapDataItem(QgsDataItem):
                 bg_vector.setAttribution(attribution_text)
                 proj.addMapLayer(bg_vector, False)
                 node_map.insertLayer(-1, bg_vector)
+
         else:
-            url = "type=xyz&url=" + self._dataset[data_key] + apikey
+            # this case can run only when user custom map
+            # when custom map url is loaded as vectortile and not valid style.json
+            # e.g. .pbf or tiles.json as vectortile
+            url_endpoint = json_url.split("?")[0]
+            url = ''
+            if url_endpoint.endswith("tiles.json"):
+                tile_json_data = json.loads(requests.get(json_url).text)
+                url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
+            # e.g. pbf
+            else:
+                url = "type=xyz&url=" + self._dataset[data_key] + apikey
             vector = QgsVectorTileLayer(url, self._name)
             vector.setAttribution(attribution_text)
-            proj.addMapLayer(vector)
+            proj.addMapLayer(vector, False)
+            node_map.insertLayer(-1, vector)
 
     def _add_custom_to_canvas(self):
         if not self._is_apikey_valid():
