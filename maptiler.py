@@ -143,6 +143,8 @@ class MapTiler:
     def _deactivate_copyrights(self):
         self.iface.layerTreeView().clicked.disconnect(
             self._write_copyright_entries)
+        self.iface.layerTreeView().currentLayerChanged.disconnect(
+            self._write_copyright_entries)
         self.proj.layersAdded.disconnect(self._write_copyright_entries)
         self.proj.layersRemoved.disconnect(self._write_copyright_entries)
         QgsProject.instance().writeEntry(
