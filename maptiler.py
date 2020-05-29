@@ -24,15 +24,15 @@
 
 import os.path
 import json
+import re
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex, QMetaObject
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
 from qgis.core import *
 
 from .browser_root_collection import DataItemProvider
 from .geocoder import MapTilerGeocoder
-from .configue_dialog import ConfigueDialog
 
 
 class MapTiler:
@@ -94,6 +94,9 @@ class MapTiler:
 
         self.pluginIsActive = False
 
+        self._default_copyright = QgsProject.instance(
+        ).readEntry("CopyrightLabel", "/Label")[0]
+
     # noinspection PyMethodMayBeStatic
 
     def tr(self, message):
@@ -115,7 +118,7 @@ class MapTiler:
         self.dip = DataItemProvider()
         QgsApplication.instance().dataItemProviderRegistry().addProvider(self.dip)
 
-    # --------------------------------------------------------------------------
+        self._activate_copyrights()
 
     def unload(self):
         """Removes the plugin menu item and icon from QGIS GUI."""
@@ -126,6 +129,64 @@ class MapTiler:
 
         # remove the toolbar
         del self.toolbar
+
+        self._deactivate_copyrights()
+
+    def _activate_copyrights(self):
+        self.iface.layerTreeView().clicked.connect(
+            self._write_copyright_entries)
+        self.iface.layerTreeView().currentLayerChanged.connect(
+            self._write_copyright_entries)
+        self.proj.layersAdded.connect(self._write_copyright_entries)
+        self.proj.layersRemoved.connect(self._write_copyright_entries)
+
+    def _deactivate_copyrights(self):
+        self.iface.layerTreeView().clicked.disconnect(
+            self._write_copyright_entries)
+        self.iface.layerTreeView().currentLayerChanged.disconnect(
+            self._write_copyright_entries)
+        self.proj.layersAdded.disconnect(self._write_copyright_entries)
+        self.proj.layersRemoved.disconnect(self._write_copyright_entries)
+        QgsProject.instance().writeEntry(
+            "CopyrightLabel", "/Label", self._default_copyright)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
+        QMetaObject.invokeMethod(
+            self.iface.mainWindow(), "projectReadDecorationItems")
+        self.iface.mapCanvas().refresh()
+
+    def _write_copyright_entries(self):
+        copyrights_text = self._parse_copyrights()
+        # when no active MapTiler layer
+        if copyrights_text == '':
+            copyrights_text = self._default_copyright
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
+
+        else:
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", True)
+
+        QMetaObject.invokeMethod(
+            self.iface.mainWindow(), "projectReadDecorationItems")
+        self.iface.mapCanvas().refresh()
+
+    def _parse_copyrights(self):
+        copyrights = []
+        root_group = self.iface.layerTreeView().layerTreeModel().rootGroup()
+        for l in root_group.findLayers():
+            if l.isVisible():
+                attribution = l.layer().attribution()
+                attribution = re.sub(
+                    '<a.*?>|</a>', '', attribution).replace('&copy;', '©').replace('©', '!!!©')
+                parsed_attributions = attribution.split('!!!')
+                for attr in parsed_attributions:
+                    if attr == '':
+                        continue
+
+                    if not attr in copyrights:
+                        copyrights.append(attr)
+
+        return ' '.join(copyrights)
 
     # --------------------------------------------------------------------------
 
