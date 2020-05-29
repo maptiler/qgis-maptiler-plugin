@@ -35,7 +35,57 @@ class MapDataItem(QgsDataItem):
         self._dataset = dataset
         self._editable = editable
 
-    def is_apikey_valid(self):
+    def handleDoubleClick(self):
+        smanager = SettingsManager()
+        prefervector = int(smanager.get_setting('prefervector'))
+
+        if 'custom' in self._dataset:
+            self._add_custom_to_canvas()
+        elif utils.is_qgs_vectortile_api_enable() and prefervector:
+            self._add_vector_to_canvas()
+        else:
+            self._add_raster_to_canvas()
+        return True
+
+    def actions(self, parent):
+        actions = []
+
+        # user custom map
+        if 'custom' in self._dataset:
+            add_custom_action = QAction(QIcon(), 'Add Layer', parent)
+            add_custom_action.triggered.connect(
+                lambda: self._add_custom_to_canvas())
+            actions.append(add_custom_action)
+
+            edit_action = QAction(QIcon(), 'Edit', parent)
+            edit_action.triggered.connect(self._edit)
+            actions.append(edit_action)
+
+            delete_action = QAction(QIcon(), 'Delete', parent)
+            delete_action.triggered.connect(self._delete)
+            actions.append(delete_action)
+
+        # MapTiler map
+        else:
+            add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
+            add_raster_action.triggered.connect(
+                lambda: self._add_raster_to_canvas())
+            actions.append(add_raster_action)
+
+            # QGIS version 3.13 or more
+            if utils.is_qgs_vectortile_api_enable():
+                add_vector_action = QAction(QIcon(), 'Add as Vector', parent)
+                add_vector_action.triggered.connect(
+                    lambda: self._add_vector_to_canvas())
+                actions.append(add_vector_action)
+
+            remove_action = QAction(QIcon(), 'Remove', parent)
+            remove_action.triggered.connect(self._remove)
+            actions.append(remove_action)
+
+        return actions
+
+    def _is_apikey_valid(self):
         # apikey validation
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
@@ -47,56 +97,12 @@ class MapDataItem(QgsDataItem):
 
         return True
 
-    def handleDoubleClick(self):
-        smanager = SettingsManager()
-        prefervector = int(smanager.get_setting('prefervector'))
+    def _is_vector_json(self, json_data: dict) -> bool:
+        data_format = json_data['format']
+        return data_format == 'pbf'
 
-        if 'custom' in self._dataset:
-            self._add_custom_to_canvas()
-        elif utils.is_vectortile_api_enable() and prefervector:
-            self._add_vector_to_canvas()
-        else:
-            self._add_raster_to_canvas()
-        return True
-
-    def actions(self, parent):
-        actions = []
-
-        if 'tiles' in self._dataset:
-            add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
-            add_raster_action.triggered.connect(
-                lambda: self._add_raster_to_canvas())
-            actions.append(add_raster_action)
-
-        if utils.is_vectortile_api_enable() and 'style' in self._dataset:
-            add_vector_action = QAction(QIcon(), 'Add as Vector', parent)
-            add_vector_action.triggered.connect(
-                lambda: self._add_vector_to_canvas())
-            actions.append(add_vector_action)
-
-        if 'custom' in self._dataset:
-            add_custom_action = QAction(QIcon(), 'Add Layer', parent)
-            add_custom_action.triggered.connect(
-                lambda: self._add_custom_to_canvas())
-            actions.append(add_custom_action)
-
-        if self._editable:
-            edit_action = QAction(QIcon(), 'Edit', parent)
-            edit_action.triggered.connect(self._edit)
-            actions.append(edit_action)
-
-            delete_action = QAction(QIcon(), 'Delete', parent)
-            delete_action.triggered.connect(self._delete)
-            actions.append(delete_action)
-        else:
-            remove_action = QAction(QIcon(), 'Remove', parent)
-            remove_action.triggered.connect(self._remove)
-            actions.append(remove_action)
-
-        return actions
-
-    def _add_raster_to_canvas(self, data_key='tiles'):
-        if not self.is_apikey_valid():
+    def _add_raster_to_canvas(self, data_key='raster'):
+        if not self._is_apikey_valid():
             self._openConfigueDialog()
             return
 
@@ -104,9 +110,9 @@ class MapDataItem(QgsDataItem):
         apikey = smanager.get_setting('apikey')
 
         proj = QgsProject().instance()
-        tile_json_url = self._dataset[data_key] + apikey
-        tile_json_data = json.loads(requests.get(tile_json_url).text)
-        layer_zxy_url = tile_json_data.get("tiles")[0]
+        json_url = self._dataset[data_key] + apikey
+        json_data = json.loads(requests.get(json_url).text)
+        layer_zxy_url = json_data.get("tiles")[0]
         url = "type=xyz&url=" + layer_zxy_url
         raster = QgsRasterLayer(url, self._name, "wms")
 
@@ -117,13 +123,13 @@ class MapDataItem(QgsDataItem):
         ls.writeToLayer(raster)
 
         # add Copyright
-        attribution_text = tile_json_data.get("attribution")
+        attribution_text = json_data.get("attribution", "")
         raster.setAttribution(attribution_text)
 
         proj.addMapLayer(raster)
 
-    def _add_vector_to_canvas(self, data_key='style'):
-        if not self.is_apikey_valid():
+    def _add_vector_to_canvas(self, data_key='vector'):
+        if not self._is_apikey_valid():
             self._openConfigueDialog()
             return
 
@@ -131,10 +137,15 @@ class MapDataItem(QgsDataItem):
         apikey = smanager.get_setting('apikey')
 
         attribution_text = ''
-        if data_key == 'style':
-            tile_json_url = self._dataset['tiles'] + apikey
+        # no user custom map
+        if data_key == 'vector':
+            tile_json_url = self._dataset['raster'] + apikey
             tile_json_data = json.loads(requests.get(tile_json_url).text)
             attribution_text = tile_json_data.get("attribution")
+        elif data_key == 'custom':
+            custom_json_url = self._dataset['custom'] + apikey
+            custom_json_data = json.loads(requests.get(custom_json_url).text)
+            attribution_text = custom_json_data.get("attribution", "")
 
         style_json_url = self._dataset[data_key] + apikey
         style_json_data = {}
@@ -190,18 +201,24 @@ class MapDataItem(QgsDataItem):
             proj.addMapLayer(vector)
 
     def _add_custom_to_canvas(self):
-        try:
-            self._add_raster_to_canvas(data_key='custom')
-        except:
+        if not self._is_apikey_valid():
+            self._openConfigueDialog()
+            return
+
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+
+        json_url = self._dataset['custom'] + apikey
+        json_data = json.loads(requests.get(json_url).text)
+        if self._is_vector_json(json_data):
             if utils.is_qgs_vectortile_api_enable():
-                try:
-                    self._add_vector_to_canvas(data_key='custom')
-                except:
-                    QMessageBox.warning(None, 'Layer Loading Error',
-                                        '\nLayer Loading Error. \nPlease confirm URL to map.')
+                self._add_vector_to_canvas(data_key='custom')
             else:
                 QMessageBox.warning(None, 'Layer Loading Error',
-                                    '\nLayer Loading Error. \nPlease confirm URL to map.')
+                                    'This map\'s JSON is for Vector Tile. Vector Tile feature is not available on this QGIS version.')
+                return
+        else:
+            self._add_raster_to_canvas(data_key='custom')
 
     def _edit(self):
         edit_dialog = EditConnectionDialog(self._name)
