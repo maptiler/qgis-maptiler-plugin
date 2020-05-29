@@ -12,7 +12,7 @@ class SettingsManager:
         self._settings = {
             'apikey': '',
             'selectedmaps': ['Basic', 'Bright', 'Dark Matter'],
-            'prefervector': '0',
+            'prefervector': '1',
             'custommaps': {}
         }
         self.load_settings()
