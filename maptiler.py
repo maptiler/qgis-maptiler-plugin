@@ -149,7 +149,7 @@ class MapTiler:
             "CopyrightLabel", "/Label", self._default_copyright)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
         QMetaObject.invokeMethod(
-            iface.mainWindow(), "projectReadDecorationItems")
+            self.iface.mainWindow(), "projectReadDecorationItems")
         self._canvas.refresh()
 
     def _write_copyright_entries(self):
