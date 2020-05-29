@@ -10,7 +10,6 @@ from .gl2qgis import converter
 
 from .configue_dialog import ConfigueDialog
 from .edit_connection_dialog import EditConnectionDialog
-from .copyright_decorator import CopyrightDecorator
 from .settings_manager import SettingsManager
 from . import utils
 
