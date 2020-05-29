@@ -1,42 +1,42 @@
 STANDARD_DATASET = {
     'Basic': {
-        'tiles': r'https://api.maptiler.com/maps/basic/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/basic/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/basic/style.json?key='
     },
     'Bright': {
-        'tiles': r'https://api.maptiler.com/maps/bright/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/bright/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/bright/style.json?key='
     },
     'Dark Matter': {
-        'tiles': r'https://api.maptiler.com/maps/darkmatter/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/darkmatter/style.json?key='
     },
     'Pastel': {
-        'tiles': r'https://api.maptiler.com/maps/pastel/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/pastel/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/pastel/style.json?key='
     },
     'Positron': {
-        'tiles': r'https://api.maptiler.com/maps/positron/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/positron/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/positron/style.json?key='
     },
     'Hybrid': {
-        'tiles': r'https://api.maptiler.com/maps/hybrid/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/hybrid/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/hybrid/style.json?key='
     },
     'Streets': {
-        'tiles': r'https://api.maptiler.com/maps/streets/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/streets/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/streets/style.json?key='
     },
     'Topo': {
-        'tiles': r'https://api.maptiler.com/maps/topo/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/topo/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/topo/style.json?key='
     },
     'Topographique': {
-        'tiles': r'https://api.maptiler.com/maps/topographique/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/topographique/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/topographique/style.json?key='
     },
     'Voyager': {
-        'tiles': r'https://api.maptiler.com/maps/voyager/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/voyager/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/voyager/style.json?key='
     }
 }
