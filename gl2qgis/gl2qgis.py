@@ -153,7 +153,7 @@ def parse_fill_layer(json_layer):
         print(
             f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
-
+    dd_properties = {}
     # Fill color
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
@@ -186,8 +186,9 @@ def parse_fill_layer(json_layer):
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
         elif isinstance(json_fill_opacity, dict):
-            # TODO FIX parse opacity
-            fill_opacity = parse_opacity(json_fill_opacity)
+            fill_opacity = None
+            dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         else:
             print(f"Could not parse opacity: {json_fill_opacity}")
 
@@ -197,7 +198,10 @@ def parse_fill_layer(json_layer):
     fill_symbol = sym.symbolLayer(0)
     fill_symbol.setColor(fill_color)
     fill_symbol.setStrokeColor(fill_outline_color)
-    sym.setOpacity(fill_opacity)
+    for dd_key, dd_expression in dd_properties.items():
+        fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+    if fill_opacity:
+        sym.setOpacity(fill_opacity)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
@@ -215,6 +219,18 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
         scale_expr = "scale_exp(@zoom_level, {}, {}, {}, {}, {})".format(
             stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)
     return scale_expr + " * {}".format(multiplier)
+
+
+def parse_interpolate_opacity_by_zoom(json_obj):
+    base = json_obj['base'] if 'base' in json_obj else 1
+    stops = json_obj['stops']  # TODO: use intermediate stops
+    if base == 1:
+        scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
+                     f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
+    else:
+        scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_exp(@zoom_level, " \
+                     f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}, {base}))"
+    return scale_expr
 
 
 def parse_line_layer(json_layer):
