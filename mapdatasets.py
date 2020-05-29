@@ -43,49 +43,49 @@ STANDARD_DATASET = {
 
 LOCAL_JP_DATASET = {
     'JP MIERUNE Streets': {
-        'tiles': r'https://api.maptiler.com/maps/jp-mierune-streets/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/jp-mierune-streets/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json?key='
     },
     'JP MIERUNE Dark': {
-        'tiles': r'https://api.maptiler.com/maps/jp-mierune-dark/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/jp-mierune-dark/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json?key='
     },
     'JP MIERUNE Gray': {
-        'tiles': r'https://api.maptiler.com/maps/jp-mierune-gray/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/jp-mierune-gray/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json?key='
     }
 }
 
 LOCAL_NL_DATASET = {
     'NL Cartiqo Dark': {
-        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-dark/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-dark/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/nl-cartiqo-dark/style.json?key='
     },
     'NL Cartiqo Light': {
-        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-light/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-light/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/nl-cartiqo-light/style.json?key='
     },
     'NL Cartiqo Topo': {
-        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-topo/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/nl-cartiqo-topo/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/nl-cartiqo-topo/style.json?key='
     }
 }
 
 LOCAL_UK_DATASET = {
     'UK OS Open Zoomstack Light': {
-        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-light/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-light/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/uk-openzoomstack-light/style.json?key='
     },
     'UK OS Open Zoomstack Night': {
-        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-night/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-night/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/uk-openzoomstack-night/style.json?key='
     },
     'UK OS Open Zoomstack Outdoor': {
-        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/style.json?key='
     },
     'UK OS Open Zoomstack Road': {
-        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-road/tiles.json?key=',
+        'tiles': r'https://api.maptiler.com/maps/uk-openzoomstack-road/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/uk-openzoomstack-road/style.json?key='
     }
 }
