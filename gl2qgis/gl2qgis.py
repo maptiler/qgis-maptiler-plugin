@@ -111,12 +111,11 @@ def parse_expression(json_expr):
         lst = [parse_value(v) for v in json_expr[1:]]
         return "NOT ({})".format(") AND NOT (".join(lst))
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
+        # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
-            op = "="   # we use single '=' not '=='
-            # TODO fix filter item ["==", "$type", "Polygon/Linestring/Point"]
-            # Right now it is not filtering by $type
-            if json_expr[1] == "$type":
-                return "TRUE"
+            op = "IS"
+        elif op == "!=":
+            op = "NOT IS"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
