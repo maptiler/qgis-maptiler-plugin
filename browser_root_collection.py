@@ -74,7 +74,7 @@ class RootCollection(QgsDataCollectionItem):
         add_action.triggered.connect(self._open_add_dialog)
         actions.append(add_action)
 
-        configue_action = QAction(QIcon(), 'Account Settings', parent)
+        configue_action = QAction(QIcon(), 'Account...', parent)
         configue_action.triggered.connect(self._open_configue_dialog)
         actions.append(configue_action)
 
