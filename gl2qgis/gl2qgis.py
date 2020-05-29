@@ -153,7 +153,7 @@ def parse_fill_layer(json_layer):
         print(
             f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
-
+    dd_properties = {}
     # Fill color
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
@@ -187,7 +187,8 @@ def parse_fill_layer(json_layer):
             fill_opacity = float(json_fill_opacity)
         elif isinstance(json_fill_opacity, dict):
             # TODO FIX parse opacity
-            fill_opacity = parse_opacity(json_fill_opacity)
+            # fill_opacity = parse_opacity(json_fill_opacity)
+            dd_properties[QgsSymbolLayer.PropertyOpacity] = parse_interpolate_by_zoom(json_fill_opacity)
         else:
             print(f"Could not parse opacity: {json_fill_opacity}")
 
@@ -197,7 +198,9 @@ def parse_fill_layer(json_layer):
     fill_symbol = sym.symbolLayer(0)
     fill_symbol.setColor(fill_color)
     fill_symbol.setStrokeColor(fill_outline_color)
-    sym.setOpacity(fill_opacity)
+    for dd_key, dd_expression in dd_properties.items():
+        fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+    # sym.setOpacity(fill_opacity)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
