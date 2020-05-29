@@ -62,13 +62,13 @@ class MapDataItem(QgsDataItem):
     def actions(self, parent):
         actions = []
 
-        if 'raster' in self._dataset:
+        if 'tiles' in self._dataset:
             add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
             add_raster_action.triggered.connect(
                 lambda: self._add_raster_to_canvas())
             actions.append(add_raster_action)
 
-        if utils.is_vectortile_api_enable() and 'vector' in self._dataset:
+        if utils.is_vectortile_api_enable() and 'style' in self._dataset:
             add_vector_action = QAction(QIcon(), 'Add as Vector', parent)
             add_vector_action.triggered.connect(
                 lambda: self._add_vector_to_canvas())
@@ -95,7 +95,7 @@ class MapDataItem(QgsDataItem):
 
         return actions
 
-    def _add_raster_to_canvas(self, data_key='raster'):
+    def _add_raster_to_canvas(self, data_key='tiles'):
         if not self.is_apikey_valid():
             self._openConfigueDialog()
             return
@@ -116,9 +116,13 @@ class MapDataItem(QgsDataItem):
         ls = QgsMapLayerStyle(bilinear_qml)
         ls.writeToLayer(raster)
 
+        # add Copyright
+        attribution_text = tile_json_data.get("attribution")
+        raster.setAttribution(attribution_text)
+
         proj.addMapLayer(raster)
 
-    def _add_vector_to_canvas(self, data_key='vector'):
+    def _add_vector_to_canvas(self, data_key='style'):
         if not self.is_apikey_valid():
             self._openConfigueDialog()
             return
@@ -126,13 +130,18 @@ class MapDataItem(QgsDataItem):
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
 
+        attribution_text = ''
+        if data_key == 'style':
+            tile_json_url = self._dataset['tiles'] + apikey
+            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            attribution_text = tile_json_data.get("attribution")
+
         style_json_url = self._dataset[data_key] + apikey
         style_json_data = {}
         try:
             style_json_data = converter.get_style_json(style_json_url)
         except Exception as e:
             print(e)
-
         proj = QgsProject().instance()
         root = proj.layerTreeRoot()
         node_map = root.addGroup(self._name)
@@ -151,16 +160,19 @@ class MapDataItem(QgsDataItem):
                         source_name, style_json_data)
                     vector.setLabeling(labeling)
                     vector.setRenderer(renderer)
+                    vector.setAttribution(attribution_text)
                     proj.addMapLayer(vector, False)
                     node_map.addLayer(vector)
                 elif source_data["type"] == "raster-dem":
                     # TODO solve layer style
                     raster = QgsRasterLayer(url, source_name, "wms")
+                    raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
                     node_map.addLayer(raster)
                 elif source_data["type"] == "raster":
                     # TODO solve layer style
                     raster = QgsRasterLayer(url, source_name, "wms")
+                    raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
                     node_map.addLayer(raster)
             # Add background layer as last if exists
@@ -168,11 +180,13 @@ class MapDataItem(QgsDataItem):
             if bg_renderer:
                 bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "background", "ogr")
                 bg_vector.setRenderer(bg_renderer)
+                bg_vector.setAttribution(attribution_text)
                 proj.addMapLayer(bg_vector, False)
                 node_map.insertLayer(-1, bg_vector)
         else:
             url = "type=xyz&url=" + self._dataset[data_key] + apikey
             vector = QgsVectorTileLayer(url, self._name)
+            vector.setAttribution(attribution_text)
             proj.addMapLayer(vector)
 
     def _add_custom_to_canvas(self):

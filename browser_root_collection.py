@@ -61,7 +61,8 @@ class RootCollection(QgsDataCollectionItem):
 
         custommaps = smanager.get_setting('custommaps')
         for key in custommaps:
-            md_item = MapDataItem(self, key, custommaps[key], editable=True)
+            md_item = MapDataItem(self, key,
+                                  custommaps[key], editable=True)
             sip.transferto(md_item, self)
             children.append(md_item)
 
