@@ -19,13 +19,17 @@ STANDARD_DATASET = {
         'tiles': r'https://api.maptiler.com/maps/positron/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/positron/style.json?key='
     },
-    'Hybrid': {
+    'Satellite': {
         'tiles': r'https://api.maptiler.com/maps/hybrid/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/hybrid/style.json?key='
     },
     'Streets': {
         'tiles': r'https://api.maptiler.com/maps/streets/256/tiles.json?key=',
         'style': r'https://api.maptiler.com/maps/streets/style.json?key='
+    },
+    'Toner': {
+        'tiles': r'https://api.maptiler.com/maps/toner/256/tiles.json?key=',
+        'style': r'https://api.maptiler.com/maps/toner/style.json?key='
     },
     'Topo': {
         'tiles': r'https://api.maptiler.com/maps/topo/256/tiles.json?key=',
