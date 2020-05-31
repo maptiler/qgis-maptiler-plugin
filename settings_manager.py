@@ -11,7 +11,7 @@ class SettingsManager:
     def __init__(self):
         self._settings = {
             'apikey': '',
-            'selectedmaps': ['Basic', 'Bright', 'Dark Matter'],
+            'selectedmaps': ['Basic', 'Bright', 'Satellite', 'Streets', 'Toner', 'Topo', 'Voyager'],
             'prefervector': '1',
             'custommaps': {}
         }

@@ -107,7 +107,18 @@ class MapDataItem(QgsDataItem):
         tile_json_url = self._dataset[data_key] + apikey
         tile_json_data = json.loads(requests.get(tile_json_url).text)
         layer_zxy_url = tile_json_data.get("tiles")[0]
-        url = "type=xyz&url=" + layer_zxy_url
+        if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+            if ".png" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".png")
+                url = "type=xyz&url=" + url_split[0] + "@2x.png" + url_split[1]
+            elif ".jpg" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".jpg")
+                url = "type=xyz&url=" + url_split[0] + "@2x.jpg" + url_split[1]
+            elif ".webp" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".webp")
+                url = "type=xyz&url=" + url_split[0] + "@2x.webp" + url_split[1]
+        else:
+            url = "type=xyz&url=" + layer_zxy_url
         raster = QgsRasterLayer(url, self._name, "wms")
 
         # change resampler to bilinear
