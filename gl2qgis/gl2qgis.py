@@ -330,7 +330,7 @@ def parse_symbol_layer(json_layer):
 
     dd_properties = {}
 
-    TEXT_SIZE_MULTIPLIER = 2  # *2 because of high-res screen?
+    TEXT_SIZE_MULTIPLIER = 1  # *2 because of high-res screen?
 
     text_size = 16
     if 'text-size' in json_layout:

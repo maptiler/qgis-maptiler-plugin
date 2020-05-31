@@ -8,8 +8,8 @@
                               -------------------
         begin                : 2020-04-02
         git sha              : $Format:%H$
-        copyright            : (C) 2020 by MIERUNE inc.
-        email                : info@mierune.co.jp
+        copyright            : (C) 2020 by MapTiler AG
+        email                : sales@maptiler.com
  ***************************************************************************/
 
 /***************************************************************************
@@ -165,7 +165,8 @@ class MapTiler:
         else:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", True)
-
+        QgsProject.instance().writeEntry("CopyrightLabel", "/MarginH", 1)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/MarginV", 1)
         QMetaObject.invokeMethod(
             self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
