@@ -8,8 +8,8 @@
                               -------------------
         begin                : 2020-04-02
         git sha              : $Format:%H$
-        copyright            : (C) 2020 by MIERUNE inc.
-        email                : info@mierune.co.jp
+        copyright            : (C) 2020 by MapTiler AG
+        email                : sales@maptiler.com
  ***************************************************************************/
 
 /***************************************************************************

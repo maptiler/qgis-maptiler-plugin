@@ -7,8 +7,8 @@ name=MapTiler
 qgisMinimumVersion=3.0
 description=Show MapTiler cloud maps.
 version=0.1
-author=MIERUNE inc.
-email=info@mierune.co.jp
+author=MapTiler AG
+email=sales@maptiler.com
 
 about=Show MapTiler cloud maps.
 
