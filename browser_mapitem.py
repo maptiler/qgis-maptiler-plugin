@@ -155,15 +155,26 @@ class MapDataItem(QgsDataItem):
         apikey = smanager.get_setting('apikey')
 
         attribution_text = ''
-        # no user custom map
+        # when not user custom map
         if data_key == 'vector':
             tile_json_url = self._dataset['raster'] + apikey
             tile_json_data = json.loads(requests.get(tile_json_url).text)
             attribution_text = tile_json_data.get("attribution")
         elif data_key == 'custom':
             custom_json_url = self._dataset['custom'] + apikey
-            custom_json_data = json.loads(requests.get(custom_json_url).text)
-            attribution_text = custom_json_data.get("attribution", "")
+            url_endpoint = custom_json_url.split("?")[0]
+            if url_endpoint.endswith(".pbf"):
+                # raw pbf has no attribution data
+                pass
+            # tiles or style json
+            else:
+                custom_json_data = json.loads(
+                    requests.get(custom_json_url).text)
+                if url_endpoint.endswith("style.json"):
+                    attribution_text = custom_json_data.get("sources").get(
+                        "maptiler_attribution").get("attribution")
+                elif url_endpoint.endswith("tiles.json"):
+                    attribution_text = custom_json_data.get("attribution", "")
 
         json_url = self._dataset[data_key] + apikey
         style_json_data = {}
