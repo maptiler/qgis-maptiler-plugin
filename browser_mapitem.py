@@ -175,14 +175,14 @@ class MapDataItem(QgsDataItem):
             custom_json_data = json.loads(requests.get(custom_json_url).text)
             url_endpoint = custom_json_url.split("?")[0]
             # get attribution from custom tiles or style json
-            if url_endpoint.endswith("tiles.json"):
-                attribution_text = custom_json_data.get("attribution", "")
-            elif url_endpoint.endswith("style.json"):
+            if url_endpoint.endswith("style.json"):
                 sources = custom_json_data.get("sources")
                 maptiler_attribution = sources.get("maptiler_attribution")
                 if maptiler_attribution:
                     attribution = maptiler_attribution.get("attribution", "")
                     attribution_text = str(attribution)
+            else:
+                attribution_text = custom_json_data.get("attribution", "")
 
         json_url = self._dataset[data_key]
         if json_url.endswith("?key="):
@@ -214,19 +214,19 @@ class MapDataItem(QgsDataItem):
                     vector.setRenderer(renderer)
                     vector.setAttribution(attribution_text)
                     proj.addMapLayer(vector, False)
-                    node_map.addLayer(vector)
+                    node_map.insertLayer(0, vector)
                 elif source_data["type"] == "raster-dem":
                     # TODO solve layer style
                     raster = QgsRasterLayer(url, source_name, "wms")
                     raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
-                    node_map.addLayer(raster)
+                    node_map.insertLayer(0, raster)
                 elif source_data["type"] == "raster":
                     # TODO solve layer style
                     raster = QgsRasterLayer(url, source_name, "wms")
                     raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
-                    node_map.addLayer(raster)
+                    node_map.insertLayer(0, raster)
             # Add background layer as last if exists
             bg_renderer = converter.get_bg_renderer(style_json_data)
             if bg_renderer:
