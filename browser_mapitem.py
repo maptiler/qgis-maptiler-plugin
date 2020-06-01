@@ -108,7 +108,8 @@ class MapDataItem(QgsDataItem):
             return data_format == 'pbf'
 
     def _add_raster_to_canvas(self, data_key='raster'):
-        if not self._is_apikey_valid():
+        """add raster layer from tiles.json"""
+        if not self._is_apikey_valid() and data_key == 'raster':
             self._openConfigueDialog()
             return
 
@@ -116,8 +117,13 @@ class MapDataItem(QgsDataItem):
         apikey = smanager.get_setting('apikey')
 
         proj = QgsProject().instance()
-        tile_json_url = self._dataset[data_key] + apikey
+
+        tile_json_url = self._dataset[data_key]
+        if tile_json_url.endswith("?key="):
+            tile_json_url += apikey
+        
         tile_json_data = json.loads(requests.get(tile_json_url).text)
+
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
             if ".png" in layer_zxy_url:
@@ -147,7 +153,7 @@ class MapDataItem(QgsDataItem):
         proj.addMapLayer(raster)
 
     def _add_vector_to_canvas(self, data_key='vector'):
-        if not self._is_apikey_valid():
+        if not self._is_apikey_valid() and data_key == "vector":
             self._openConfigueDialog()
             return
 
@@ -160,26 +166,28 @@ class MapDataItem(QgsDataItem):
             tile_json_url = self._dataset['raster'] + apikey
             tile_json_data = json.loads(requests.get(tile_json_url).text)
             attribution_text = tile_json_data.get("attribution")
+        
         elif data_key == 'custom':
-            custom_json_url = self._dataset['custom'] + apikey
+            custom_json_url = self._dataset['custom']
+            if custom_json_url.endswith("?key="):
+                custom_json_url += apikey
+            
+            custom_json_data = json.loads(requests.get(custom_json_url).text)
             url_endpoint = custom_json_url.split("?")[0]
-            if url_endpoint.endswith(".pbf"):
-                # raw pbf has no attribution data
-                pass
-            # tiles or style json
-            else:
-                custom_json_data = json.loads(
-                    requests.get(custom_json_url).text)
-                if url_endpoint.endswith("style.json"):
-                    sources = custom_json_data.get("sources")
-                    maptiler_attribution = sources.get("maptiler_attribution")
-                    if maptiler_attribution:
-                        attribution = maptiler_attribution.get("attribution", "")
-                        attribution_text = str(attribution)
-                elif url_endpoint.endswith("tiles.json"):
-                    attribution_text = custom_json_data.get("attribution", "")
+            # get attribution from custom tiles or style json
+            if url_endpoint.endswith("tiles.json"):
+                attribution_text = custom_json_data.get("attribution", "")
+            elif url_endpoint.endswith("style.json"):
+                sources = custom_json_data.get("sources")
+                maptiler_attribution = sources.get("maptiler_attribution")
+                if maptiler_attribution:
+                    attribution = maptiler_attribution.get("attribution", "")
+                    attribution_text = str(attribution)
 
-        json_url = self._dataset[data_key] + apikey
+        json_url = self._dataset[data_key]
+        if json_url.endswith("?key="):
+            json_url += apikey
+        
         style_json_data = {}
         try:
             style_json_data = converter.get_style_json(json_url)
@@ -230,37 +238,33 @@ class MapDataItem(QgsDataItem):
 
         else:
             # this case can run only when user custom map
-            # when custom map url is loaded as vectortile and not valid style.json
-            # e.g. .pbf or tiles.json as vectortile
+            # when tiles.json for vector tile
             url_endpoint = json_url.split("?")[0]
-            url = ''
-            if url_endpoint.endswith("tiles.json"):
-                tile_json_data = json.loads(requests.get(json_url).text)
-                url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
-            # e.g. pbf
-            else:
-                url = "type=xyz&url=" + self._dataset[data_key] + apikey
+            tile_json_data = json.loads(requests.get(json_url).text)
+            url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
+            
             vector = QgsVectorTileLayer(url, self._name)
             vector.setAttribution(attribution_text)
             proj.addMapLayer(vector, False)
             node_map.insertLayer(-1, vector)
 
     def _add_custom_to_canvas(self):
-        if not self._is_apikey_valid():
-            self._openConfigueDialog()
-            return
+        json_url = self._dataset['custom']
+        if json_url.endswith("?key="):
+            if not self._is_apikey_valid():
+                self._openConfigueDialog()
+                return
 
-        smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-
-        json_url = self._dataset['custom'] + apikey
+            smanager = SettingsManager()
+            apikey = smanager.get_setting('apikey')
+            json_url += apikey
+        
         if self._is_vector_json(json_url):
             if utils.is_qgs_vectortile_api_enable():
                 self._add_vector_to_canvas(data_key='custom')
             else:
                 QMessageBox.warning(None, 'Layer Loading Error',
                                     'This map\'s JSON is for Vector Tile. Vector Tile feature is not available on this QGIS version.')
-                return
         else:
             self._add_raster_to_canvas(data_key='custom')
 
