@@ -97,9 +97,15 @@ class MapDataItem(QgsDataItem):
 
         return True
 
-    def _is_vector_json(self, json_data: dict) -> bool:
-        data_format = json_data['format']
-        return data_format == 'pbf'
+    def _is_vector_json(self, json_url: str) -> bool:
+        url_endpoint = json_url.split("?")[0]
+        if url_endpoint.endswith("style.json"):
+            return True
+        # tiles.json
+        else:
+            json_data = json.loads(requests.get(json_url).text)
+            data_format = json_data['format']
+            return data_format == 'pbf'
 
     def _add_raster_to_canvas(self, data_key='raster'):
         if not self.is_apikey_valid():
@@ -234,8 +240,7 @@ class MapDataItem(QgsDataItem):
         apikey = smanager.get_setting('apikey')
 
         json_url = self._dataset['custom'] + apikey
-        json_data = json.loads(requests.get(json_url).text)
-        if self._is_vector_json(json_data):
+        if self._is_vector_json(json_url):
             if utils.is_qgs_vectortile_api_enable():
                 self._add_vector_to_canvas(data_key='custom')
             else:
