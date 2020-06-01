@@ -219,13 +219,38 @@ def parse_fill_layer(json_layer):
 def parse_interpolate_by_zoom(json_obj, multiplier=1):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']  # TODO: use intermediate stops
-    if base == 1:
-        scale_expr = "scale_linear(@zoom_level, {}, {}, {}, {})".format(
-            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1])
+    if len(stops) <= 2:
+        if base == 1:
+            scale_expr = f"scale_linear(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
+                         f"{stops[0][1]}, {stops[-1][1]}) " \
+                         f"* {multiplier}"
+        else:
+            scale_expr = f"scale_exp(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
+                         f"{stops[0][1]}, {stops[-1][1]}, {base}) " \
+                         f"* {multiplier}"
     else:
-        scale_expr = "scale_exp(@zoom_level, {}, {}, {}, {}, {})".format(
-            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)
-    return scale_expr + " * {}".format(multiplier)
+        scale_expr = parse_stops(base, stops, multiplier)
+    return scale_expr
+
+
+def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> str:
+    case_str = "CASE"
+    if base == 1:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]}) " \
+                           f"* {multiplier}"
+            case_str = case_str + f"{interval_str}"
+    else:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]}, {base}) " \
+                           f"* {multiplier}"
+            case_str = case_str + f"{interval_str}"
+    case_str = case_str + " END"
+    return case_str
 
 
 def parse_interpolate_opacity_by_zoom(json_obj):
