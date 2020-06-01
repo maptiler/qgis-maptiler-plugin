@@ -174,7 +174,7 @@ class MapDataItem(QgsDataItem):
                     sources = custom_json_data.get("sources")
                     maptiler_attribution = sources.get("maptiler_attribution")
                     if maptiler_attribution:
-                        attribution = maptiler_attribution.get("attribution")
+                        attribution = maptiler_attribution.get("attribution", "")
                         attribution_text = str(attribution)
                 elif url_endpoint.endswith("tiles.json"):
                     attribution_text = custom_json_data.get("attribution", "")
