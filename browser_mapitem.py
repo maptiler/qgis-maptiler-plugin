@@ -108,7 +108,7 @@ class MapDataItem(QgsDataItem):
             return data_format == 'pbf'
 
     def _add_raster_to_canvas(self, data_key='raster'):
-        if not self.is_apikey_valid():
+        if not self._is_apikey_valid():
             self._openConfigueDialog()
             return
 
