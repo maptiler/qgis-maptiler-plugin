@@ -271,8 +271,9 @@ def parse_line_layer(json_layer):
         if isinstance(json_line_opacity, (float, int)):
             line_opacity = float(json_line_opacity)
         elif isinstance(json_line_opacity, dict):
-            # TODO FIX parse opacity
-            line_opacity = parse_opacity(json_line_opacity)
+            fill_opacity = None
+            dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
         else:
             print("skipping non-float line-opacity",
                   json_line_opacity, type(json_line_opacity))
@@ -306,7 +307,8 @@ def parse_line_layer(json_layer):
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
-    sym.setOpacity(line_opacity)
+    if line_opacity:
+        sym.setOpacity(line_opacity)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.LineGeometry)
