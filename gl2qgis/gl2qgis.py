@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from qgis.core import *
 
-PX_TO_MM = 0.26  # TODO: some good conversion ratio
+PX_TO_MM = 0.254 * 0.5  # TODO: some good conversion ratio
 
 
 def parse_color(json_color):
