@@ -20,12 +20,18 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
     for source_name, source_data in layer_sources.items():
+        layer_zxy_url = ""
         tile_json_url = source_data.get("url")
-        if not tile_json_url:
-            continue
+        if tile_json_url:
+            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+        # style.json can have no tiles.json
+        else:
+            if source_data.get("tiles") is None:
+                continue
+            layer_zxy_url = source_data.get("tiles")[0]
+
         source_type = source_data.get("type")
-        tile_json_data = json.loads(requests.get(tile_json_url).text)
-        layer_zxy_url = tile_json_data.get("tiles")[0]
         source_zxy_dict[source_name] = {"name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
 
     return source_zxy_dict
