@@ -311,6 +311,7 @@ def parse_line_layer(json_layer):
     if dash_vector is not None:
         line_symbol.setCustomDashVector(dash_vector)
         line_symbol.setUseCustomDashPattern(True)
+        line_symbol.setStrokeColor(QColor("transparent"))
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
