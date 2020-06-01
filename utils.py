@@ -16,7 +16,7 @@ def validate_key(apikey='') -> bool:
         return False
 
 
-def is_vectortile_api_enable():
+def is_qgs_vectortile_api_enable():
     # judge vtile is available or not
     # e.g. QGIS3.10.4 -> 31004
     qgis_version_str = str(Qgis.QGIS_VERSION_INT)
