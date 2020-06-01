@@ -17,7 +17,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from qgis.core import *
 
-PX_TO_MM = 0.26  # TODO: some good conversion ratio
+PX_TO_MM = 0.254 * 0.5  # TODO: some good conversion ratio
 
 
 def parse_color(json_color):
@@ -101,6 +101,7 @@ def parse_value(json_value):
 def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
+    is_literal_value = isinstance(json_expr[-1], (int, float))
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         return "({})".format(") AND (".join(lst))
@@ -113,9 +114,15 @@ def parse_expression(json_expr):
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
-            op = "IS"
+            if is_literal_value:
+                op = "="
+            else:
+                op = "IS"
         elif op == "!=":
-            op = "NOT IS"
+            if is_literal_value:
+                op = "!="
+            else:
+                op = "NOT IS"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
@@ -212,13 +219,38 @@ def parse_fill_layer(json_layer):
 def parse_interpolate_by_zoom(json_obj, multiplier=1):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']  # TODO: use intermediate stops
-    if base == 1:
-        scale_expr = "scale_linear(@zoom_level, {}, {}, {}, {})".format(
-            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1])
+    if len(stops) <= 2:
+        if base == 1:
+            scale_expr = f"scale_linear(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
+                         f"{stops[0][1]}, {stops[-1][1]}) " \
+                         f"* {multiplier}"
+        else:
+            scale_expr = f"scale_exp(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
+                         f"{stops[0][1]}, {stops[-1][1]}, {base}) " \
+                         f"* {multiplier}"
     else:
-        scale_expr = "scale_exp(@zoom_level, {}, {}, {}, {}, {})".format(
-            stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)
-    return scale_expr + " * {}".format(multiplier)
+        scale_expr = parse_stops(base, stops, multiplier)
+    return scale_expr
+
+
+def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> str:
+    case_str = "CASE"
+    if base == 1:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]}) " \
+                           f"* {multiplier}"
+            case_str = case_str + f"{interval_str}"
+    else:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]}, {base}) " \
+                           f"* {multiplier}"
+            case_str = case_str + f"{interval_str}"
+    case_str = case_str + " END"
+    return case_str
 
 
 def parse_interpolate_opacity_by_zoom(json_obj):
@@ -271,8 +303,9 @@ def parse_line_layer(json_layer):
         if isinstance(json_line_opacity, (float, int)):
             line_opacity = float(json_line_opacity)
         elif isinstance(json_line_opacity, dict):
-            # TODO FIX parse opacity
-            line_opacity = parse_opacity(json_line_opacity)
+            fill_opacity = None
+            dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
         else:
             print("skipping non-float line-opacity",
                   json_line_opacity, type(json_line_opacity))
@@ -303,10 +336,12 @@ def parse_line_layer(json_layer):
     if dash_vector is not None:
         line_symbol.setCustomDashVector(dash_vector)
         line_symbol.setUseCustomDashPattern(True)
+        line_symbol.setStrokeColor(QColor("transparent"))
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
-    sym.setOpacity(line_opacity)
+    if line_opacity:
+        sym.setOpacity(line_opacity)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.LineGeometry)
