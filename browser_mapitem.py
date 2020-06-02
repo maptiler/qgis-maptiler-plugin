@@ -160,29 +160,7 @@ class MapDataItem(QgsDataItem):
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
 
-        attribution_text = ''
-        # when not user custom map
-        if data_key == 'vector':
-            tile_json_url = self._dataset['raster'] + apikey
-            tile_json_data = json.loads(requests.get(tile_json_url).text)
-            attribution_text = tile_json_data.get("attribution")
-
-        elif data_key == 'custom':
-            custom_json_url = self._dataset['custom']
-            if custom_json_url.endswith("?key="):
-                custom_json_url += apikey
-
-            custom_json_data = json.loads(requests.get(custom_json_url).text)
-            url_endpoint = custom_json_url.split("?")[0]
-            # get attribution from custom tiles or style json
-            if url_endpoint.endswith("style.json"):
-                sources = custom_json_data.get("sources")
-                maptiler_attribution = sources.get("maptiler_attribution")
-                if maptiler_attribution:
-                    attribution = maptiler_attribution.get("attribution", "")
-                    attribution_text = str(attribution)
-            else:
-                attribution_text = custom_json_data.get("attribution", "")
+        attribution_text = self._get_attribution_text(data_key, apikey)
 
         json_url = self._dataset[data_key]
         if json_url.endswith("?key="):
@@ -198,12 +176,10 @@ class MapDataItem(QgsDataItem):
         node_map = root.addGroup(self._name)
         node_map.setExpanded(False)
 
-        # style_json_data can be None only when user custom maps.
         if style_json_data:
             self._add_vtlayer_from_style_json(
                 style_json_data, node_map, attribution_text)
         else:
-            # this case can run only when user custom map
             # when tiles.json for vector tile
             tile_json_data = json.loads(requests.get(json_url).text)
             self._add_vtlayer_from_tile_json(
@@ -261,6 +237,50 @@ class MapDataItem(QgsDataItem):
         vector.setAttribution(attribution_text)
         QgsProject.instance().addMapLayer(vector, False)
         target_node.insertLayer(-1, vector)
+
+    def _get_attribution_text(self, data_key, apikey) -> str:
+        attribution_text = ""
+        # MapTiler style.json doesn't always have attribution text
+        # Get text from tiles.json
+        if data_key == 'vector':
+            tile_json_url = self._dataset['raster'] + apikey
+            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            attribution_text = tile_json_data.get("attribution")
+
+        elif data_key == 'custom':
+            custom_json_url = self._dataset['custom']
+            if custom_json_url.endswith("?key="):
+                custom_json_url += apikey
+
+            custom_json_data = json.loads(requests.get(custom_json_url).text)
+
+            url_endpoint = custom_json_url.split("?")[0]
+            if url_endpoint.endswith("style.json"):
+                sources = custom_json_data.get("sources")
+                maptiler_attribution = sources.get("maptiler_attribution")
+                if maptiler_attribution:
+                    attribution = maptiler_attribution.get("attribution", "")
+                    attribution_text = str(attribution)
+            else:
+                attribution_text = custom_json_data.get("attribution", "")
+
+        return attribution_text
+
+    def _get_attr_of_custom_json(self, custom_json_data) -> str:
+        attribution_text = ""
+
+        url_endpoint = custom_json_url.split("?")[0]
+        # get attribution from custom tiles or style json
+        if url_endpoint.endswith("style.json"):
+            sources = custom_json_data.get("sources")
+            maptiler_attribution = sources.get("maptiler_attribution")
+            if maptiler_attribution:
+                attribution = maptiler_attribution.get("attribution", "")
+                attribution_text = str(attribution)
+        else:
+            attribution_text = custom_json_data.get("attribution", "")
+
+        return attribution_text
 
     def _add_custom_to_canvas(self):
         json_url = self._dataset['custom']
