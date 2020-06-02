@@ -256,13 +256,36 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
 def parse_interpolate_opacity_by_zoom(json_obj):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']  # TODO: use intermediate stops
-    if base == 1:
-        scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
-                     f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
+    if len(stops) <= 2:
+        if base == 1:
+            scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
+                         f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
+        else:
+            scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_exp(@zoom_level, " \
+                         f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}, {base}))"
     else:
-        scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_exp(@zoom_level, " \
-                     f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}, {base}))"
+        scale_expr = parse_opacity_stops(base, stops)
     return scale_expr
+
+
+def parse_opacity_stops(base: (int, float), stops: list) -> str:
+    case_str = "CASE"
+    if base == 1:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN set_color_part(@symbol_color, 'alpha', " \
+                           f"scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]})"
+            case_str = case_str + f"{interval_str}"
+    else:
+        for i in range(len(stops)-1):
+            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
+                           f"THEN set_color_part(@symbol_color, 'alpha', " \
+                           f"scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]}, {base})"
+            case_str = case_str + f"{interval_str}"
+    case_str = case_str + " END"
+    return case_str
 
 
 def parse_line_layer(json_layer):
