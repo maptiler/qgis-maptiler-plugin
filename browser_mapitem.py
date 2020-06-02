@@ -121,7 +121,7 @@ class MapDataItem(QgsDataItem):
         tile_json_url = self._dataset[data_key]
         if tile_json_url.endswith("?key="):
             tile_json_url += apikey
-        
+
         tile_json_data = json.loads(requests.get(tile_json_url).text)
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
@@ -166,12 +166,12 @@ class MapDataItem(QgsDataItem):
             tile_json_url = self._dataset['raster'] + apikey
             tile_json_data = json.loads(requests.get(tile_json_url).text)
             attribution_text = tile_json_data.get("attribution")
-        
+
         elif data_key == 'custom':
             custom_json_url = self._dataset['custom']
             if custom_json_url.endswith("?key="):
                 custom_json_url += apikey
-            
+
             custom_json_data = json.loads(requests.get(custom_json_url).text)
             url_endpoint = custom_json_url.split("?")[0]
             # get attribution from custom tiles or style json
@@ -187,66 +187,80 @@ class MapDataItem(QgsDataItem):
         json_url = self._dataset[data_key]
         if json_url.endswith("?key="):
             json_url += apikey
-        
+
         style_json_data = {}
         try:
             style_json_data = converter.get_style_json(json_url)
         except Exception as e:
             print(e)
-        proj = QgsProject().instance()
-        root = proj.layerTreeRoot()
+
+        root = QgsProject().instance().layerTreeRoot()
         node_map = root.addGroup(self._name)
         node_map.setExpanded(False)
 
         # style_json_data can be None only when user custom maps.
         if style_json_data:
-            # Add other layers from sources
-            sources = converter.get_sources_dict_from_style_json(
-                style_json_data)
-            for source_name, source_data in sources.items():
-                url = "type=xyz&url=" + source_data["zxy_url"]
-
-                if source_data["type"] == "vector":
-                    vector = QgsVectorTileLayer(url, source_name)
-                    renderer, labeling = converter.get_renderer_labeling(
-                        source_name, style_json_data)
-                    vector.setLabeling(labeling)
-                    vector.setRenderer(renderer)
-                    vector.setAttribution(attribution_text)
-                    proj.addMapLayer(vector, False)
-                    node_map.insertLayer(0, vector)
-                elif source_data["type"] == "raster-dem":
-                    # TODO solve layer style
-                    raster = QgsRasterLayer(url, source_name, "wms")
-                    raster.setAttribution(attribution_text)
-                    proj.addMapLayer(raster, False)
-                    node_map.insertLayer(0, raster)
-                elif source_data["type"] == "raster":
-                    # TODO solve layer style
-                    raster = QgsRasterLayer(url, source_name, "wms")
-                    raster.setAttribution(attribution_text)
-                    proj.addMapLayer(raster, False)
-                    node_map.insertLayer(0, raster)
-            # Add background layer as last if exists
-            bg_renderer = converter.get_bg_renderer(style_json_data)
-            if bg_renderer:
-                bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "background", "ogr")
-                bg_vector.setRenderer(bg_renderer)
-                bg_vector.setAttribution(attribution_text)
-                proj.addMapLayer(bg_vector, False)
-                node_map.insertLayer(-1, bg_vector)
-
+            self._add_vtlayer_from_style_json(
+                style_json_data, node_map, attribution_text)
         else:
             # this case can run only when user custom map
             # when tiles.json for vector tile
-            url_endpoint = json_url.split("?")[0]
             tile_json_data = json.loads(requests.get(json_url).text)
-            url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
-            
-            vector = QgsVectorTileLayer(url, self._name)
-            vector.setAttribution(attribution_text)
-            proj.addMapLayer(vector, False)
-            node_map.insertLayer(-1, vector)
+            self._add_vtlayer_from_tile_json(
+                tile_json_data, node_map, attribution_text)
+
+    def _add_vtlayer_from_style_json(self,
+                                     style_json_data: dict,
+                                     target_node: QgsLayerTreeGroup,
+                                     attribution_text: str,):
+        proj = QgsProject().instance()
+
+        # Add other layers from sources
+        sources = converter.get_sources_dict_from_style_json(
+            style_json_data)
+        for source_name, source_data in sources.items():
+            url = "type=xyz&url=" + source_data["zxy_url"]
+
+            if source_data["type"] == "vector":
+                vector = QgsVectorTileLayer(url, source_name)
+                renderer, labeling = converter.get_renderer_labeling(
+                    source_name, style_json_data)
+                vector.setLabeling(labeling)
+                vector.setRenderer(renderer)
+                vector.setAttribution(attribution_text)
+                proj.addMapLayer(vector, False)
+                target_node.insertLayer(0, vector)
+            elif source_data["type"] == "raster-dem":
+                # TODO solve layer style
+                raster = QgsRasterLayer(url, source_name, "wms")
+                raster.setAttribution(attribution_text)
+                proj.addMapLayer(raster, False)
+                target_node.insertLayer(0, raster)
+            elif source_data["type"] == "raster":
+                # TODO solve layer style
+                raster = QgsRasterLayer(url, source_name, "wms")
+                raster.setAttribution(attribution_text)
+                proj.addMapLayer(raster, False)
+                target_node.insertLayer(0, raster)
+        # Add background layer as last if exists
+        bg_renderer = converter.get_bg_renderer(style_json_data)
+        if bg_renderer:
+            bg_vector = QgsVectorLayer(BG_VECTOR_PATH, "background", "ogr")
+            bg_vector.setRenderer(bg_renderer)
+            bg_vector.setAttribution(attribution_text)
+            proj.addMapLayer(bg_vector, False)
+            target_node.insertLayer(-1, bg_vector)
+
+    def _add_vtlayer_from_tile_json(self,
+                                    tile_json_data: dict,
+                                    target_node: QgsLayerTreeGroup,
+                                    attribution_text: str):
+        url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
+
+        vector = QgsVectorTileLayer(url, self._name)
+        vector.setAttribution(attribution_text)
+        QgsProject.instance().addMapLayer(vector, False)
+        target_node.insertLayer(-1, vector)
 
     def _add_custom_to_canvas(self):
         json_url = self._dataset['custom']
@@ -258,7 +272,7 @@ class MapDataItem(QgsDataItem):
             smanager = SettingsManager()
             apikey = smanager.get_setting('apikey')
             json_url += apikey
-        
+
         if self._is_vector_json(json_url):
             if utils.is_qgs_vectortile_api_enable():
                 self._add_vector_to_canvas(data_key='custom')
