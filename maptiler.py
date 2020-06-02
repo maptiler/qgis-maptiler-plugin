@@ -238,26 +238,38 @@ class MapTiler:
         # add selected feature to Project
         selected_feature = self.result_features[result_index.row()]
         geojson_str = json.dumps(selected_feature)
+        bbox = selected_feature.get("bbox")
+
         vlayer = QgsVectorLayer(
             geojson_str, selected_feature['place_name'], 'ogr')
         self.proj.addMapLayer(vlayer)
 
-        # get leftbottom and righttop points of vlayer
-        vlayer_extent_rect = vlayer.extent()
-        vlayer_extent_leftbottom = QgsPoint(
-            vlayer_extent_rect.xMinimum(), vlayer_extent_rect.yMinimum())
-        vlayer_extent_righttop = QgsPoint(
-            vlayer_extent_rect.xMaximum(), vlayer_extent_rect.yMaximum())
+        extent_rect = QgsRectangle()
+        if bbox:
+            extent_rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+        else:
+            extent_rect = vlayer.extent()
+
+        extent_leftbottom = QgsPoint(
+            extent_rect.xMinimum(), extent_rect.yMinimum())
+        extent_righttop = QgsPoint(
+            extent_rect.xMaximum(), extent_rect.yMaximum())
 
         # transform 2points to project CRS
-        current_crs = vlayer.sourceCrs()
+        current_crs = QgsCoordinateReferenceSystem()
+        if bbox:
+            # bbox is always defined with Longitude and Latitude
+            current_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        else:
+            current_crs = vlayer.sourceCrs()
+
         target_crs = self.proj.crs()
         transform = QgsCoordinateTransform(current_crs, target_crs, self.proj)
-        vlayer_extent_leftbottom.transform(transform)
-        vlayer_extent_righttop.transform(transform)
+        extent_leftbottom.transform(transform)
+        extent_righttop.transform(transform)
 
         # make rectangle same to new extent by transformed 2points
-        target_extent_rect = QgsRectangle(vlayer_extent_leftbottom.x(), vlayer_extent_leftbottom.y(),
-                                          vlayer_extent_righttop.x(), vlayer_extent_righttop.y())
+        extent_rect = QgsRectangle(extent_leftbottom.x(), extent_leftbottom.y(),
+                                   extent_righttop.x(), extent_righttop.y())
 
-        self.iface.mapCanvas().zoomToFeatureExtent(target_extent_rect)
+        self.iface.mapCanvas().zoomToFeatureExtent(extent_rect)
