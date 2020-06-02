@@ -91,7 +91,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Access key for MapTiler Cloud is require.&lt;br/&gt;Get a FREE key at &lt;a href=&quot;https://cloud.maptiler.com/account/keys&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://cloud.maptiler.com/account/keys&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Access key for MapTiler Cloud is required.&lt;br/&gt;Get a FREE key at &lt;a href=&quot;https://cloud.maptiler.com/account/keys&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://cloud.maptiler.com/account/keys&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
@@ -107,7 +107,7 @@
       <bool>false</bool>
      </property>
      <property name="text">
-      <string>Use vector tiles (requires QGIS 3.14+)</string>
+      <string>Use vector tiles by default (requires QGIS 3.14+)</string>
      </property>
     </widget>
    </item>

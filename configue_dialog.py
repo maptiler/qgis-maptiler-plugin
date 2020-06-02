@@ -32,7 +32,7 @@ class ConfigueDialog(QtWidgets.QDialog):
         # Checkbox are available only when on QGIS version having feature of Vectortile
         if minor_ver > 12:
             self.ui.vtileCheckBox.setEnabled(True)
-            prefervector = int(smanager.get_setting('prefervector'))
+            prefervector = bool(int(smanager.get_setting('prefervector')))
             self.ui.vtileCheckBox.setChecked(prefervector)
 
         # when OS in darkmode change icon to darkmode one
@@ -50,7 +50,7 @@ class ConfigueDialog(QtWidgets.QDialog):
         apikey = self.ui.apikey_txt.text()
         smanager.store_setting('apikey', apikey)
 
-        prefervector = int(self.ui.vtileCheckBox.isChecked())
+        prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
         smanager.store_setting('prefervector', prefervector)
 
         self.close()
