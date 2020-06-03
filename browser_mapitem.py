@@ -116,8 +116,6 @@ class MapDataItem(QgsDataItem):
         smanager = SettingsManager()
         apikey = smanager.get_setting('apikey')
 
-        proj = QgsProject().instance()
-
         tile_json_url = self._dataset[data_key]
         if tile_json_url.endswith("?key="):
             tile_json_url += apikey
@@ -150,7 +148,11 @@ class MapDataItem(QgsDataItem):
         attribution_text = tile_json_data.get("attribution")
         raster.setAttribution(attribution_text)
 
-        proj.addMapLayer(raster)
+        # add rlayer to project
+        proj = QgsProject().instance()
+        proj.addMapLayer(raster, False)
+        root = proj.layerTreeRoot()
+        root.addLayer(raster)
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if not self._is_apikey_valid() and data_key == "vector":
