@@ -194,6 +194,7 @@ def parse_fill_layer(json_layer):
             fill_opacity = float(json_fill_opacity)
         elif isinstance(json_fill_opacity, dict):
             fill_opacity = None
+            print(json_layer["id"])
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         else:
@@ -288,6 +289,10 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
     return case_str
 
 
+def parse_interpolate_color_by_zoom(json_obj):
+    pass
+
+
 def parse_line_layer(json_layer):
     try:
         json_paint = json_layer['paint']
@@ -327,6 +332,7 @@ def parse_line_layer(json_layer):
             line_opacity = float(json_line_opacity)
         elif isinstance(json_line_opacity, dict):
             fill_opacity = None
+            print(json_layer["id"])
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
         else:
