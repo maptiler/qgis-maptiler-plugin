@@ -73,15 +73,38 @@ def get_bg_renderer(style_json_data: dict):
     return renderer
 
 
-def get_raster_styling(source_name: str, style_json_data: dict):
+def get_source_layers(source_name: str, style_json_data: dict):
     layers = style_json_data.get("layers")
     source_layers = []
     for layer in layers:
         if "source" not in layer or layer["source"] != source_name:
             continue
         source_layers.append(layer)
-    pass
+    return source_layers
 
 
-def get_raster_dem_styling_hillshade(source_name: str, style_json_data: dict):
-    pass
+def get_raster_renderer(renderer, layer_json: dict):
+    paint = layer_json.get("paint")
+    if paint is None:
+        return renderer
+
+    style = {
+        "b_max": paint.get("raster-brightness-max"),
+        "b_min": paint.get("raster-brightness-min"),
+        "contrast": paint.get("raster-contrast"),
+        "fade_duration": paint.get("raster-fade-duration"),
+        "hue_rotate": paint.get("raster-hue-rotate"),
+        "opacity": paint.get("raster-opacity"),
+        "resampling": paint.get("raster-resampling"),
+        "saturation": paint.get("raster-saturation")
+    }
+    print(style)
+    styled_renderer = renderer.clone()
+    for (key, value) in style:
+        if value is None:
+            continue
+
+        if key == "opacity":
+            styled_renderer.setOpacity(int(value))
+
+    return styled_renderer

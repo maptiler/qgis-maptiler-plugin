@@ -213,11 +213,18 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(0, raster)
             elif source_data["type"] == "raster":
-                # TODO solve layer style
-                raster = QgsRasterLayer(url, source_name, "wms")
-                raster.setAttribution(attribution_text)
-                proj.addMapLayer(raster, False)
-                target_node.insertLayer(0, raster)
+                rlayers = converter.get_source_layers(
+                    source_name, style_json_data)
+                for rlayer_json in rlayers:
+                    layer_id = rlayer_json.get("id", "NO_NAME")
+                    raster = QgsRasterLayer(url, layer_id, "wms")
+                    renderer = raster.renderer()
+                    styled_renderer = converter.get_raster_renderer(
+                        renderer, rlayer_json)
+                    raster.setAttribution(attribution_text)
+                    proj.addMapLayer(raster, False)
+                    target_node.insertLayer(0, raster)
+
         # Add background layer as last if exists
         bg_renderer = converter.get_bg_renderer(style_json_data)
         if bg_renderer:
