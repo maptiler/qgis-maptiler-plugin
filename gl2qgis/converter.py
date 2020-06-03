@@ -32,7 +32,8 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
             layer_zxy_url = source_data.get("tiles")[0]
 
         source_type = source_data.get("type")
-        source_zxy_dict[source_name] = {"name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
+        source_zxy_dict[source_name] = {
+            "name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
 
     return source_zxy_dict
 
@@ -70,3 +71,17 @@ def get_bg_renderer(style_json_data: dict):
     if not renderer:
         print("No background layer in style.json.")
     return renderer
+
+
+def get_raster_styling(source_name: str, style_json_data: dict):
+    layers = style_json_data.get("layers")
+    source_layers = []
+    for layer in layers:
+        if "source" not in layer or layer["source"] != source_name:
+            continue
+        source_layers.append(layer)
+    pass
+
+
+def get_raster_dem_styling_hillshade(source_name: str, style_json_data: dict):
+    pass
