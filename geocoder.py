@@ -10,7 +10,7 @@ from . import utils
 
 
 class MapTilerGeocoder:
-    def __init__(self, language='ja'):
+    def __init__(self, language='en'):
         self._language = language
 
     def geocoding(self, searchword, center_lonlat):
