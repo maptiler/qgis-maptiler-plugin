@@ -122,7 +122,11 @@ class MapTilerGeocoderToolbar:
 
         vlayer = QgsVectorLayer(
             geojson_str, selected_feature['place_name'], 'ogr')
-        self.proj.addMapLayer(vlayer)
+
+        # add feature to project
+        self.proj.addMapLayer(vlayer, False)
+        root = self.proj.layerTreeRoot()
+        root.insertLayer(0, vlayer)
 
         extent_rect = QgsRectangle()
         current_crs = QgsCoordinateReferenceSystem()
