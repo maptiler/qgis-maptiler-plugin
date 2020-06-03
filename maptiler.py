@@ -175,6 +175,9 @@ class MapTiler:
         copyrights = []
         root_group = self.iface.layerTreeView().layerTreeModel().rootGroup()
         for l in root_group.findLayers():
+            # when invalid layer is in Browser
+            if not isinstance(l.layer(), QgsMapLayer):
+                continue
             if l.isVisible():
                 attribution = l.layer().attribution()
                 attribution = re.sub(
