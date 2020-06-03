@@ -230,7 +230,8 @@ class MapTiler:
         center_lonlat = [center_as_qgspoint.x(), center_as_qgspoint.y()]
 
         # start Geocoding
-        geocoder = MapTilerGeocoder()
+        locale = QSettings().value('locale/globalLocale')[0:2]
+        geocoder = MapTilerGeocoder(locale)
         geojson_dict = geocoder.geocoding(searchword, center_lonlat)
         return geojson_dict
 
@@ -245,10 +246,14 @@ class MapTiler:
         self.proj.addMapLayer(vlayer)
 
         extent_rect = QgsRectangle()
+        current_crs = QgsCoordinateReferenceSystem()
         if bbox:
             extent_rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
+            # bbox is always defined with Longitude and Latitude
+            current_crs = QgsCoordinateReferenceSystem("EPSG:4326")
         else:
             extent_rect = vlayer.extent()
+            current_crs = vlayer.sourceCrs()
 
         extent_leftbottom = QgsPoint(
             extent_rect.xMinimum(), extent_rect.yMinimum())
@@ -256,13 +261,6 @@ class MapTiler:
             extent_rect.xMaximum(), extent_rect.yMaximum())
 
         # transform 2points to project CRS
-        current_crs = QgsCoordinateReferenceSystem()
-        if bbox:
-            # bbox is always defined with Longitude and Latitude
-            current_crs = QgsCoordinateReferenceSystem("EPSG:4326")
-        else:
-            current_crs = vlayer.sourceCrs()
-
         target_crs = self.proj.crs()
         transform = QgsCoordinateTransform(current_crs, target_crs, self.proj)
         extent_leftbottom.transform(transform)
