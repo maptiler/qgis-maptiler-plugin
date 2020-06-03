@@ -109,7 +109,7 @@ class MapTiler:
         self.dip = None
 
         # remove the toolbar
-        del self.toolbar
+        del self.gc_toolbar
 
         self._deactivate_copyrights()
 
