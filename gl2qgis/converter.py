@@ -13,7 +13,7 @@
 
 import json
 import requests
-from .gl2qgis import parse_layers, parse_background
+from .gl2qgis import parse_layers, parse_background, parse_opacity
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -73,7 +73,7 @@ def get_bg_renderer(style_json_data: dict):
     return renderer
 
 
-def get_source_layers(source_name: str, style_json_data: dict):
+def get_layers_by(source_name: str, style_json_data: dict):
     layers = style_json_data.get("layers")
     source_layers = []
     for layer in layers:
@@ -89,8 +89,8 @@ def get_raster_renderer(renderer, layer_json: dict):
         return renderer
 
     style = {
-        "b_max": paint.get("raster-brightness-max"),
-        "b_min": paint.get("raster-brightness-min"),
+        "brightness_max": paint.get("raster-brightness-max"),
+        "brightness_min": paint.get("raster-brightness-min"),
         "contrast": paint.get("raster-contrast"),
         "fade_duration": paint.get("raster-fade-duration"),
         "hue_rotate": paint.get("raster-hue-rotate"),
@@ -98,13 +98,14 @@ def get_raster_renderer(renderer, layer_json: dict):
         "resampling": paint.get("raster-resampling"),
         "saturation": paint.get("raster-saturation")
     }
-    print(style)
+
     styled_renderer = renderer.clone()
-    for (key, value) in style:
+    for key, value in style.items():
         if value is None:
             continue
 
         if key == "opacity":
-            styled_renderer.setOpacity(int(value))
+            parsed_opacity = parse_opacity(value)
+            styled_renderer.setOpacity(parsed_opacity)
 
     return styled_renderer
