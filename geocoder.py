@@ -117,25 +117,32 @@ class MapTilerGeocoderToolbar:
     def on_result_clicked(self, result_index):
         # add selected feature to Project
         selected_feature = self.result_features[result_index.row()]
-        geojson_str = json.dumps(selected_feature)
-        bbox = selected_feature.get("bbox")
-
-        vlayer = QgsVectorLayer(
-            geojson_str, selected_feature['place_name'], 'ogr')
-
-        # add layer to project
-        if vlayer.isValid():
-            self.proj.addMapLayer(vlayer, False)
-            root = self.proj.layerTreeRoot()
-            root.insertLayer(0, vlayer)
 
         extent_rect = QgsRectangle()
         current_crs = QgsCoordinateReferenceSystem()
+
+        bbox = selected_feature.get("bbox")
+        geometry_type = selected_feature.get("geometry", {}).get("type")
+
         if bbox:
             extent_rect = QgsRectangle(bbox[0], bbox[1], bbox[2], bbox[3])
-            # bbox is always defined with Longitude and Latitude
             current_crs = QgsCoordinateReferenceSystem("EPSG:4326")
+        elif geometry_type == "GeometryCollection":
+            geometries = selected_feature.get("geometries")
+            if geometries is None:
+                print("invalid GeoJSON")
+                return
+            tmp_geojson = {
+                "type": "Feature",
+                "geometry": geometries[0]
+            }
+            geojson_str = json.dumps(tmp_geojson)
+            vlayer = QgsVectorLayer(geojson_str, 'tmp', 'ogr')
+            extent_rect = vlayer.extent()
+            current_crs = vlayer.sourceCrs()
         else:
+            geojson_str = json.dumps(selected_feature)
+            vlayer = QgsVectorLayer(geojson_str, 'tmp', 'ogr')
             extent_rect = vlayer.extent()
             current_crs = vlayer.sourceCrs()
 
