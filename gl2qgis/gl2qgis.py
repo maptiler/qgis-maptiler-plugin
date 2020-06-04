@@ -200,7 +200,6 @@ def parse_fill_layer(json_layer):
             fill_opacity = float(json_fill_opacity)
         elif isinstance(json_fill_opacity, dict):
             fill_opacity = None
-            print(json_layer["id"])
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         else:
@@ -297,7 +296,25 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
 
 
 def parse_interpolate_color_by_zoom(json_obj):
-    pass
+    stops = json_obj['stops']
+    bottom_color = parse_color(stops[0][1])
+    top_color = parse_color(stops[-1][1])
+    bc_hue, bc_sat, bc_light, bc_alpha = bottom_color.getHsl()
+    tc_hue, tc_sat, tc_light, tc_alpha = top_color.getHsl()
+
+    expr = f"set_color_part(@symbol_color, 'hsl_hue', scale_linear(@zoom_level, " \
+           f"{stops[0][0]}, {stops[-1][0]}, {bc_hue}, {tc_hue}))" \
+           f" AND " \
+           f"set_color_part(@symbol_color, 'hsl_saturation', scale_linear(@zoom_level, " \
+           f"{stops[0][0]}, {stops[-1][0]}, {bc_sat}, {tc_sat}))" \
+           f" AND " \
+           f"set_color_part(@symbol_color, 'lightness', scale_linear(@zoom_level, " \
+           f"{stops[0][0]}, {stops[-1][0]}, {bc_light}, {tc_light}))" \
+           f" AND " \
+           f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
+           f"{stops[0][0]}, {stops[-1][0]}, {bc_alpha}, {tc_alpha}))"
+
+    return expr
 
 
 def parse_line_layer(json_layer):
@@ -548,15 +565,22 @@ def parse_background(bg_layer_data: dict):
     json_paint = bg_layer_data.get("paint")
     renderer = None
     if "background-color" in json_paint:
+        sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
+        # Set no stroke for background layer
+        sym.symbolLayer(0).setStrokeColor(QColor("transparent"))
+        # Parse fill color
         json_background_color = json_paint.get("background-color")
         if not isinstance(json_background_color, str):
             # TODO implement color of type dict
-            bg_color = parse_paint(json_background_color)
+            bg_color_expr = parse_interpolate_color_by_zoom(json_background_color)
+            print("###########")
+            print(bg_color_expr)
+            bg_color_expr = "set_color_part(@symbol_color, 'red', scale_linear(@zoom_level, 2, 20, 0, 255))"
+            sym.symbolLayer(0).setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,
+                                                      QgsProperty.fromExpression(bg_color_expr))
         else:
             bg_color = parse_color(json_background_color)
-        sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
-        sym.setColor(bg_color)
-        sym.symbolLayer(0).setStrokeColor(QColor("transparent"))
+            sym.symbolLayer(0).setColor(bg_color)
         if "background-opacity" in json_paint:
             json_background_opacity = json_paint.get("background-opacity")
             bg_opacity = parse_opacity(json_background_opacity)
