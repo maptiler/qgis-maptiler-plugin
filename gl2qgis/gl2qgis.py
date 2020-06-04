@@ -145,11 +145,6 @@ def parse_expression(json_expr):
     raise ValueError(json_expr)
 
 
-def parse_paint(json_paint):
-    # TODO implement!
-    return Qt.white
-
-
 def parse_opacity(json_opacity):
     # TODO fix parsing opacity
     base = json_opacity['base'] if 'base' in json_opacity else 1
@@ -174,18 +169,9 @@ def parse_fill_layer(json_layer):
     else:
         json_fill_color = json_paint['fill-color']
         if not isinstance(json_fill_color, str):
-            # TODO implement color of type dict
-            fill_color = parse_paint(json_fill_color)
-            print(f"Fill layer {json_layer['id']}")
-            print("skipping non-string color", json_fill_color)
-            if json_layer['id'] == "landuse-residential":
-                # fill_color = Qt.black
-                dd_properties[QgsSymbolLayer.PropertyFillColor] = "color_rgb(120, 80, 200)"
-
-                #     "AND " \
-                #     "set_color_part(@symbol_color, 'blue', '150)) " \
-                #     "AND " \
-                #     "set_color_part(@symbol_color, 'green', 80) "
+            fill_color = None
+            dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_color)
         else:
             fill_color = parse_color(json_fill_color)
 
@@ -197,8 +183,8 @@ def parse_fill_layer(json_layer):
         if isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color)
         else:
-            fill_outline_color = parse_paint(json_fill_outline_color)
-            fill_outline_color = Qt.white
+            fill_outline_color = None
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_outline_color)
 
     # Fill opacity
     if 'fill-opacity' not in json_paint:
@@ -207,7 +193,7 @@ def parse_fill_layer(json_layer):
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
-        elif isinstance(json_fill_opacity, dict) and json_layer['id'] != "landuse-residental":
+        elif isinstance(json_fill_opacity, dict):
             fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
@@ -269,7 +255,6 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
     case_str = case_str + " END"
-    print(case_str)
     return case_str
 
 
@@ -308,26 +293,46 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
     return case_str
 
 
+def get_color_as_hsla_components(qcolor):
+    hue = qcolor.hslHue()
+    sat = int(qcolor.hslSaturationF() * 100)
+    lightness = int(qcolor.lightnessF() * 100)
+    alpha = qcolor.alpha()
+    return hue, sat, lightness, alpha
+
+
 def parse_interpolate_color_by_zoom(json_obj):
     stops = json_obj['stops']
+    # Bottom color
+    bz = stops[0][0]
     bottom_color = parse_color(stops[0][1])
+    bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
+    case_str = f"CASE " \
+               f"WHEN @zoom_level < {bz} THEN color_hsla({bc_hue}, {bc_sat}, {bc_light}, {bc_alpha}) "
+    for i in range(len(stops)-1):
+        # Step bottom zoom
+        bz = stops[i][0]
+        # Step top zoom
+        tz = stops[i+1][0]
+        bottom_color = parse_color(stops[i][1])
+        top_color = parse_color(stops[i+1][1])
+        bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
+        tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
+
+        when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
+                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}), " \
+                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}), " \
+                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}), " \
+                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha})) "
+        case_str = case_str + when_str
+    # Top color
+    tz = stops[-1][0]
     top_color = parse_color(stops[-1][1])
-    bc_hue, bc_sat, bc_light, bc_alpha = bottom_color.getHsl()
-    tc_hue, tc_sat, tc_light, tc_alpha = top_color.getHsl()
+    tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
+    end_string = f"WHEN @zoom_level >= {tz} THEN color_hsla({tc_hue}, {tc_sat}, {tc_light}, {tc_alpha}) END"
+    case_str = case_str + end_string
 
-    expr = f"set_color_part(@symbol_color, 'hsl_hue', scale_linear(@zoom_level, " \
-           f"{stops[0][0]}, {stops[-1][0]}, {bc_hue}, {tc_hue}))" \
-           f" AND " \
-           f"set_color_part(@symbol_color, 'hsl_saturation', scale_linear(@zoom_level, " \
-           f"{stops[0][0]}, {stops[-1][0]}, {bc_sat}, {tc_sat}))" \
-           f" AND " \
-           f"set_color_part(@symbol_color, 'lightness', scale_linear(@zoom_level, " \
-           f"{stops[0][0]}, {stops[-1][0]}, {bc_light}, {tc_light}))" \
-           f" AND " \
-           f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
-           f"{stops[0][0]}, {stops[-1][0]}, {bc_alpha}, {tc_alpha}))"
-
-    return expr
+    return case_str
 
 
 def parse_line_layer(json_layer):
@@ -346,11 +351,11 @@ def parse_line_layer(json_layer):
 
     json_line_color = json_paint['line-color']
     if not isinstance(json_line_color, str):
-        print(f"Line layer: {json_layer['id']}")
-        print("skipping non-string color", json_line_color)
-        return
-
-    line_color = parse_color(json_line_color)
+        line_color = None
+        dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_line_color)
+        dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_line_color)
+    else:
+        line_color = parse_color(json_line_color)
 
     line_width = 0
     if 'line-width' in json_paint:
@@ -358,6 +363,7 @@ def parse_line_layer(json_layer):
         if isinstance(json_line_width, (float, int)):
             line_width = float(json_line_width)
         elif isinstance(json_line_width, dict):
+            line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
                 json_line_width, PX_TO_MM)
         else:
@@ -395,8 +401,6 @@ def parse_line_layer(json_layer):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
     line_symbol = sym.symbolLayer(0)
-    line_symbol.setColor(line_color)
-    line_symbol.setWidth(line_width * PX_TO_MM)
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
     if dash_vector is not None:
@@ -406,6 +410,10 @@ def parse_line_layer(json_layer):
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
+    if line_color:
+        line_symbol.setColor(line_color)
+    if line_width:
+        line_symbol.setWidth(line_width * PX_TO_MM)
     if line_opacity:
         sym.setOpacity(line_opacity)
 
@@ -588,13 +596,9 @@ def parse_background(bg_layer_data: dict):
             bg_color_expr = parse_interpolate_color_by_zoom(json_background_color)
             # print("###########")
             # print(bg_color_expr)
-            bg_color_expr = "set_color_part(@symbol_color, 'red', scale_linear(@zoom_level, 2, 20, 0, 255))" \
-                            " AND " \
-                            "set_color_part(@symbol_color, 'green', scale_linear(@zoom_level, 2, 20, 0, 255))" \
-                            " AND " \
-                            "set_color_part(@symbol_color, 'blue', scale_linear(@zoom_level, 2, 20, 0, 255))"
-            sym.symbolLayer(0).setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,
-                                                      QgsProperty.fromExpression(bg_color_expr))
+            fill_symbol = sym.symbolLayer(0)
+            fill_symbol.setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,
+                                               QgsProperty.fromExpression(bg_color_expr))
         else:
             bg_color = parse_color(json_background_color)
             sym.symbolLayer(0).setColor(bg_color)
