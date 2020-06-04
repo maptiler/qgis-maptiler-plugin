@@ -3,6 +3,8 @@ import requests
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import Qgis
 
+import ssl
+ssl._create_default_https_context = ssl._create_unverified_context
 
 def validate_key(apikey='') -> bool:
     testurl = 'https://api.maptiler.com/maps/basic/style.json?key='
