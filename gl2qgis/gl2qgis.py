@@ -104,6 +104,9 @@ def parse_expression(json_expr):
     is_literal_value = isinstance(json_expr[-1], (int, float))
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
+        if None in lst:
+            print(f"Skipping unsupported expression {json_expr}")
+            return
         return "({})".format(") AND (".join(lst))
     elif op == 'any':
         lst = [parse_value(v) for v in json_expr[1:]]
