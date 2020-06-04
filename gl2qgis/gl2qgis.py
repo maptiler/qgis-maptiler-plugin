@@ -176,7 +176,16 @@ def parse_fill_layer(json_layer):
         if not isinstance(json_fill_color, str):
             # TODO implement color of type dict
             fill_color = parse_paint(json_fill_color)
-            fill_color = Qt.white
+            print(f"Fill layer {json_layer['id']}")
+            print("skipping non-string color", json_fill_color)
+            if json_layer['id'] == "landuse-residential":
+                # fill_color = Qt.black
+                dd_properties[QgsSymbolLayer.PropertyFillColor] = "color_rgb(120, 80, 200)"
+
+                #     "AND " \
+                #     "set_color_part(@symbol_color, 'blue', '150)) " \
+                #     "AND " \
+                #     "set_color_part(@symbol_color, 'green', 80) "
         else:
             fill_color = parse_color(json_fill_color)
 
@@ -198,7 +207,7 @@ def parse_fill_layer(json_layer):
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
-        elif isinstance(json_fill_opacity, dict):
+        elif isinstance(json_fill_opacity, dict) and json_layer['id'] != "landuse-residental":
             fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
@@ -210,12 +219,15 @@ def parse_fill_layer(json_layer):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
-    fill_symbol.setColor(fill_color)
-    fill_symbol.setStrokeColor(fill_outline_color)
+
     for dd_key, dd_expression in dd_properties.items():
         fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
     if fill_opacity:
         sym.setOpacity(fill_opacity)
+    if fill_color:
+        fill_symbol.setColor(fill_color)
+    if fill_outline_color:
+        fill_symbol.setStrokeColor(fill_outline_color)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
@@ -257,6 +269,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
     case_str = case_str + " END"
+    print(case_str)
     return case_str
 
 
@@ -333,6 +346,7 @@ def parse_line_layer(json_layer):
 
     json_line_color = json_paint['line-color']
     if not isinstance(json_line_color, str):
+        print(f"Line layer: {json_layer['id']}")
         print("skipping non-string color", json_line_color)
         return
 
@@ -356,7 +370,6 @@ def parse_line_layer(json_layer):
             line_opacity = float(json_line_opacity)
         elif isinstance(json_line_opacity, dict):
             fill_opacity = None
-            print(json_layer["id"])
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
         else:
@@ -573,9 +586,13 @@ def parse_background(bg_layer_data: dict):
         if not isinstance(json_background_color, str):
             # TODO implement color of type dict
             bg_color_expr = parse_interpolate_color_by_zoom(json_background_color)
-            print("###########")
-            print(bg_color_expr)
-            bg_color_expr = "set_color_part(@symbol_color, 'red', scale_linear(@zoom_level, 2, 20, 0, 255))"
+            # print("###########")
+            # print(bg_color_expr)
+            bg_color_expr = "set_color_part(@symbol_color, 'red', scale_linear(@zoom_level, 2, 20, 0, 255))" \
+                            " AND " \
+                            "set_color_part(@symbol_color, 'green', scale_linear(@zoom_level, 2, 20, 0, 255))" \
+                            " AND " \
+                            "set_color_part(@symbol_color, 'blue', scale_linear(@zoom_level, 2, 20, 0, 255))"
             sym.symbolLayer(0).setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,
                                                       QgsProperty.fromExpression(bg_color_expr))
         else:
