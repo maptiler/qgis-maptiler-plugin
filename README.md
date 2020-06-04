@@ -59,23 +59,29 @@ only in QGIS 3.13 and higher. You can choose default type of tiles by checking/u
     - Voyager
     
    More preset maps are available after clicking on `Add a new map...` from MapTiler plugin contextual menu
-
+   on a tab `MapTiler Cloud`. You can choose from various maps provided on MapTiler cloud.
+   
+   <img src='imgs/readme_06.png'>
 
 2. Usermap
-    
+
+    You can also add your own map from tab `From URL`. Add name of your map and URL to JSON.
+    - For vector tiles you can add either URL to style.json or TileJSON. Note that if you add
+    URL to TileJSON you will get only tiles data with basic QGIS styling.
+    - For raster tiles you have to add URL to TileJSON.
+
+    <img src='imgs/readme_06.png'>
 
 ### Geocoding API
 
-Once install this plugin, MapTiler Toolbar for Geocoding API added to your QGIS.
+MapTiler plugin also provides MapTiler Toolbar for Geocoding API.
 
 <img src='imgs/readme_03.png'>
 
-Input a place you want to find and press return-key. MapTiler Geocoding API respond a list of locations.
-When you click one of list, the mapcanvas move to it and Geometry added to your project.
+Input a place you want to find and press return-key. MapTiler Geocoding API responds a list of locations.
+When you click one of the list, map canvas will zoom to feature extent.
 
 <img src='imgs/readme_04.png'>  
-<BR>
-<img src='imgs/readme_05.png'>
 
 ---
 
