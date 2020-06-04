@@ -13,7 +13,7 @@
 
 import json
 import requests
-from .gl2qgis import parse_layers, parse_background
+from .gl2qgis import parse_layers, parse_background, parse_opacity
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -32,7 +32,8 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
             layer_zxy_url = source_data.get("tiles")[0]
 
         source_type = source_data.get("type")
-        source_zxy_dict[source_name] = {"name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
+        source_zxy_dict[source_name] = {
+            "name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
 
     return source_zxy_dict
 
@@ -70,3 +71,50 @@ def get_bg_renderer(style_json_data: dict):
     if not renderer:
         print("No background layer in style.json.")
     return renderer
+
+
+def get_source_layers_by(source_name: str, style_json_data: dict):
+    layers = style_json_data.get("layers")
+    source_layers = []
+    for layer in layers:
+        if "source" not in layer or layer["source"] != source_name:
+            continue
+        source_layers.append(layer)
+    return source_layers
+
+
+def get_raster_renderer_resampler(renderer, layer_json: dict):
+    paint = layer_json.get("paint")
+    if paint is None:
+        return renderer
+
+    #not fully converted:only opacity, resampling
+    gl_style = {
+        "brightness_max": paint.get("raster-brightness-max"),
+        "brightness_min": paint.get("raster-brightness-min"),
+        "contrast": paint.get("raster-contrast"),
+        "fade_duration": paint.get("raster-fade-duration"),
+        "hue_rotate": paint.get("raster-hue-rotate"),
+        "opacity": paint.get("raster-opacity"),
+        "resampling": paint.get("raster-resampling"),
+        "saturation": paint.get("raster-saturation")
+    }
+
+    styled_renderer = renderer.clone()
+    styled_resampler = "bilinear"  # as default
+    for key, value in gl_style.items():
+        if value is None:
+            continue
+
+        if key == "opacity":
+            parsed_opacity = 1.0
+            if isinstance(value, dict):
+                parsed_opacity = parse_opacity(value)
+            else:
+                parsed_opacity = value
+            styled_renderer.setOpacity(parsed_opacity)
+
+        if key == "resampling":
+            styled_resampler = value
+
+    return styled_renderer, styled_resampler
