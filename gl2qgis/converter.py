@@ -83,12 +83,12 @@ def get_layers_by(source_name: str, style_json_data: dict):
     return source_layers
 
 
-def get_raster_renderer(renderer, layer_json: dict):
+def get_raster_renderer_resampler(renderer, layer_json: dict):
     paint = layer_json.get("paint")
     if paint is None:
         return renderer
 
-    style = {
+    gl_style = {
         "brightness_max": paint.get("raster-brightness-max"),
         "brightness_min": paint.get("raster-brightness-min"),
         "contrast": paint.get("raster-contrast"),
@@ -100,12 +100,20 @@ def get_raster_renderer(renderer, layer_json: dict):
     }
 
     styled_renderer = renderer.clone()
-    for key, value in style.items():
+    styled_resampler = "bilinear"  # as default
+    for key, value in gl_style.items():
         if value is None:
             continue
 
         if key == "opacity":
-            parsed_opacity = parse_opacity(value)
+            parsed_opacity = 1.0
+            if isinstance(value, dict):
+                parsed_opacity = parse_opacity(value)
+            else:
+                parsed_opacity = value
             styled_renderer.setOpacity(parsed_opacity)
 
-    return styled_renderer
+        if key == "resampling":
+            styled_resampler = value
+
+    return styled_renderer, styled_resampler

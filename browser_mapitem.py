@@ -140,7 +140,7 @@ class MapDataItem(QgsDataItem):
 
         # change resampler to bilinear
         qml_str = self._qml_of(raster)
-        bilinear_qml = self._change_resampler_of(qml_str)
+        bilinear_qml = self._change_resampler_to_bilinear(qml_str)
         ls = QgsMapLayerStyle(bilinear_qml)
         ls.writeToLayer(raster)
 
@@ -221,9 +221,16 @@ class MapDataItem(QgsDataItem):
                     layer_id = rlayer_json.get("id", "NO_NAME")
                     raster = QgsRasterLayer(url, layer_id, "wms")
                     renderer = raster.renderer()
-                    styled_renderer = converter.get_raster_renderer(
+                    styled_renderer, styled_resampler = converter.get_raster_renderer_resampler(
                         renderer, rlayer_json)
                     raster.setRenderer(styled_renderer)
+                    if styled_resampler == "bilinear":
+                        # change resampler to bilinear
+                        qml_str = self._qml_of(raster)
+                        bilinear_qml = self._change_resampler_to_bilinear(
+                            qml_str)
+                        ls = QgsMapLayerStyle(bilinear_qml)
+                        ls.writeToLayer(raster)
                     raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
                     target_node.insertLayer(0, raster)
@@ -343,7 +350,7 @@ class MapDataItem(QgsDataItem):
         ls.readFromLayer(layer)
         return ls.xmlData()
 
-    def _change_resampler_of(self, qml_str):
+    def _change_resampler_to_bilinear(self, qml_str):
         default_resampler_xmltext = '<rasterresampler'
         bilinear_resampler_xmltext = '<rasterresampler zoomedInResampler="bilinear"'
         replaced = qml_str.replace(
