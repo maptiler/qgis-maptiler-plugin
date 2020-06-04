@@ -62,6 +62,10 @@ only in QGIS 3.13 and higher. You can choose default type of tiles by checking/u
    on a tab `MapTiler Cloud`. You can choose from various maps provided on MapTiler cloud.
    
    <img src='imgs/readme_06.png'>
+   
+   All maps provided by MapTiler are available both in raster and vector tiles. If you have QGIS 3.13 and higher
+   you can choose whether you want to add map as vector or raster from contextual menu of map and clicking either
+   on `Add as Raster` or `Add as Vector`.
 
 2. Usermap
 
