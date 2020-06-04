@@ -1,5 +1,4 @@
-import urllib.request
-import urllib.error
+import requests
 
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import Qgis
@@ -7,13 +6,13 @@ from qgis.core import Qgis
 
 def validate_key(apikey='') -> bool:
     testurl = 'https://api.maptiler.com/maps/basic/style.json?key='
-    try:
-        response = urllib.request.urlopen(testurl + apikey)
-        print(response.status)
+    response = requests.get(testurl + apikey)
+    
+    if response.status_code == 200:
         return True
-    except urllib.error.HTTPError as e:
-        print(e.code, e.msg)
-        return False
+    
+    print(f"key validation error code:{response.status_code}")
+    return False
 
 
 def is_qgs_vectortile_api_enable():
