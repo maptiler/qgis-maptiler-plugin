@@ -88,6 +88,7 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
     if paint is None:
         return renderer
 
+    #not fully converted:only opacity, resampling
     gl_style = {
         "brightness_max": paint.get("raster-brightness-max"),
         "brightness_min": paint.get("raster-brightness-min"),
