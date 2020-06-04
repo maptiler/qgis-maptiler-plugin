@@ -73,7 +73,7 @@ def get_bg_renderer(style_json_data: dict):
     return renderer
 
 
-def get_layers_by(source_name: str, style_json_data: dict):
+def get_source_layers_by(source_name: str, style_json_data: dict):
     layers = style_json_data.get("layers")
     source_layers = []
     for layer in layers:

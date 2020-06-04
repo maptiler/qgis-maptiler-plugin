@@ -215,7 +215,7 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(0, raster)
             elif source_data["type"] == "raster":
-                rlayers = converter.get_layers_by(
+                rlayers = converter.get_source_layers_by(
                     source_name, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
