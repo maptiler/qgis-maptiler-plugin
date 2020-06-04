@@ -8,7 +8,7 @@ qgisMinimumVersion=3.0
 description=Show MapTiler cloud maps.
 version=0.1
 author=MapTiler AG
-email=sales@maptiler.com
+email=info@maptiler.com
 
 about=Show MapTiler cloud maps.
 
@@ -27,6 +27,6 @@ tags=python, maptiler, raster, vector, tile
 
 homepage=https://github.com/maptiler/qgis-maptiler-plugin
 category=Web
-icon=./imgs/maptiler_icon.svg
+icon=./imgs/icon_maptiler.svg
 # experimental flag
 experimental=False
