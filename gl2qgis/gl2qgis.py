@@ -104,6 +104,9 @@ def parse_expression(json_expr):
     is_literal_value = isinstance(json_expr[-1], (int, float))
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
+        if None in lst:
+            print(f"Skipping unsupported expression {json_expr}")
+            return
         return "({})".format(") AND (".join(lst))
     elif op == 'any':
         lst = [parse_value(v) for v in json_expr[1:]]
@@ -135,6 +138,9 @@ def parse_expression(json_expr):
             return "{} IN ({})".format(key, ", ".join(lst))
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+    elif op == 'match':
+        print(f"Skipping not implemented operator {op}")
+        return
 
     raise ValueError(json_expr)
 
@@ -197,6 +203,7 @@ def parse_fill_layer(json_layer):
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         else:
+            fill_opacity = 1.0
             print(f"Could not parse opacity: {json_fill_opacity}")
 
     # TODO: fill-translate
