@@ -172,13 +172,15 @@ def parse_fill_layer(json_layer):
         return
     else:
         json_fill_color = json_paint['fill-color']
-        if not isinstance(json_fill_color, str):
+        if isinstance(json_fill_color, dict):
             # Use data defined property
             fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
-        else:
+        elif isinstance(json_fill_color, str):
             # Use simple string color
             fill_color = parse_color(json_fill_color)
+        else:
+            print(f"Skipping non-implemented color expression {json_fill_color}")
 
     # Fill outline color
     if 'fill-outline-color' not in json_paint:
@@ -187,14 +189,18 @@ def parse_fill_layer(json_layer):
             fill_outline_color = fill_color
         # Use fill color data defined property
         else:
+            fill_outline_color = None
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_color)
     else:
         json_fill_outline_color = json_paint['fill-outline-color']
         if isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color)
-        else:
+        elif isinstance(json_fill_outline_color, dict):
             fill_outline_color = None
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_outline_color)
+        else:
+            fill_outline_color = None
+            print(f"Skipping non-implemented color expression {json_fill_outline_color}")
 
     # Fill opacity
     if 'fill-opacity' not in json_paint:
@@ -332,6 +338,7 @@ def get_color_as_hsla_components(qcolor):
 
 
 def parse_interpolate_color_by_zoom(json_obj):
+    base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']
     # Bottom color
     bz = stops[0][0]
@@ -339,22 +346,42 @@ def parse_interpolate_color_by_zoom(json_obj):
     bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
     case_str = f"CASE " \
                f"WHEN @zoom_level < {bz} THEN color_hsla({bc_hue}, {bc_sat}, {bc_light}, {bc_alpha}) "
-    for i in range(len(stops)-1):
-        # Step bottom zoom
-        bz = stops[i][0]
-        # Step top zoom
-        tz = stops[i+1][0]
-        bottom_color = parse_color(stops[i][1])
-        top_color = parse_color(stops[i+1][1])
-        bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
-        tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
+    # Base = 1 -> scale_linear()
+    if base == 1:
+        for i in range(len(stops)-1):
+            # Step bottom zoom
+            bz = stops[i][0]
+            # Step top zoom
+            tz = stops[i+1][0]
+            bottom_color = parse_color(stops[i][1])
+            top_color = parse_color(stops[i+1][1])
+            bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
+            tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
 
-        when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
-                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}), " \
-                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}), " \
-                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}), " \
-                   f"scale_linear(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha})) "
-        case_str = case_str + when_str
+            when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
+                       f"scale_linear(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}), " \
+                       f"scale_linear(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}), " \
+                       f"scale_linear(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}), " \
+                       f"scale_linear(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha})) "
+            case_str = case_str + when_str
+    # Base != 1 -> scale_exp()
+    else:
+        for i in range(len(stops) - 1):
+            # Step bottom zoom
+            bz = stops[i][0]
+            # Step top zoom
+            tz = stops[i + 1][0]
+            bottom_color = parse_color(stops[i][1])
+            top_color = parse_color(stops[i + 1][1])
+            bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
+            tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
+
+            when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
+                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}, {base}), " \
+                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}, {base}), " \
+                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}, {base}), " \
+                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha}, {base})) "
+            case_str = case_str + when_str
     # Top color
     tz = stops[-1][0]
     top_color = parse_color(stops[-1][1])
