@@ -2,6 +2,7 @@ import os
 import sip
 import json
 import requests
+import webbrowser
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.core import *
@@ -82,6 +83,15 @@ class MapDataItem(QgsDataItem):
             remove_action = QAction(QIcon(), 'Remove', parent)
             remove_action.triggered.connect(self._remove)
             actions.append(remove_action)
+
+            if 'customize_url' in self._dataset:
+                separator = QAction(QIcon(), '', parent)
+                separator.setSeparator(True)
+                actions.append(separator)
+
+                open_customize_url_action = QAction(QIcon(), 'Customize in Cloud', parent)
+                open_customize_url_action.triggered.connect(self._open_customize_url)
+                actions.append(open_customize_url_action)
 
         return actions
 
@@ -324,6 +334,10 @@ class MapDataItem(QgsDataItem):
         selectedmaps.remove(self._name)
         smanager.store_setting('selectedmaps', selectedmaps)
         self.refreshConnections()
+
+    def _open_customize_url(self):
+        customize_url = self._dataset.get("customize_url")
+        webbrowser.open(customize_url)
 
     def _openConfigueDialog(self):
         configue_dialog = ConfigueDialog()
