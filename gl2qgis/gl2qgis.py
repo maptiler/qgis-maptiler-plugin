@@ -387,6 +387,9 @@ def parse_fill_layer(json_layer):
             # Use data defined property
             fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
+            if json_layer['id'] == "landuse_residential":
+                print(json_fill_color)
+                print(dd_properties[QgsSymbolLayer.PropertyFillColor])
         elif isinstance(json_fill_color, list):
             # Use data defined property
             fill_color = None
@@ -532,7 +535,7 @@ def parse_line_layer(json_layer):
         json_dasharray = json_paint['line-dasharray']
         if isinstance(json_dasharray, list):
             dash_vector = [i * PX_TO_MM for i in json_dasharray]
-        if isinstance(json_dasharray, dict):
+        elif isinstance(json_dasharray, dict):
             # TODO improve parsing (use PropertyCustomDash?)
             dash_vector = [i * PX_TO_MM for i in json_dasharray["stops"][-1][1]]
         else:
