@@ -255,24 +255,37 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
 
 
 def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> str:
-    case_str = "CASE"
+    # Bottom zoom and value
+    bz = stops[0][0]
+    bv = stops[0][1]
+    case_str = f"CASE WHEN @zoom_level <= {bz} THEN {bv} "
     if base == 1:
         # base = 1 -> scale_linear
         for i in range(len(stops)-1):
-            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
-                           f"THEN scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
-                           f"{stops[i][1]}, {stops[i+1][1]}) " \
+            # Bottom zoom and value
+            bz = stops[i][0]
+            bv = stops[i][1]
+            # Top zoom and value
+            tz = stops[i+1][0]
+            tv = stops[i+1][1]
+            interval_str = f" WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
+                           f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
     else:
         # base != 1 -> scale_exp
         for i in range(len(stops)-1):
-            interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
-                           f"THEN scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
-                           f"{stops[i][1]}, {stops[i+1][1]}, {base}) " \
+            # Bottom zoom and value
+            bz = stops[i][0]
+            bv = stops[i][1]
+            # Top zoom and value
+            tz = stops[i + 1][0]
+            tv = stops[i + 1][1]
+            interval_str = f" WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
+                           f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
-    case_str = case_str + " END"
+    case_str = case_str + f"ELSE {tv} END"
     return case_str
 
 
@@ -386,7 +399,8 @@ def parse_interpolate_color_by_zoom(json_obj):
     tz = stops[-1][0]
     top_color = parse_color(stops[-1][1])
     tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
-    end_string = f"WHEN @zoom_level >= {tz} THEN color_hsla({tc_hue}, {tc_sat}, {tc_light}, {tc_alpha}) END"
+    end_string = f"WHEN @zoom_level >= {tz} THEN color_hsla({tc_hue}, {tc_sat}, {tc_light}, {tc_alpha}) " \
+                 f"ELSE color_hsla({tc_hue}, {tc_sat}, {tc_light}, {tc_alpha}) END"
     case_str = case_str + end_string
 
     return case_str
@@ -660,17 +674,18 @@ def parse_background(bg_layer_data: dict):
         sym.symbolLayer(0).setStrokeColor(QColor("transparent"))
         # Parse fill color
         json_background_color = json_paint.get("background-color")
-        if not isinstance(json_background_color, str):
+        if isinstance(json_background_color, dict):
             # TODO implement color of type dict
             bg_color_expr = parse_interpolate_color_by_zoom(json_background_color)
-            # print("###########")
-            # print(bg_color_expr)
             fill_symbol = sym.symbolLayer(0)
             fill_symbol.setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor,
                                                QgsProperty.fromExpression(bg_color_expr))
-        else:
+        elif isinstance(json_background_color, str):
             bg_color = parse_color(json_background_color)
             sym.symbolLayer(0).setColor(bg_color)
+        else:
+            print(f"Skipping not implemented expression for background color: "
+                  f"{json_background_color} , {type(json_background_color)}")
         if "background-opacity" in json_paint:
             json_background_opacity = json_paint.get("background-opacity")
             bg_opacity = parse_opacity(json_background_opacity)
