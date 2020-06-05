@@ -79,10 +79,9 @@ class AddConnectionDialog(QtWidgets.QDialog):
 
     def _accepted(self):
         if self.ui.tabWidget.currentIndex() == 0:
-            self._maptiler_tab_action()
-        else:
             self._custom_tab_action()
-
+        else:
+            self._maptiler_tab_action()
         self.close()
 
     def _rejected(self):
