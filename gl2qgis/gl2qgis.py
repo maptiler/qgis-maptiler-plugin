@@ -142,6 +142,7 @@ def parse_expression(json_expr):
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
     elif op == 'match':
+        # TODO implement match operator
         print(f"Skipping not implemented operator {op}")
         return
 
@@ -172,15 +173,21 @@ def parse_fill_layer(json_layer):
     else:
         json_fill_color = json_paint['fill-color']
         if not isinstance(json_fill_color, str):
+            # Use data defined property
             fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
-            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_color)
         else:
+            # Use simple string color
             fill_color = parse_color(json_fill_color)
 
     # Fill outline color
     if 'fill-outline-color' not in json_paint:
-        fill_outline_color = fill_color
+        # Use fill_color simple string if available
+        if fill_color:
+            fill_outline_color = fill_color
+        # Use fill color data defined property
+        else:
+            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_fill_color)
     else:
         json_fill_outline_color = json_paint['fill-outline-color']
         if isinstance(json_fill_outline_color, str):
@@ -191,7 +198,7 @@ def parse_fill_layer(json_layer):
 
     # Fill opacity
     if 'fill-opacity' not in json_paint:
-        fill_opacity = 1.0
+        fill_opacity = None
     else:
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
@@ -201,7 +208,7 @@ def parse_fill_layer(json_layer):
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         else:
-            fill_opacity = 1.0
+            fill_opacity = None
             print(f"Could not parse opacity: {json_fill_opacity}")
 
     # TODO: fill-translate
@@ -226,7 +233,7 @@ def parse_fill_layer(json_layer):
 
 def parse_interpolate_by_zoom(json_obj, multiplier=1):
     base = json_obj['base'] if 'base' in json_obj else 1
-    stops = json_obj['stops']  # TODO: use intermediate stops
+    stops = json_obj['stops']
     if len(stops) <= 2:
         if base == 1:
             scale_expr = f"scale_linear(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
@@ -244,6 +251,7 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
 def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> str:
     case_str = "CASE"
     if base == 1:
+        # base = 1 -> scale_linear
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
@@ -251,6 +259,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
     else:
+        # base != 1 -> scale_exp
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
@@ -262,8 +271,13 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
 
 
 def parse_interpolate_opacity_by_zoom(json_obj):
+    """
+    Interpolates opacity with either scale_linear() or scale_exp() (depending on base value).
+    For json_obj with intermediate stops it uses parse_opacity_stops() function.
+    It uses QGIS set_color_part() function to set alpha component of color.
+    """
     base = json_obj['base'] if 'base' in json_obj else 1
-    stops = json_obj['stops']  # TODO: use intermediate stops
+    stops = json_obj['stops']
     if len(stops) <= 2:
         if base == 1:
             scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
@@ -277,8 +291,13 @@ def parse_interpolate_opacity_by_zoom(json_obj):
 
 
 def parse_opacity_stops(base: (int, float), stops: list) -> str:
+    """
+    Takes values from stops and uses either scale_linear() or scale_exp() functions
+    to interpolate alpha component of color.
+    """
     case_str = "CASE"
     if base == 1:
+        # base = 1 -> scale_linear
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
@@ -286,6 +305,7 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
                            f"{stops[i][1]}, {stops[i+1][1]})"
             case_str = case_str + f"{interval_str}"
     else:
+        # base != 1 -> scale_expr
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
@@ -297,6 +317,13 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
 
 
 def get_color_as_hsla_components(qcolor):
+    """
+    Takes QColor object and returns HSLA components in required format for QGIS color_hsla() function.
+    hue: an integer value from 0 to 360,
+    saturation: an integer value from 0 to 100,
+    lightness: an integer value from 0 to 100,
+    alpha: an integer value from 0 (completely transparent) to 255 (opaque).
+    """
     hue = qcolor.hslHue()
     sat = int(qcolor.hslSaturationF() * 100)
     lightness = int(qcolor.lightnessF() * 100)
@@ -370,7 +397,8 @@ def parse_line_layer(json_layer):
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
                 json_line_width, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
         else:
-            print("skipping non-float line-width", json_line_width)
+            print("skipping not implemented line-width expression",
+                  json_line_width, type(json_line_width))
 
     line_opacity = 1
     if 'line-opacity' in json_paint:
@@ -382,7 +410,7 @@ def parse_line_layer(json_layer):
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
         else:
-            print("skipping non-float line-opacity",
+            print("skipping not implemented line-opacity expression",
                   json_line_opacity, type(json_line_opacity))
 
     dash_vector = None
