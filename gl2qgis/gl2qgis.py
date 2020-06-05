@@ -407,12 +407,15 @@ def parse_line_layer(json_layer):
     dd_properties = {}
 
     json_line_color = json_paint['line-color']
-    if not isinstance(json_line_color, str):
+    if isinstance(json_line_color, dict):
         line_color = None
         dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_line_color)
         dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_color_by_zoom(json_line_color)
-    else:
+    elif isinstance(json_line_color, str):
         line_color = parse_color(json_line_color)
+    else:
+        print("skipping not implemented line-color expression",
+              json_line_color, type(json_line_color))
 
     line_width = 0
     if 'line-width' in json_paint:
@@ -503,6 +506,7 @@ def parse_symbol_layer(json_layer):
         if isinstance(json_text_size, (float, int)):
             text_size = json_text_size
         elif isinstance(json_text_size, dict):
+            text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
                 json_text_size, TEXT_SIZE_MULTIPLIER)
         else:
@@ -515,6 +519,9 @@ def parse_symbol_layer(json_layer):
         json_text_color = json_paint['text-color']
         if isinstance(json_text_color, str):
             text_color = parse_color(json_text_color)
+        elif isinstance(json_text_color, dict):
+            text_color = None
+            dd_properties[QgsPalLayerSettings.Color] = parse_interpolate_color_by_zoom(json_text_color)
         else:
             print("skipping non-string text-color", json_text_color)
 
@@ -535,10 +542,13 @@ def parse_symbol_layer(json_layer):
             print("skipping non-float text-halo-width", json_text_halo_width)
 
     format = QgsTextFormat()
-    format.setColor(text_color)
-    format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
+    if text_color:
+        format.setColor(text_color)
+    if text_size:
+        format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
     format.setSizeUnit(QgsUnitTypes.RenderPixels)
-    # format.setFont(font)
+    # if font:
+    #     format.setFont(font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
@@ -551,7 +561,10 @@ def parse_symbol_layer(json_layer):
     label_settings.fieldName = '"name:latin"'  # TODO: parse field name
     label_settings.isExpression = True
     label_settings.placement = QgsPalLayerSettings.OverPoint
-    label_settings.priority = min(text_size/3., 10.)
+    if text_size:
+        label_settings.priority = min(text_size/3., 10.)
+    else:
+        label_settings.priority = 10
     label_settings.setFormat(format)
 
     if dd_properties:
