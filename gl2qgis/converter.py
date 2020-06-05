@@ -109,6 +109,7 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
         if key == "opacity":
             parsed_opacity = 1.0
             if isinstance(value, dict):
+                # TODO parse_opacity() returns just mean of min a max step
                 parsed_opacity = parse_opacity(value)
             else:
                 parsed_opacity = value
