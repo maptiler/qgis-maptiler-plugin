@@ -89,7 +89,7 @@ class MapDataItem(QgsDataItem):
                 separator.setSeparator(True)
                 actions.append(separator)
 
-                open_customize_url_action = QAction(QIcon(), 'Customize in Cloud', parent)
+                open_customize_url_action = QAction(QIcon(), 'Customize in Cloud ↗', parent)
                 open_customize_url_action.triggered.connect(self._open_customize_url)
                 actions.append(open_customize_url_action)
 
