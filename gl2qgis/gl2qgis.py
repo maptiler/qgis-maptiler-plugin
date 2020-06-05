@@ -221,9 +221,7 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
 
 def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> str:
     # Bottom zoom and value
-    bz = stops[0][0]
-    bv = stops[0][1]
-    case_str = f"CASE WHEN @zoom_level <= {bz} THEN {bv} "
+    case_str = f"CASE "
     if base == 1:
         # base = 1 -> scale_linear
         for i in range(len(stops)-1):
@@ -233,7 +231,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Top zoom and value
             tz = stops[i+1][0]
             tv = stops[i+1][1]
-            interval_str = f" WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
+            interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
                            f"* {multiplier}"
             case_str = case_str + f"{interval_str}"
@@ -246,11 +244,11 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Top zoom and value
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
-            interval_str = f" WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
+            interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
                            f"* {multiplier}"
-            case_str = case_str + f"{interval_str}"
-    case_str = case_str + f"ELSE {tv} END"
+            case_str = case_str + f"{interval_str} "
+    case_str = case_str + f"END"
     return case_str
 
 
@@ -295,8 +293,8 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
                            f"scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
                            f"{stops[i][1]}, {stops[i+1][1]}, {base})"
-            case_str = case_str + f"{interval_str}"
-    case_str = case_str + " END"
+            case_str = case_str + f"{interval_str} "
+    case_str = case_str + "END"
     return case_str
 
 
@@ -323,7 +321,6 @@ def parse_interpolate_color_by_zoom(json_obj):
     bottom_color = parse_color(stops[0][1])
     bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
     case_str = f"CASE " \
-               f"WHEN @zoom_level < {bz} THEN color_hsla({bc_hue}, {bc_sat}, {bc_light}, {bc_alpha}) "
     # Base = 1 -> scale_linear()
     if base == 1:
         for i in range(len(stops)-1):
