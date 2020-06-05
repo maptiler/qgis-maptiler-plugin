@@ -530,7 +530,7 @@ def parse_line_layer(json_layer):
     if 'line-dasharray' in json_paint:
         json_dasharray = json_paint['line-dasharray']
         if isinstance(json_dasharray, list):
-            dash_vector = list(map(float, json_dasharray))
+            dash_vector = [i * PX_TO_MM for i in json_dasharray]
         if isinstance(json_dasharray, dict):
             print("skipping dasharray in dict", json_dasharray)
 
