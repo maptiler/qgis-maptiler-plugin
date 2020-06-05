@@ -532,7 +532,10 @@ def parse_line_layer(json_layer):
         if isinstance(json_dasharray, list):
             dash_vector = [i * PX_TO_MM for i in json_dasharray]
         if isinstance(json_dasharray, dict):
-            print("skipping dasharray in dict", json_dasharray)
+            # TODO improve parsing (use PropertyCustomDash?)
+            dash_vector = [i * PX_TO_MM for i in json_dasharray["stops"][-1][1]]
+        else:
+            print(f"Skipping non implemented dash vector expression: {json_dasharray}")
 
     pen_cap_style = Qt.FlatCap
     pen_join_style = Qt.MiterJoin
@@ -547,13 +550,14 @@ def parse_line_layer(json_layer):
     line_symbol = sym.symbolLayer(0)
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
-    if dash_vector is not None:
-        line_symbol.setCustomDashVector(dash_vector)
-        line_symbol.setUseCustomDashPattern(True)
-        line_symbol.setStrokeColor(QColor("transparent"))
+
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
+    if dash_vector:
+        line_symbol.setCustomDashVector(dash_vector)
+        line_symbol.setUseCustomDashPattern(True)
+        line_symbol.setStrokeColor(QColor("transparent"))
     if line_color:
         line_symbol.setColor(line_color)
     if line_width:
