@@ -17,7 +17,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from qgis.core import *
 
-PX_TO_MM = 0.254 * 0.5  # TODO: some good conversion ratio
+PX_TO_MM = 0.254  # TODO: some good conversion ratio
+TEXT_SIZE_MULTIPLIER = 1
+BUFFER_SIZE_MULTIPLIER = 2
+LINE_WIDTH_MULTIPLIER = 0.5
 
 
 def parse_color(json_color):
@@ -365,7 +368,7 @@ def parse_line_layer(json_layer):
         elif isinstance(json_line_width, dict):
             line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
-                json_line_width, PX_TO_MM)
+                json_line_width, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
         else:
             print("skipping non-float line-width", json_line_width)
 
@@ -413,7 +416,7 @@ def parse_line_layer(json_layer):
     if line_color:
         line_symbol.setColor(line_color)
     if line_width:
-        line_symbol.setWidth(line_width * PX_TO_MM)
+        line_symbol.setWidth(line_width * PX_TO_MM * LINE_WIDTH_MULTIPLIER)
     if line_opacity:
         sym.setOpacity(line_opacity)
 
@@ -438,8 +441,6 @@ def parse_symbol_layer(json_layer):
         return
 
     dd_properties = {}
-
-    TEXT_SIZE_MULTIPLIER = 1  # *2 because of high-res screen?
 
     text_size = 16
     if 'text-size' in json_layout:
@@ -487,7 +488,7 @@ def parse_symbol_layer(json_layer):
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
         buffer_settings.setEnabled(True)
-        buffer_settings.setSize(buffer_size * PX_TO_MM * TEXT_SIZE_MULTIPLIER)
+        buffer_settings.setSize(buffer_size * PX_TO_MM * BUFFER_SIZE_MULTIPLIER)
         buffer_settings.setColor(buffer_color)
         format.setBuffer(buffer_settings)
 
