@@ -187,9 +187,10 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
     if json_obj[2] != ["zoom"]:
         print(f"Skipping not implemented interpolation input {json_obj[2]}")
         return None
-    list_stops_values = json_obj[3:-1]
+    # Convert stops into list of lists
+    list_stops_values = json_obj[3:]
     it = iter(list_stops_values)
-    stops = zip(it, it)
+    stops = list(zip(it, it))
     d = {"base": base, "stops": stops}
     if prop_type == PropertyType.Color:
         expr = parse_interpolate_color_by_zoom(d)
@@ -522,7 +523,7 @@ def parse_line_layer(json_layer):
         elif isinstance(json_line_opacity, list):
             fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
-                json_line_opacity, PropertyType.Color)
+                json_line_opacity, PropertyType.Opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
         else:
             print("skipping not implemented line-opacity expression",
