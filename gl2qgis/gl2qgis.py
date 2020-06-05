@@ -155,7 +155,7 @@ def parse_json(json_str):
     return parse_layers(json_layers)
 
 
-def parse_opacity(json_opacity):
+def parse_opacity(json_opacity: dict) -> float:
     # TODO fix parsing opacity
     base = json_opacity['base'] if 'base' in json_opacity else 1
     stops = json_opacity['stops']
@@ -307,8 +307,10 @@ def get_color_as_hsla_components(qcolor):
     alpha: an integer value from 0 (completely transparent) to 255 (opaque).
     """
     hue = qcolor.hslHue()
-    sat = int(qcolor.hslSaturationF() * 100)
-    lightness = int(qcolor.lightnessF() * 100)
+    if hue < 0:
+        hue = 0
+    sat = int((qcolor.hslSaturation() / 255) * 100)
+    lightness = int((qcolor.lightness() / 255) * 100)
     alpha = qcolor.alpha()
     return hue, sat, lightness, alpha
 
@@ -317,10 +319,8 @@ def parse_interpolate_color_by_zoom(json_obj):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']
     # Bottom color
-    bz = stops[0][0]
-    bottom_color = parse_color(stops[0][1])
-    bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
-    case_str = f"CASE " \
+    case_str = f"CASE "
+
     # Base = 1 -> scale_linear()
     if base == 1:
         for i in range(len(stops)-1):
@@ -376,6 +376,7 @@ def parse_fill_layer(json_layer):
             f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
     dd_properties = {}
+
     # Fill color
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
@@ -754,7 +755,9 @@ def parse_background(bg_layer_data: dict):
                   f"{json_background_color} , {type(json_background_color)}")
         if "background-opacity" in json_paint:
             json_background_opacity = json_paint.get("background-opacity")
-            bg_opacity = parse_opacity(json_background_opacity)
-            sym.setOpacity(bg_opacity)
+            if isinstance(json_background_opacity, dict):
+                bg_opacity = parse_opacity(json_background_opacity)
+            elif isinstance(json_background_opacity, (int, float)):
+                sym.setOpacity(json_background_opacity)
         renderer = QgsSingleSymbolRenderer(sym)
     return renderer
