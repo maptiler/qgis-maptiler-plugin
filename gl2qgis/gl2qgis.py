@@ -510,6 +510,9 @@ def parse_line_layer(json_layer):
         json_line_opacity = json_paint['line-opacity']
         if isinstance(json_line_opacity, (float, int)):
             line_opacity = float(json_line_opacity)
+        elif isinstance(json_line_opacity, (dict, list)) and QgsSymbolLayer.PropertyFillColor in dd_properties:
+            print(f"Could not parse opacity of layer {json_layer['id']},"
+                  f" opacity already defined in: {json_paint['line-color']}")
         elif isinstance(json_line_opacity, dict):
             fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
