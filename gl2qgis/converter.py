@@ -30,6 +30,7 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
         layer_source = layer.get("source")
         if layer_source not in source_order:
             source_order.append(layer.get("source"))
+    source_order.reverse()
 
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}

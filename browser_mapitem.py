@@ -206,7 +206,8 @@ class MapDataItem(QgsDataItem):
         # Add other layers from sources
         sources = converter.get_sources_dict_from_style_json(
             style_json_data)
-        for source_name, source_data in sources.items():
+        ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
+        for source_name, source_data in ordered_sources.items():
             url = "type=xyz&url=" + source_data["zxy_url"]
 
             if source_data["type"] == "vector":
