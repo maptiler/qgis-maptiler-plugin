@@ -674,7 +674,7 @@ def parse_layers(json_layers):
     for json_layer in json_layers:
         layer_type = json_layer['type']
         if layer_type == 'background':
-            continue   # TODO: parse background color
+            continue
         style_id = json_layer['id']
         layer_name = json_layer['source-layer']
         min_zoom = json_layer['minzoom'] if 'minzoom' in json_layer else -1
