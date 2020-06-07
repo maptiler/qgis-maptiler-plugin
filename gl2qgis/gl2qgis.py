@@ -387,9 +387,6 @@ def parse_fill_layer(json_layer):
             # Use data defined property
             fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
-            if json_layer['id'] == "landuse_residential":
-                print(json_fill_color)
-                print(dd_properties[QgsSymbolLayer.PropertyFillColor])
         elif isinstance(json_fill_color, list):
             # Use data defined property
             fill_color = None
@@ -426,23 +423,21 @@ def parse_fill_layer(json_layer):
             print(f"Skipping non-implemented color expression {json_fill_outline_color}")
 
     # Fill opacity
-    if 'fill-opacity' not in json_paint:
-        fill_opacity = None
-    else:
+    fill_opacity = None
+    if 'fill-opacity' in json_paint:
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
+        elif isinstance(json_fill_opacity, (dict, list)) and QgsSymbolLayer.PropertyFillColor in dd_properties:
+            print(f"Could not parse opacity, opacity already defined in: {json_fill_color}")
         elif isinstance(json_fill_opacity, dict):
-            fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         elif isinstance(json_fill_opacity, list):
-            fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
                 json_fill_opacity, PropertyType.Opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
         else:
-            fill_opacity = None
             print(f"Could not parse opacity: {json_fill_opacity}")
 
     # TODO: fill-translate
