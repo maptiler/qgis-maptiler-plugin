@@ -17,6 +17,21 @@ from .gl2qgis import parse_layers, parse_background, parse_opacity
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
+    # Get order of sources
+    # TODO solve case when sources order is mixed like this:
+    # Layer 1: Source 1
+    # Layer 2: Source 2
+    # Layer 3: Source 1
+    layers = style_json_data.get("layers")
+    source_order = []
+    for layer in layers:
+        if "source" not in layer:
+            continue
+        layer_source = layer.get("source")
+        if layer_source not in source_order:
+            source_order.append(layer.get("source"))
+    source_order.reverse()
+
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
     for source_name, source_data in layer_sources.items():
@@ -33,7 +48,8 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 
         source_type = source_data.get("type")
         source_zxy_dict[source_name] = {
-            "name": source_name, "zxy_url": layer_zxy_url, "type": source_type}
+            "name": source_name, "zxy_url": layer_zxy_url,
+            "type": source_type, "order": source_order.index(source_name)}
 
     return source_zxy_dict
 

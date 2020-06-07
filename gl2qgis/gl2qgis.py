@@ -155,7 +155,7 @@ def parse_json(json_str):
     return parse_layers(json_layers)
 
 
-def parse_opacity(json_opacity):
+def parse_opacity(json_opacity: dict) -> float:
     # TODO fix parsing opacity
     base = json_opacity['base'] if 'base' in json_opacity else 1
     stops = json_opacity['stops']
@@ -170,7 +170,7 @@ class PropertyType(enum.Enum):
     Opacity = 3
 
 
-def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier=1):
+def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier: float = 1):
     """
     Interpolates list that starts with interpolate function.
     """
@@ -307,8 +307,10 @@ def get_color_as_hsla_components(qcolor):
     alpha: an integer value from 0 (completely transparent) to 255 (opaque).
     """
     hue = qcolor.hslHue()
-    sat = int(qcolor.hslSaturationF() * 100)
-    lightness = int(qcolor.lightnessF() * 100)
+    if hue < 0:
+        hue = 0
+    sat = int((qcolor.hslSaturation() / 255) * 100)
+    lightness = int((qcolor.lightness() / 255) * 100)
     alpha = qcolor.alpha()
     return hue, sat, lightness, alpha
 
@@ -317,10 +319,8 @@ def parse_interpolate_color_by_zoom(json_obj):
     base = json_obj['base'] if 'base' in json_obj else 1
     stops = json_obj['stops']
     # Bottom color
-    bz = stops[0][0]
-    bottom_color = parse_color(stops[0][1])
-    bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
-    case_str = f"CASE " \
+    case_str = f"CASE "
+
     # Base = 1 -> scale_linear()
     if base == 1:
         for i in range(len(stops)-1):
@@ -376,7 +376,9 @@ def parse_fill_layer(json_layer):
             f'Style layer {json_layer["id"]} has not paint property, skipping...')
         return
     dd_properties = {}
+
     # Fill color
+    fill_color = None
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
         return
@@ -384,11 +386,9 @@ def parse_fill_layer(json_layer):
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
-            fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
         elif isinstance(json_fill_color, list):
             # Use data defined property
-            fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
                 json_fill_color, PropertyType.Color)
         elif isinstance(json_fill_color, str):
@@ -422,23 +422,22 @@ def parse_fill_layer(json_layer):
             print(f"Skipping non-implemented color expression {json_fill_outline_color}")
 
     # Fill opacity
-    if 'fill-opacity' not in json_paint:
-        fill_opacity = None
-    else:
+    fill_opacity = None
+    if 'fill-opacity' in json_paint:
         json_fill_opacity = json_paint['fill-opacity']
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
+        elif isinstance(json_fill_opacity, (dict, list)) and QgsSymbolLayer.PropertyFillColor in dd_properties:
+            print(f"Could not set opacity of layer {json_layer['id']}, "
+                  f"opacity already defined in: {json_fill_color}")
         elif isinstance(json_fill_opacity, dict):
-            fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = parse_interpolate_opacity_by_zoom(json_fill_opacity)
         elif isinstance(json_fill_opacity, list):
-            fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
                 json_fill_opacity, PropertyType.Opacity)
             dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
         else:
-            fill_opacity = None
             print(f"Could not parse opacity: {json_fill_opacity}")
 
     # TODO: fill-translate
@@ -475,13 +474,12 @@ def parse_line_layer(json_layer):
 
     dd_properties = {}
 
+    line_color = None
     json_line_color = json_paint['line-color']
     if isinstance(json_line_color, dict):
-        line_color = None
         dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_line_color)
         dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
     elif isinstance(json_line_color, list):
-        line_color = None
         dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
             json_line_color, PropertyType.Color)
         dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
@@ -513,6 +511,9 @@ def parse_line_layer(json_layer):
         json_line_opacity = json_paint['line-opacity']
         if isinstance(json_line_opacity, (float, int)):
             line_opacity = float(json_line_opacity)
+        elif isinstance(json_line_opacity, (dict, list)) and QgsSymbolLayer.PropertyFillColor in dd_properties:
+            print(f"Could not set opacity of layer {json_layer['id']},"
+                  f" opacity already defined in: {json_paint['line-color']}")
         elif isinstance(json_line_opacity, dict):
             fill_opacity = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_opacity_by_zoom(json_line_opacity)
@@ -530,9 +531,12 @@ def parse_line_layer(json_layer):
     if 'line-dasharray' in json_paint:
         json_dasharray = json_paint['line-dasharray']
         if isinstance(json_dasharray, list):
-            dash_vector = list(map(float, json_dasharray))
-        if isinstance(json_dasharray, dict):
-            print("skipping dasharray in dict", json_dasharray)
+            dash_vector = [i * PX_TO_MM for i in json_dasharray]
+        elif isinstance(json_dasharray, dict):
+            # TODO improve parsing (use PropertyCustomDash?)
+            dash_vector = [i * PX_TO_MM for i in json_dasharray["stops"][-1][1]]
+        else:
+            print(f"Skipping non implemented dash vector expression: {json_dasharray}")
 
     pen_cap_style = Qt.FlatCap
     pen_join_style = Qt.MiterJoin
@@ -547,13 +551,14 @@ def parse_line_layer(json_layer):
     line_symbol = sym.symbolLayer(0)
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
-    if dash_vector is not None:
-        line_symbol.setCustomDashVector(dash_vector)
-        line_symbol.setUseCustomDashPattern(True)
-        line_symbol.setStrokeColor(QColor("transparent"))
+
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
+    if dash_vector:
+        line_symbol.setCustomDashVector(dash_vector)
+        line_symbol.setUseCustomDashPattern(True)
+        line_symbol.setStrokeColor(QColor("transparent"))
     if line_color:
         line_symbol.setColor(line_color)
     if line_width:
@@ -671,7 +676,7 @@ def parse_layers(json_layers):
     for json_layer in json_layers:
         layer_type = json_layer['type']
         if layer_type == 'background':
-            continue   # TODO: parse background color
+            continue
         style_id = json_layer['id']
         layer_name = json_layer['source-layer']
         min_zoom = json_layer['minzoom'] if 'minzoom' in json_layer else -1
@@ -750,7 +755,9 @@ def parse_background(bg_layer_data: dict):
                   f"{json_background_color} , {type(json_background_color)}")
         if "background-opacity" in json_paint:
             json_background_opacity = json_paint.get("background-opacity")
-            bg_opacity = parse_opacity(json_background_opacity)
-            sym.setOpacity(bg_opacity)
+            if isinstance(json_background_opacity, dict):
+                bg_opacity = parse_opacity(json_background_opacity)
+            elif isinstance(json_background_opacity, (int, float)):
+                sym.setOpacity(json_background_opacity)
         renderer = QgsSingleSymbolRenderer(sym)
     return renderer

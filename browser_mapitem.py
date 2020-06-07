@@ -206,7 +206,8 @@ class MapDataItem(QgsDataItem):
         # Add other layers from sources
         sources = converter.get_sources_dict_from_style_json(
             style_json_data)
-        for source_name, source_data in sources.items():
+        ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
+        for source_name, source_data in ordered_sources.items():
             url = "type=xyz&url=" + source_data["zxy_url"]
 
             if source_data["type"] == "vector":
@@ -217,13 +218,13 @@ class MapDataItem(QgsDataItem):
                 vector.setRenderer(renderer)
                 vector.setAttribution(attribution_text)
                 proj.addMapLayer(vector, False)
-                target_node.insertLayer(0, vector)
+                target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
                 # TODO solve layer style
                 raster = QgsRasterLayer(url, source_name, "wms")
                 raster.setAttribution(attribution_text)
                 proj.addMapLayer(raster, False)
-                target_node.insertLayer(0, raster)
+                target_node.insertLayer(source_data["order"], raster)
             elif source_data["type"] == "raster":
                 rlayers = converter.get_source_layers_by(
                     source_name, style_json_data)
@@ -243,7 +244,7 @@ class MapDataItem(QgsDataItem):
                         ls.writeToLayer(raster)
                     raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
-                    target_node.insertLayer(0, raster)
+                    target_node.insertLayer(source_data["order"], raster)
 
         # Add background layer as last if exists
         bg_renderer = converter.get_bg_renderer(style_json_data)
