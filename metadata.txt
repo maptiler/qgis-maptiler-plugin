@@ -23,7 +23,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python, maptiler, raster, vector, tile
+tags=python, maptiler,  openmaptiles, osm, openstreetmap, raster, vector, tile, wmts, tilejson, mapbox, gl, style, geocoding, basemaps, vector-tiles, geojson, basemap, tiles
 
 homepage=https://github.com/maptiler/qgis-maptiler-plugin
 category=Web
