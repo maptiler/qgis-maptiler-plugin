@@ -170,7 +170,7 @@ class PropertyType(enum.Enum):
     Opacity = 3
 
 
-def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier=1):
+def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier: float = 1):
     """
     Interpolates list that starts with interpolate function.
     """
@@ -378,6 +378,7 @@ def parse_fill_layer(json_layer):
     dd_properties = {}
 
     # Fill color
+    fill_color = None
     if 'fill-color' not in json_paint:
         print("skipping fill without fill-color", json_paint)
         return
@@ -385,11 +386,9 @@ def parse_fill_layer(json_layer):
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
-            fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_fill_color)
         elif isinstance(json_fill_color, list):
             # Use data defined property
-            fill_color = None
             dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
                 json_fill_color, PropertyType.Color)
         elif isinstance(json_fill_color, str):
@@ -474,13 +473,12 @@ def parse_line_layer(json_layer):
 
     dd_properties = {}
 
+    line_color = None
     json_line_color = json_paint['line-color']
     if isinstance(json_line_color, dict):
-        line_color = None
         dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_color_by_zoom(json_line_color)
         dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
     elif isinstance(json_line_color, list):
-        line_color = None
         dd_properties[QgsSymbolLayer.PropertyFillColor] = parse_interpolate_list_by_zoom(
             json_line_color, PropertyType.Color)
         dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
