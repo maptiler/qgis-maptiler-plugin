@@ -660,7 +660,7 @@ def parse_symbol_layer(json_layer):
         symbol_placement = json_layout['symbol-placement']
         if symbol_placement == 'line':
             label_settings.placement = QgsPalLayerSettings.Curved
-            label_settings.placementFlags = QgsPalLayerSettings.LinePlacementFlags.OnLine
+            label_settings.placementFlags = 1 #LinePlacementFlags.OnLine
             wkb_type = QgsWkbTypes.LineGeometry
         
     if text_size:
