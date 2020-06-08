@@ -114,7 +114,10 @@
    <item>
     <widget class="QLabel" name="label_5">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Read more &lt;a href=&quot;https://www.maptiler.com/cloud/qgis&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;about this plugin.&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Read more &lt;a href=&quot;https://www.maptiler.com/qgis-plugin/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;about this plugin.&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+     </property>
+    <property name="openExternalLinks">
+      <bool>true</bool>
      </property>
     </widget>
    </item>
