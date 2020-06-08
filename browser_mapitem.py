@@ -16,7 +16,6 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
-SPRITE_IMGS_PATH = os.path.join(DATA_PATH, "sprites")
 
 
 class MapDataItem(QgsDataItem):
