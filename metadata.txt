@@ -5,7 +5,7 @@
 [general]
 name=MapTiler
 qgisMinimumVersion=3.0
-description=Customizable street and satellite base maps.
+description=Customizable street and satellite base maps
 version=1.0.0
 author=MapTiler
 email=info@maptiler.com
