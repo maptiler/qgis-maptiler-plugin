@@ -1,8 +1,8 @@
 # QGIS MapTiler Plugin
 
-Simply add global base maps to QGIS. This plugin adds OpenStreetMap data with OpenMapTiles project. Maps for this plugin are available from the MapTiler Cloud. Customize look and feel of maps or import GL Json styles ot TileJSON.
+Simply add global base maps to QGIS. This plugin adds OpenStreetMap data with OpenMapTiles project. Maps for this plugin are available from the MapTiler Cloud. Customize look and feel of maps or import GL JSON styles of TileJSON.
 
-Homepage: https://www.maptiler.com/qgis-plugin/
+Homepage: https://maptiler.link/qgisplugin
 
 <!-- TOC -->
 
@@ -23,7 +23,7 @@ Homepage: https://www.maptiler.com/qgis-plugin/
 
 There are two ways to install this plugin.
 
-1. From official QGIS Plugin Repository - see step-by-step guide at https://www.maptiler.com/qgis-plugin/#install
+1. From official QGIS Plugin Repository - see step-by-step guide at https://maptiler.link/qgisplugin
 
 2. From [Zipfile](https://github.com/maptiler/qgis-maptiler-plugin/archive/master.zip) of this repository
 
@@ -72,7 +72,7 @@ For **vector tiles** you can add either URL to style.json or TileJSON. Note that
 
 ### Customize quickly the look&feel of the base maps 
 
-There is a possibility to simply adjust the default base maps in [Customize tool](https://cloud.maptiler.com/customize/) - via a context menu on right-click in QGIS.
+There is a possibility to simply adjust the default base maps in [Customize tool](https://maptiler.link/qgisstreets) - via a context menu on right-click in QGIS.
 
 Switch language, select layers, and change colors to match your brand and make a perfect map.
 
@@ -92,7 +92,7 @@ When you click on one place in the list, the map canvas will zoom to feature ext
 ### Access key
 
 This plugin needs your access key to the MapTiler Cloud that is available for free.
-You can get your own FREE access key at https://cloud.maptiler.com/account/keys
+You can get your own FREE access key at https://maptiler.link/qgiskeys
 
 Click on `Account...` from MapTiler plugin contextual menu to open the Account dialog window and to insert your access key.
 
