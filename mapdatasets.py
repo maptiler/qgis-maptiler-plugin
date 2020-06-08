@@ -2,12 +2,12 @@ STANDARD_DATASET = {
     'Basic': {
         'raster': r'https://api.maptiler.com/maps/basic/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/basic/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#basic'
+        'customize_url': r'https://maptiler.link/qgisbasic'
     },
     'Bright': {
         'raster': r'https://api.maptiler.com/maps/bright/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/bright/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#bright'
+        'customize_url': r'https://maptiler.link/qgisbright'
     },
     'Dark Matter': {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json?key=',
@@ -16,7 +16,7 @@ STANDARD_DATASET = {
     'Pastel': {
         'raster': r'https://api.maptiler.com/maps/pastel/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/pastel/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#pastel'
+        'customize_url': r'https://maptiler.link/qgis-pastel'
     },
     'Positron': {
         'raster': r'https://api.maptiler.com/maps/positron/256/tiles.json?key=',
@@ -25,32 +25,32 @@ STANDARD_DATASET = {
     'Satellite': {
         'raster': r'https://api.maptiler.com/maps/hybrid/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/hybrid/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#hybrid'
+        'customize_url': r'https://maptiler.link/qgishybrid'
     },
     'Streets': {
         'raster': r'https://api.maptiler.com/maps/streets/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/streets/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#streets'
+        'customize_url': r'https://maptiler.link/qgisstreets'
     },
     'Toner': {
         'raster': r'https://api.maptiler.com/maps/toner/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/toner/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#toner'
+        'customize_url': r'https://maptiler.link/qgistoner'
     },
     'Topo': {
         'raster': r'https://api.maptiler.com/maps/topo/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/topo/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#topo'
+        'customize_url': r'https://maptiler.link/qgistopo'
     },
     'Topographique': {
         'raster': r'https://api.maptiler.com/maps/topographique/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/topographique/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#topographique'
+        'customize_url': r'https://maptiler.link/qgistopographique'
     },
     'Voyager': {
         'raster': r'https://api.maptiler.com/maps/voyager/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/voyager/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#voyager'
+        'customize_url': r'https://maptiler.link/qgisvoyager'
     }
 }
 
@@ -88,21 +88,21 @@ LOCAL_UK_DATASET = {
     'UK OS Open Zoomstack Light': {
         'raster': r'https://api.maptiler.com/maps/uk-openzoomstack-light/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/uk-openzoomstack-light/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#uk-openzoomstack-light'
+        'customize_url': r'https://maptiler.link/qgislight'
     },
     'UK OS Open Zoomstack Night': {
         'raster': r'https://api.maptiler.com/maps/uk-openzoomstack-night/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/uk-openzoomstack-night/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#uk-openzoomstack-night'
+        'customize_url': r'https://maptiler.link/qgisosnight'
     },
     'UK OS Open Zoomstack Outdoor': {
         'raster': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/uk-openzoomstack-outdoor/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#uk-openzoomstack-outdoor'
+        'customize_url': r'https://maptiler.link/qgisosoutdoor'
     },
     'UK OS Open Zoomstack Road': {
         'raster': r'https://api.maptiler.com/maps/uk-openzoomstack-road/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/uk-openzoomstack-road/style.json?key=',
-        'customize_url': r'https://cloud.maptiler.com/customize/#uk-openzoomstack-road'
+        'customize_url': r'https://maptiler.link/qgisosroad'
     }
 }
