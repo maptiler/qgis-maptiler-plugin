@@ -109,7 +109,15 @@ class MapTilerGeocoderToolbar:
         center_lonlat = [center_as_qgspoint.x(), center_as_qgspoint.y()]
 
         # start Geocoding
-        locale = QSettings().value('locale/globalLocale')[0:2]
+        locale = 'en'
+        global_locale = QSettings().value('locale/globalLocale')
+        if global_locale:
+            locale = global_locale[0:2]
+        else:
+            user_locale = QSettings().value('locale/userLocale')
+            if user_locale:
+                locale = user_locale[0:2]
+        
         geocoder = MapTilerGeocoder(locale)
         geojson_dict = geocoder.geocoding(searchword, center_lonlat)
         return geojson_dict
