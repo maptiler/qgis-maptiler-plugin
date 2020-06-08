@@ -6,7 +6,7 @@
 name=MapTiler
 qgisMinimumVersion=3.0
 description=Show MapTiler cloud maps.
-version=0.1
+version=1.0.0
 author=MapTiler
 email=info@maptiler.com
 
@@ -25,7 +25,7 @@ hasProcessingProvider=no
 # Tags are comma separated with spaces allowed
 tags=python, maptiler,  open, map, maps, tile, tiles, openmaptiles, osm, openstreetmap, street, streets, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemap, basemaps, quick, vector-tiles, geojson, reader, service, services
 
-homepage=https://github.com/maptiler/qgis-maptiler-plugin
+homepage=https://www.maptiler.com/qgis-plugin/
 category=Web
 icon=./imgs/icon_maptiler.svg
 # experimental flag
