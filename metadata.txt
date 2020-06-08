@@ -23,9 +23,9 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=python, maptiler,  open, map, maps, tile, tiles, openmaptiles, osm, openstreetmap, street, streets, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemap, basemaps, quick, vector-tiles, geojson, reader, service, services
+tags=maptiler, open, map, maps, tiles, openmaptiles, osm, openstreetmap, streets, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemap, basemaps, quick, vector-tiles, geojson, reader, service, services, xyz
 
-homepage=https://www.maptiler.com/qgis-plugin/
+homepage=https://maptiler.link/qgisplugin
 category=Web
 icon=./imgs/icon_maptiler.svg
 # experimental flag
