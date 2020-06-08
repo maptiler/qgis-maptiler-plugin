@@ -645,10 +645,24 @@ def parse_symbol_layer(json_layer):
         buffer_settings.setColor(buffer_color)
         format.setBuffer(buffer_settings)
 
+    symbol_placement = 'point'
+    if 'symbol-placement' in json_layout:
+        #point, line, polygon
+        symbol_placement = json_layout['symbol-placement']
+
     label_settings = QgsPalLayerSettings()
     label_settings.fieldName = '"name:latin"'  # TODO: parse field name
     label_settings.isExpression = True
+
     label_settings.placement = QgsPalLayerSettings.OverPoint
+    wkb_type = QgsWkbTypes.PointGeometry
+    if 'symbol-placement' in json_layout:
+        symbol_placement = json_layout['symbol-placement']
+        if symbol_placement == 'line':
+            label_settings.placement = QgsPalLayerSettings.Curved
+            label_settings.placementFlags = QgsPalLayerSettings.LinePlacementFlags.OnLine
+            wkb_type = QgsWkbTypes.LineGeometry
+        
     if text_size:
         label_settings.priority = min(text_size/3., 10.)
     else:
@@ -663,7 +677,7 @@ def parse_symbol_layer(json_layer):
         label_settings.setDataDefinedProperties(prop_collection)
 
     lb = QgsVectorTileBasicLabelingStyle()
-    lb.setGeometryType(QgsWkbTypes.PointGeometry)
+    lb.setGeometryType(wkb_type)
     lb.setLabelSettings(label_settings)
     return lb
 
