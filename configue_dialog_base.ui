@@ -91,7 +91,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Access key for MapTiler Cloud is required.&lt;br/&gt;Get a FREE key at &lt;a href=&quot;https://cloud.maptiler.com/account/keys&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://cloud.maptiler.com/account/keys&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Access key for MapTiler Cloud is required.&lt;br/&gt;Get a FREE key at &lt;a href=&quot;https://cloud.maptiler.com/account/keys&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiskeys&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
@@ -114,7 +114,7 @@
    <item>
     <widget class="QLabel" name="label_5">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Read more &lt;a href=&quot;https://www.maptiler.com/qgis-plugin/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;about this plugin.&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Read more &lt;a href=&quot;https://maptiler.link/qgisplugin&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;about this plugin.&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
     <property name="openExternalLinks">
       <bool>true</bool>
