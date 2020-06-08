@@ -5,12 +5,12 @@
 [general]
 name=MapTiler
 qgisMinimumVersion=3.0
-description=Show MapTiler cloud maps.
+description=Customizable street and satellite base maps.
 version=1.0.0
 author=MapTiler
 email=info@maptiler.com
 
-about=Show MapTiler cloud maps.
+about=Load OpenStreetMap data with beautiful predefined maps or import your own GL JSON styles or TileJSON from any URL. Customize look and feel of map and export as a vector map.
 
 tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
 repository=https://github.com/maptiler/qgis-maptiler-plugin
