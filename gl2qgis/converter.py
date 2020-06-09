@@ -40,10 +40,19 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
         if source_name not in source_order:
             continue
         layer_zxy_url = ""
-        tile_json_url = source_data.get("url")
+        min_zoom = None
+        max_zoom = None
+        tile_json_url = None
+        if "url" in source_data:
+            tile_json_url = source_data.get("url")
         if tile_json_url:
             tile_json_data = json.loads(requests.get(tile_json_url).text)
-            layer_zxy_url = tile_json_data.get("tiles")[0]
+            if "tiles" in tile_json_data:
+                layer_zxy_url = tile_json_data.get("tiles")[0]
+            if "minzoom" in tile_json_data:
+                min_zoom = tile_json_data.get("minzoom")
+            if "maxzoom" in tile_json_data:
+                max_zoom = tile_json_data.get("maxzoom")
         # style.json can have no tiles.json
         else:
             if source_data.get("tiles") is None:
@@ -53,7 +62,9 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
         source_type = source_data.get("type")
         source_zxy_dict[source_name] = {
             "name": source_name, "zxy_url": layer_zxy_url,
-            "type": source_type, "order": source_order.index(source_name)}
+            "type": source_type, "order": source_order.index(source_name),
+            "maxzoom": max_zoom, "minzoom": min_zoom
+        }
 
     return source_zxy_dict
 
