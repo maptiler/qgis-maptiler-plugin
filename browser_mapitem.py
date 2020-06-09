@@ -208,8 +208,8 @@ class MapDataItem(QgsDataItem):
             style_json_data)
         ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
         for source_name, source_data in ordered_sources.items():
-            url = "type=xyz&url=" + source_data["zxy_url"]
-
+            zxy_url = source_data["zxy_url"]
+            url = f"type=xyz&url={zxy_url}"
             if source_data["type"] == "vector":
                 vector = QgsVectorTileLayer(url, source_name)
                 renderer, labeling = converter.get_renderer_labeling(
@@ -226,6 +226,11 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
             elif source_data["type"] == "raster":
+                # Add minzoom and maxzoom for rasters
+                if source_data["minzoom"] is not None and source_data["maxzoom"] is not None:
+                    min_zoom = source_data["minzoom"]
+                    max_zoom = source_data["maxzoom"]
+                    url = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}"
                 rlayers = converter.get_source_layers_by(
                     source_name, style_json_data)
                 for rlayer_json in rlayers:
