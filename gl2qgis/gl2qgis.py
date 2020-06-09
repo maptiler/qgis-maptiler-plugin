@@ -23,13 +23,16 @@ BUFFER_SIZE_MULTIPLIER = 2
 LINE_WIDTH_MULTIPLIER = 0.5
 
 
-def parse_color(json_color):
+def parse_color(json_color: str):
     """
     Parse color in one of these supported formats:
       - #fff or #ffffff
       - hsl(30, 19%, 90%) or hsla(30, 19%, 90%, 0.4)
       - rgb(10, 20, 30) or rgba(10, 20, 30, 0.5)
     """
+    if not isinstance(json_color, str):
+        print(f"Could not parse non-string color {json_color}, skipping.")
+        return QColor(0,0,0,0)
     if json_color[0] == '#':
         return QColor(json_color)
     elif json_color.startswith('hsla'):

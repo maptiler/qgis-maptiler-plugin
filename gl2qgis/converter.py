@@ -13,7 +13,8 @@
 
 import json
 import requests
-from .gl2qgis import parse_layers, parse_background, parse_opacity
+from .gl2qgis import parse_layers, parse_background, parse_interpolate_list_by_zoom
+from .gl2qgis import parse_interpolate_opacity_by_zoom, PropertyType
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -35,6 +36,9 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
     for source_name, source_data in layer_sources.items():
+        # For sources that are not used in layers
+        if source_name not in source_order:
+            continue
         layer_zxy_url = ""
         tile_json_url = source_data.get("url")
         if tile_json_url:
@@ -124,9 +128,11 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
 
         if key == "opacity":
             parsed_opacity = 1.0
-            if isinstance(value, dict):
+            if isinstance(value, list):
                 # TODO parse_opacity() returns just mean of min a max step
-                parsed_opacity = parse_opacity(value)
+                parsed_opacity = parse_interpolate_list_by_zoom(value, )
+            elif isinstance(value, dict):
+                parsed_opacity = parse_interpolate_opacity_by_zoom(value)
             else:
                 parsed_opacity = value
             styled_renderer.setOpacity(parsed_opacity)
