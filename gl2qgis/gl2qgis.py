@@ -17,8 +17,13 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from qgis.core import *
 
-PX_TO_MM = 0.254  # TODO: some good conversion ratio
-TEXT_SIZE_MULTIPLIER = 1
+# SCREEN SETTING
+screen = QgsApplication.primaryScreen()
+INCH = 25.4
+DPI = screen.physicalDotsPerInch()
+print(DPI)
+PX_TO_MM = INCH / DPI  # TODO: some good conversion ratio
+TEXT_SIZE_MULTIPLIER = 1.5
 BUFFER_SIZE_MULTIPLIER = 2
 LINE_WIDTH_MULTIPLIER = 0.5
 
