@@ -144,11 +144,21 @@ def parse_expression(json_expr):
             return "{} IN ({})".format(key, ", ".join(lst))
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+    elif op == 'get':
+        return parse_key(json_expr[1])
     elif op == 'match':
-        # TODO implement match operator
-        print(f"Skipping not implemented operator {op}")
+        attr = json_expr[1]
+        true_cond = json_expr[3]
+        false_cond = json_expr[4]
+        if len(json_expr[2]) > 1:
+            attr_value = tuple(json_expr[2])
+            return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
+        else:
+            attr_value = tuple(json_expr[2])
+            return f"if({attr}={attr_value}, {true_cond}, {false_cond}"
+    else:
+        print(f"Skipping {json_expr}")
         return
-
     raise ValueError(json_expr)
 
 
@@ -171,6 +181,7 @@ class PropertyType(enum.Enum):
     Color = 1
     Line = 2
     Opacity = 3
+    Text = 4
 
 
 def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier: float = 1):
@@ -200,7 +211,7 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
     d = {"base": base, "stops": stops}
     if prop_type == PropertyType.Color:
         expr = parse_interpolate_color_by_zoom(d)
-    elif prop_type == PropertyType.Line:
+    elif prop_type == PropertyType.Line or prop_type == PropertyType.Text:
         expr = parse_interpolate_by_zoom(d, multiplier)
     elif prop_type == PropertyType.Opacity:
         expr = parse_interpolate_opacity_by_zoom(d)
@@ -603,6 +614,10 @@ def parse_symbol_layer(json_layer):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
                 json_text_size, TEXT_SIZE_MULTIPLIER)
+        elif isinstance(json_text_size, list):
+            text_size = None
+            dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_list_by_zoom(
+                json_text_size, PropertyType.Text, TEXT_SIZE_MULTIPLIER)
         else:
             print("skipping non-float text-size", json_text_size)
 
