@@ -23,7 +23,7 @@ INCH = 25.4
 DPI = screen.physicalDotsPerInch()
 print(DPI)
 PX_TO_MM = INCH / DPI  # TODO: some good conversion ratio
-TEXT_SIZE_MULTIPLIER = 1.5
+TEXT_SIZE_MULTIPLIER = 1
 BUFFER_SIZE_MULTIPLIER = 2
 LINE_WIDTH_MULTIPLIER = 0.5
 
