@@ -21,10 +21,10 @@ from qgis.core import *
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
 # TODO use devicePixelRatio()
-DPI = screen.physicalDotsPerInch()
+dpi = screen.logicalDotsPerInch()
 deviceRatio = screen.devicePixelRatio()
 INCH = 25.4
-PX_TO_MM = INCH / DPI * deviceRatio
+PX_TO_MM = INCH / (dpi * deviceRatio)
 # deviceRatio = screen.devicePixelRatio()
 # PX_TO_MM = 0.266 * deviceRatio
 # PX_TO_MM = INCH / DPI  # TODO: some good conversion ratio
