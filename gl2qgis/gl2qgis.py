@@ -15,7 +15,7 @@ import enum
 import json
 import os
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
 
 PX_TO_MM = 0.254  # TODO: some good conversion ratio
@@ -616,7 +616,21 @@ def parse_symbol_layer(json_layer):
         else:
             print("skipping non-float text-size", json_text_size)
 
-    # TODO: text-font
+    text_font = None
+    if 'text-font' in json_layout:
+        json_text_font = json_layout['text-font']
+        if not isinstance(json_text_font, (str, list)):
+            print(f"Skipping non implemented text-font expression {json_text_font}")
+        else:
+            if isinstance(json_text_font, str):
+                font_name = json_text_font
+            elif isinstance(json_text_font, list):
+                font_name = json_text_font[0]
+            text_font = QFont(font_name)
+            if 'bold' in font_name.lower():
+                text_font.setBold(True)
+            if 'italic' in font_name.lower():
+                text_font.setItalic(True)
 
     text_color = Qt.black
     if 'text-color' in json_paint:
@@ -658,8 +672,8 @@ def parse_symbol_layer(json_layer):
     if text_size:
         format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
     format.setSizeUnit(QgsUnitTypes.RenderPixels)
-    # if font:
-    #     format.setFont(font)
+    if text_font:
+        format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
