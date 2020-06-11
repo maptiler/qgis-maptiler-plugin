@@ -206,11 +206,7 @@ class MapDataItem(QgsDataItem):
                                      attribution_text: str,):
         proj = QgsProject().instance()
 
-        try:
-            shutil.rmtree(SPRITES_PATH)
-        except:
-            print("skip remove sprites dir")
-        os.mkdir(SPRITES_PATH)
+        os.makedirs(SPRITES_PATH, exist_ok=True)
         converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
 
         # Add other layers from sources
