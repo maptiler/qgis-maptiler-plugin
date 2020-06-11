@@ -18,6 +18,7 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
+SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
 class MapDataItem(QgsDataItem):
@@ -205,8 +206,10 @@ class MapDataItem(QgsDataItem):
                                      attribution_text: str,):
         proj = QgsProject().instance()
 
-        SPRITES_PATH = os.path.join(DATA_PATH, "sprites")
-        shutil.rmtree(SPRITES_PATH)
+        try:
+            shutil.rmtree(SPRITES_PATH)
+        except:
+            print("skip remove sprites dir")
         os.mkdir(SPRITES_PATH)
         converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
 

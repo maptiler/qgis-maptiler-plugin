@@ -13,6 +13,7 @@
 """
 import enum
 import json
+import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor
 from qgis.core import *
@@ -382,10 +383,7 @@ def parse_fill_layer(json_layer):
 
     # Fill color
     fill_color = None
-    if 'fill-color' not in json_paint:
-        print("skipping fill without fill-color", json_paint)
-        return
-    else:
+    if 'fill-color' in json_paint:
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
@@ -408,7 +406,8 @@ def parse_fill_layer(json_layer):
         # Use fill color data defined property
         else:
             fill_outline_color = None
-            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
+            if QgsSymbolLayer.PropertyFillColor in dd_properties:
+                dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
     else:
         json_fill_outline_color = json_paint['fill-outline-color']
         if isinstance(json_fill_outline_color, str):
@@ -456,6 +455,13 @@ def parse_fill_layer(json_layer):
         fill_symbol.setColor(fill_color)
     if fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
+
+    #when fill-pattern exists, set and override sprite
+    fill_pattern = json_paint.get("fill-pattern")
+    if fill_pattern:
+        SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
+        fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
+        sym.changeSymbolLayer(0, fill_symbol)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
