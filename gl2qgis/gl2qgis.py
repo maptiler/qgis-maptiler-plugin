@@ -447,21 +447,23 @@ def parse_fill_layer(json_layer):
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
 
-    for dd_key, dd_expression in dd_properties.items():
-        fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
-    if fill_opacity:
-        sym.setOpacity(fill_opacity)
-    if fill_color:
-        fill_symbol.setColor(fill_color)
-    if fill_outline_color:
-        fill_symbol.setStrokeColor(fill_outline_color)
-
     #when fill-pattern exists, set and override sprite
     fill_pattern = json_paint.get("fill-pattern")
     if fill_pattern:
         SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
-        fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
-        sym.changeSymbolLayer(0, fill_symbol)
+        raster_fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
+        sym.appendSymbolLayer(raster_fill_symbol)
+
+    for dd_key, dd_expression in dd_properties.items():
+        fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+    if fill_opacity:
+        sym.setOpacity(fill_opacity)
+    if fill_outline_color:
+        fill_symbol.setStrokeColor(fill_outline_color)
+    if fill_color:
+        fill_symbol.setColor(fill_color)
+    else:
+        fill_symbol.setColor(parse_color("rgba(0, 0, 0, 0.0)"))
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
