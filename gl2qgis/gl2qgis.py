@@ -456,13 +456,18 @@ def parse_fill_layer(json_layer):
 
     for dd_key, dd_expression in dd_properties.items():
         fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+    
     if fill_opacity:
         sym.setOpacity(fill_opacity)
     if fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
+    else:
+        #fully transparent color
+        fill_symbol.setStrokeColor(parse_color("rgba(0, 0, 0, 0.0)"))
     if fill_color:
         fill_symbol.setColor(fill_color)
     else:
+        #fully transparent color
         fill_symbol.setColor(parse_color("rgba(0, 0, 0, 0.0)"))
 
     st = QgsVectorTileBasicRendererStyle()
