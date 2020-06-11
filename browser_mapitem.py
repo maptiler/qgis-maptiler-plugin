@@ -3,6 +3,7 @@ import sip
 import json
 import requests
 import webbrowser
+import shutil
 from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMessageBox
 from qgis.core import *
@@ -17,6 +18,7 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
+SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
 class MapDataItem(QgsDataItem):
@@ -197,11 +199,15 @@ class MapDataItem(QgsDataItem):
             self._add_vtlayer_from_tile_json(
                 tile_json_data, node_map, attribution_text)
 
+
     def _add_vtlayer_from_style_json(self,
                                      style_json_data: dict,
                                      target_node: QgsLayerTreeGroup,
                                      attribution_text: str,):
         proj = QgsProject().instance()
+
+        os.makedirs(SPRITES_PATH, exist_ok=True)
+        converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
 
         # Add other layers from sources
         sources = converter.get_sources_dict_from_style_json(
