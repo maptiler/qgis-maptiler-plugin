@@ -447,7 +447,7 @@ def parse_fill_layer(json_layer):
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
 
-    #when fill-pattern exists, set and override sprite
+    #when fill-pattern exists, set and insert RasterFillSymbolLayer
     fill_pattern = json_paint.get("fill-pattern")
     if fill_pattern:
         SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
@@ -462,13 +462,13 @@ def parse_fill_layer(json_layer):
     if fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
     else:
-        #fully transparent color
-        fill_symbol.setStrokeColor(parse_color("rgba(0, 0, 0, 0.0)"))
+        transparent_color = parse_color("rgba(0, 0, 0, 0.0)")
+        fill_symbol.setStrokeColor(transparent_color)
     if fill_color:
         fill_symbol.setColor(fill_color)
     else:
-        #fully transparent color
-        fill_symbol.setColor(parse_color("rgba(0, 0, 0, 0.0)"))
+        transparent_color = parse_color("rgba(0, 0, 0, 0.0)")
+        fill_symbol.setColor(transparent_color)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
