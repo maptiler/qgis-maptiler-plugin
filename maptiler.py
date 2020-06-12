@@ -77,6 +77,10 @@ class MapTiler:
 
         self._default_copyright = QgsProject.instance(
         ).readEntry("CopyrightLabel", "/Label")[0]
+        self._default_copyright_is_visible = QgsProject.instance(
+        ).readEntry("CopyrightLabel", "/Enabled")[0]
+
+        self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
 
     # noinspection PyMethodMayBeStatic
 
@@ -113,65 +117,90 @@ class MapTiler:
 
         self._deactivate_copyrights()
 
+    def _on_custom_project_loaded(self, a0, context):
+        copyright_label_in_the_project = None
+        copyright_enabled_in_the_project = False
+        copyright_nodes = a0.elementsByTagName("CopyrightLabel").at(0).childNodes()
+        for i in range(copyright_nodes.count()):
+            if copyright_nodes.at(i).nodeName() == "Label":
+                copyright_label_in_the_project = copyright_nodes.at(i).toElement().text()
+            if copyright_nodes.at(i).nodeName() == "Enabled":
+                if copyright_nodes.at(i).toElement().text() == "true":
+                    copyright_enabled_in_the_project = True
+            
+        self._default_copyright = copyright_label_in_the_project
+        self._default_copyright_is_visible = copyright_enabled_in_the_project
+
     def _activate_copyrights(self):
-        self.iface.layerTreeView().clicked.connect(
-            self._write_copyright_entries)
-        self.iface.layerTreeView().currentLayerChanged.connect(
-            self._write_copyright_entries)
+        self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
+        self.iface.layerTreeView().currentLayerChanged.connect(self._write_copyright_entries)
         self.proj.layersAdded.connect(self._write_copyright_entries)
         self.proj.layersRemoved.connect(self._write_copyright_entries)
 
     def _deactivate_copyrights(self):
-        self.iface.layerTreeView().clicked.disconnect(
-            self._write_copyright_entries)
-        self.iface.layerTreeView().currentLayerChanged.disconnect(
-            self._write_copyright_entries)
+        self.iface.layerTreeView().clicked.disconnect(self._write_copyright_entries)
+        self.iface.layerTreeView().currentLayerChanged.disconnect(self._write_copyright_entries)
         self.proj.layersAdded.disconnect(self._write_copyright_entries)
         self.proj.layersRemoved.disconnect(self._write_copyright_entries)
-        QgsProject.instance().writeEntry(
-            "CopyrightLabel", "/Label", self._default_copyright)
-        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
-        QMetaObject.invokeMethod(
-            self.iface.mainWindow(), "projectReadDecorationItems")
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
+        QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
-    def _write_copyright_entries(self):
-        copyrights_text = self._parse_copyrights()
+    def _write_copyright_entries(self, param):
+        is_adding = False
+        adding_layers = []
+        if isinstance(param, QgsMapLayer):
+            is_adding = True
+            adding_layers.append(param)
+        elif isinstance(param, list):
+            if isinstance(param[0], QgsMapLayer):
+                is_adding = True
+                adding_layers += param
+        
+        parsed_copyrights = self._parse_copyrights(adding_layers)
+        copyrights_text = parsed_copyrights
+        
+        #if user defined copyright exists
+        if self._default_copyright_is_visible:
+            copyrights_text += " " + self._default_copyright
+        
         # when no active MapTiler layer
-        if copyrights_text == '':
-            copyrights_text = self._default_copyright
-            QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
-            QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", False)
-
+        if parsed_copyrights.replace(' ', '') == '':
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
+            QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
         else:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", True)
         QgsProject.instance().writeEntry("CopyrightLabel", "/MarginH", 1)
         QgsProject.instance().writeEntry("CopyrightLabel", "/MarginV", 1)
-        QMetaObject.invokeMethod(
-            self.iface.mainWindow(), "projectReadDecorationItems")
+        QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
-    def _parse_copyrights(self):
+    def _parse_copyrights(self, adding_layers):
         copyrights = []
+        target_layers = []
+        target_layers += adding_layers
         root_group = self.iface.layerTreeView().layerTreeModel().rootGroup()
         for l in root_group.findLayers():
             # when invalid layer is in Browser
             if not isinstance(l.layer(), QgsMapLayer):
                 continue
-
             if l.isVisible():
-                attribution = l.layer().attribution()
-                attribution = re.sub(
-                    '<a.*?>|</a>', '', attribution).replace('&copy;', '©').replace('©', '!!!©')
-                parsed_attributions = attribution.split('!!!')
-                for attr in parsed_attributions:
-                    if attr == '':
-                        continue
+                target_layers.append(l.layer())
 
-                    if not attr in copyrights:
-                        copyrights.append(attr)
+        for l in target_layers:
+            attribution = l.attribution()
+            attribution = re.sub(
+                '<a.*?>|</a>', '', attribution).replace('&copy;', '©').replace('©', '!!!©')
+            parsed_attributions = attribution.split('!!!')
+            for attr in parsed_attributions:
+                if attr == '':
+                    continue
 
+                if not attr in copyrights:
+                    copyrights.append(attr)
+        
         return ' '.join(copyrights)
 
     # --------------------------------------------------------------------------
