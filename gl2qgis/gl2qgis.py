@@ -90,6 +90,8 @@ def parse_line_join(json_line_join):
 def parse_key(json_key):
     if json_key == '$type':
         return "_geom_type"
+    if isinstance(json_key, list):
+        return json_key[1]
     return '"{}"'.format(json_key)  # TODO: better escaping
 
 
@@ -146,17 +148,17 @@ def parse_expression(json_expr):
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
     elif op == 'get':
-        return parse_key(json_expr[1])
+        return parse_key(json_expr[1][1])
     elif op == 'match':
-        attr = json_expr[1]
+        attr = json_expr[1][1]
         true_cond = json_expr[3]
         false_cond = json_expr[4]
         if len(json_expr[2]) > 1:
             attr_value = tuple(json_expr[2])
             return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
         else:
-            attr_value = tuple(json_expr[2])
-            return f"if({attr}={attr_value}, {true_cond}, {false_cond}"
+            attr_value = json_expr[2][0]
+            return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
     else:
         print(f"Skipping {json_expr}")
         return
@@ -251,7 +253,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i+1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str}"
     else:
         # base != 1 -> scale_exp
@@ -264,7 +266,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
     return case_str
