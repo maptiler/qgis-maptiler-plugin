@@ -13,6 +13,11 @@
 
 import json
 import requests
+import io
+import os
+
+from PIL import Image
+
 from .gl2qgis import parse_layers, parse_background, parse_interpolate_list_by_zoom
 from .gl2qgis import parse_interpolate_opacity_by_zoom, PropertyType
 
@@ -140,8 +145,17 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
         if key == "opacity":
             parsed_opacity = 1.0
             if not isinstance(value, (str, float, int)):
-                parsed_opacity = 1.0
-                print(f"Could not parse raster opacity {value}, setting 1.0.")
+                
+                if isinstance(value, (dict)):
+                    #e.g. {'stops': [[1, 0.2], [13, 0.1], [16, 0]]}
+                    stops = value.get("stops")
+                    minzoom_opacity = stops[0][1]
+                    maxzoom_opacity = stops[-1][1]
+                    parsed_opacity = (minzoom_opacity + maxzoom_opacity) / 2
+                else:
+                    #list
+                    parsed_opacity = 1.0
+                    print(f"Could not parse raster opacity {value}, setting 1.0.")
             else:
                 parsed_opacity = float(value)
             styled_renderer.setOpacity(parsed_opacity)
@@ -150,3 +164,24 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
             styled_resampler = value
 
     return styled_renderer, styled_resampler
+
+
+def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
+    sprite_url = style_json_data.get("sprite")
+    if sprite_url is None:
+        return {}
+
+    sprite_json_dict = json.loads(requests.get(sprite_url + '.json').text)
+    sprite_img = Image.open(io.BytesIO(requests.get(sprite_url + '.png').content))
+    sprite_imgs_dict = {}
+
+    for key, value in sprite_json_dict.items():
+        left = int(value["x"])
+        top = int(value["y"])
+        right = left + int(value["width"])
+        bottom = top + int(value["height"])
+        cropped = sprite_img.crop((left, top, right, bottom))
+        sprite_imgs_dict[key] = cropped
+
+    for key, value in sprite_imgs_dict.items():
+        value.save(os.path.join(output_path, key + ".png"))

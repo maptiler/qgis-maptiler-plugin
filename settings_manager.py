@@ -30,6 +30,8 @@ class SettingsManager:
             self.load_setting(key)
 
     def store_setting(self, key, value):
+        if key == "apikey":
+            value = value.strip()
         qsettings = QSettings()
         qsettings.beginGroup(self.SETTING_GROUP)
         qsettings.setValue(key, value)

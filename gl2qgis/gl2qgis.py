@@ -13,8 +13,9 @@
 """
 import enum
 import json
+import os
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
 
 PX_TO_MM = 0.254  # TODO: some good conversion ratio
@@ -396,10 +397,7 @@ def parse_fill_layer(json_layer):
 
     # Fill color
     fill_color = None
-    if 'fill-color' not in json_paint:
-        print("skipping fill without fill-color", json_paint)
-        return
-    else:
+    if 'fill-color' in json_paint:
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
@@ -422,7 +420,8 @@ def parse_fill_layer(json_layer):
         # Use fill color data defined property
         else:
             fill_outline_color = None
-            dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
+            if QgsSymbolLayer.PropertyFillColor in dd_properties:
+                dd_properties[QgsSymbolLayer.PropertyStrokeColor] = dd_properties[QgsSymbolLayer.PropertyFillColor]
     else:
         json_fill_outline_color = json_paint['fill-outline-color']
         if isinstance(json_fill_outline_color, str):
@@ -462,14 +461,28 @@ def parse_fill_layer(json_layer):
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
 
+    #when fill-pattern exists, set and insert RasterFillSymbolLayer
+    fill_pattern = json_paint.get("fill-pattern")
+    if fill_pattern:
+        SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
+        raster_fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
+        sym.appendSymbolLayer(raster_fill_symbol)
+
     for dd_key, dd_expression in dd_properties.items():
         fill_symbol.setDataDefinedProperty(dd_key, QgsProperty.fromExpression(dd_expression))
+    
     if fill_opacity:
         sym.setOpacity(fill_opacity)
-    if fill_color:
-        fill_symbol.setColor(fill_color)
     if fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
+    else:
+        transparent_color = parse_color("rgba(0, 0, 0, 0.0)")
+        fill_symbol.setStrokeColor(transparent_color)
+    if fill_color:
+        fill_symbol.setColor(fill_color)
+    else:
+        transparent_color = parse_color("rgba(0, 0, 0, 0.0)")
+        fill_symbol.setColor(transparent_color)
 
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.PolygonGeometry)
@@ -621,7 +634,21 @@ def parse_symbol_layer(json_layer):
         else:
             print("skipping non-float text-size", json_text_size)
 
-    # TODO: text-font
+    text_font = None
+    if 'text-font' in json_layout:
+        json_text_font = json_layout['text-font']
+        if not isinstance(json_text_font, (str, list)):
+            print(f"Skipping non implemented text-font expression {json_text_font}")
+        else:
+            if isinstance(json_text_font, str):
+                font_name = json_text_font
+            elif isinstance(json_text_font, list):
+                font_name = json_text_font[0]
+            text_font = QFont(font_name)
+            if 'bold' in font_name.lower():
+                text_font.setBold(True)
+            if 'italic' in font_name.lower():
+                text_font.setItalic(True)
 
     text_color = Qt.black
     if 'text-color' in json_paint:
@@ -663,8 +690,8 @@ def parse_symbol_layer(json_layer):
     if text_size:
         format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
     format.setSizeUnit(QgsUnitTypes.RenderPixels)
-    # if font:
-    #     format.setFont(font)
+    if text_font:
+        format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
