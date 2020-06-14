@@ -147,7 +147,7 @@ class MapTiler:
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
-    def _write_copyright_entries(self):
+    def _write_copyright_entries(self, param):
         current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         if self._previous_copyright_text == "" and QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == 'true':
             self._default_copyright = current_copyrights_text
@@ -157,12 +157,22 @@ class MapTiler:
             self._default_copyright = current_copyrights_text
             self._default_copyright_is_visible = True
 
-        parsed_copyrights = self._parse_copyrights()
+        adding_layers = []
+        if isinstance(param, QgsMapLayer):
+            is_adding = True
+            adding_layers.append(param)
+        elif isinstance(param, list):
+            if isinstance(param[0], QgsMapLayer):
+                is_adding = True
+                adding_layers += param
+
+        parsed_copyrights = self._parse_copyrights(adding_layers=adding_layers)
         copyrights_to_text = []
         for c in parsed_copyrights:
             if c in self._default_copyright:
                 continue
             copyrights_to_text.append(c)
+        
         copyrights_text = ' '.join(copyrights_to_text)
         
         #if user defined copyright exists and visible
@@ -193,9 +203,10 @@ class MapTiler:
         current_copyrights_text = current_copyrights_text.strip()
         return current_copyrights_text
 
-    def _parse_copyrights(self):
+    def _parse_copyrights(self, adding_layers=[]):
         copyrights = []
         target_layers = []
+        target_layers += adding_layers
         root_group = self.iface.layerTreeView().layerTreeModel().rootGroup()
         for l in root_group.findLayers():
             # when invalid layer is in Browser
