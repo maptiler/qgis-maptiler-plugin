@@ -76,8 +76,10 @@ class MapTiler:
         self.pluginIsActive = False
 
         #copyright variables
-        self._default_copyright = ""
-        self._default_copyright_is_visible = False
+        self._is_copyright_written_by_plugin = False
+        self._previous_copyright_text = ""
+        self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+        self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == "true"
         self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
 
     # noinspection PyMethodMayBeStatic
@@ -145,22 +147,23 @@ class MapTiler:
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
-    def _write_copyright_entries(self, param):
-        if self._default_copyright == "":
-            self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-            self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0]
-        
-        """
-        adding_layers = []
-        if isinstance(param, QgsMapLayer):
-            adding_layers.append(param)
-        elif isinstance(param, list):
-            if isinstance(param[0], QgsMapLayer):
-                adding_layers += param
-        """
+    def _write_copyright_entries(self):
+        current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+        if self._previous_copyright_text == "" and QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == 'true':
+            self._default_copyright = current_copyrights_text
+            self._default_copyright_is_visible = True
+        elif not self._previous_copyright_text == current_copyrights_text:
+            print("copyright is over-written")
+            self._default_copyright = current_copyrights_text
+            self._default_copyright_is_visible = True
 
         parsed_copyrights = self._parse_copyrights()
-        copyrights_text = ' '.join(parsed_copyrights)
+        copyrights_to_text = []
+        for c in parsed_copyrights:
+            if c in self._default_copyright:
+                continue
+            copyrights_to_text.append(c)
+        copyrights_text = ' '.join(copyrights_to_text)
         
         #if user defined copyright exists and visible
         if self._default_copyright and self._default_copyright_is_visible:
@@ -170,19 +173,25 @@ class MapTiler:
         if parsed_copyrights == []:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
-            self._default_copyright = ""
-            self._default_copyright_is_visible = False
         else:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", True)
+
         QgsProject.instance().writeEntry("CopyrightLabel", "/MarginH", 1)
         QgsProject.instance().writeEntry("CopyrightLabel", "/MarginV", 1)
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
+        self._previous_copyright_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+        self._default_copyright = self._trim_copyrights_to_default()
+
     def _trim_copyrights_to_default(self):
-        current_copyrights = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        
+        current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+        copyrights = self._parse_copyrights()
+        for c in copyrights:
+            current_copyrights_text = current_copyrights_text.replace(c, "")
+        current_copyrights_text = current_copyrights_text.strip()
+        return current_copyrights_text
 
     def _parse_copyrights(self):
         copyrights = []
