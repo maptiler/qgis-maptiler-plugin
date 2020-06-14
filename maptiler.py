@@ -75,11 +75,9 @@ class MapTiler:
 
         self.pluginIsActive = False
 
-        self._default_copyright = QgsProject.instance(
-        ).readEntry("CopyrightLabel", "/Label")[0]
-        self._default_copyright_is_visible = QgsProject.instance(
-        ).readEntry("CopyrightLabel", "/Enabled")[0]
-
+        #copyright variables
+        self._default_copyright = ""
+        self._default_copyright_is_visible = False
         self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
 
     # noinspection PyMethodMayBeStatic
@@ -118,7 +116,7 @@ class MapTiler:
         self._deactivate_copyrights()
 
     def _on_custom_project_loaded(self, a0, context):
-        copyright_label_in_the_project = None
+        copyright_label_in_the_project = ""
         copyright_enabled_in_the_project = False
         copyright_nodes = a0.elementsByTagName("CopyrightLabel").at(0).childNodes()
         for i in range(copyright_nodes.count()):
@@ -148,27 +146,30 @@ class MapTiler:
         self.iface.mapCanvas().refresh()
 
     def _write_copyright_entries(self, param):
-        is_adding = False
+        if self._default_copyright == "":
+            self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+            self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0]
+        
         adding_layers = []
         if isinstance(param, QgsMapLayer):
-            is_adding = True
             adding_layers.append(param)
         elif isinstance(param, list):
             if isinstance(param[0], QgsMapLayer):
-                is_adding = True
                 adding_layers += param
         
         parsed_copyrights = self._parse_copyrights(adding_layers)
         copyrights_text = parsed_copyrights
         
-        #if user defined copyright exists
-        if self._default_copyright_is_visible:
+        #if user defined copyright exists and visible
+        if self._default_copyright and self._default_copyright_is_visible:
             copyrights_text += " " + self._default_copyright
         
         # when no active MapTiler layer
         if parsed_copyrights.replace(' ', '') == '':
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
+            self._default_copyright = ""
+            self._default_copyright_is_visible = False
         else:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", copyrights_text)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", True)
@@ -196,6 +197,10 @@ class MapTiler:
             parsed_attributions = attribution.split('!!!')
             for attr in parsed_attributions:
                 if attr == '':
+                    continue
+                
+                #when user copyright includes MapTiler attributions
+                if attr in self._default_copyright:
                     continue
 
                 if not attr in copyrights:
