@@ -78,6 +78,7 @@ class MapTiler:
         #copyright variables
         self._is_copyright_written_by_plugin = False
         self._previous_copyright_text = ""
+        self._previous_copyrights = []
         self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == "true"
         self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
@@ -155,6 +156,9 @@ class MapTiler:
         elif not self._previous_copyright_text == current_copyrights_text:
             print("copyright is over-written")
             self._default_copyright = current_copyrights_text
+            for c in self._previous_copyrights:
+                self._default_copyright = self._default_copyright.replace(c, "")
+                self._default_copyright = self._default_copyright.strip()
             self._default_copyright_is_visible = True
 
         adding_layers = []
@@ -192,6 +196,7 @@ class MapTiler:
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
+        self._previous_copyrights = copyrights_to_text
         self._previous_copyright_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         self._default_copyright = self._trim_copyrights_to_default()
 
