@@ -150,22 +150,24 @@ class MapTiler:
             self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
             self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0]
         
+        """
         adding_layers = []
         if isinstance(param, QgsMapLayer):
             adding_layers.append(param)
         elif isinstance(param, list):
             if isinstance(param[0], QgsMapLayer):
                 adding_layers += param
-        
-        parsed_copyrights = self._parse_copyrights(adding_layers)
-        copyrights_text = parsed_copyrights
+        """
+
+        parsed_copyrights = self._parse_copyrights()
+        copyrights_text = ' '.join(parsed_copyrights)
         
         #if user defined copyright exists and visible
         if self._default_copyright and self._default_copyright_is_visible:
             copyrights_text += " " + self._default_copyright
         
         # when no active MapTiler layer
-        if parsed_copyrights.replace(' ', '') == '':
+        if parsed_copyrights == []:
             QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
             QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
             self._default_copyright = ""
@@ -178,10 +180,13 @@ class MapTiler:
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
-    def _parse_copyrights(self, adding_layers):
+    def _trim_copyrights_to_default(self):
+        current_copyrights = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
+        
+
+    def _parse_copyrights(self):
         copyrights = []
         target_layers = []
-        target_layers += adding_layers
         root_group = self.iface.layerTreeView().layerTreeModel().rootGroup()
         for l in root_group.findLayers():
             # when invalid layer is in Browser
@@ -198,14 +203,10 @@ class MapTiler:
             for attr in parsed_attributions:
                 if attr == '':
                     continue
-                
-                #when user copyright includes MapTiler attributions
-                if attr in self._default_copyright:
-                    continue
 
                 if not attr in copyrights:
                     copyrights.append(attr)
         
-        return ' '.join(copyrights)
+        return copyrights
 
     # --------------------------------------------------------------------------
