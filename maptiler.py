@@ -150,9 +150,10 @@ class MapTiler:
 
     def _write_copyright_entries(self, param):
         current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        if self._previous_copyright_text == "" and QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == 'true':
+        if not self._is_copyright_written_by_plugin and self._previous_copyright_text == "" and QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == 'true':
             self._default_copyright = current_copyrights_text
             self._default_copyright_is_visible = True
+            self._is_copyright_written_by_plugin = True
         elif not self._previous_copyright_text == current_copyrights_text:
             print("copyright is over-written")
             self._default_copyright = current_copyrights_text
@@ -163,11 +164,9 @@ class MapTiler:
 
         adding_layers = []
         if isinstance(param, QgsMapLayer):
-            is_adding = True
             adding_layers.append(param)
         elif isinstance(param, list):
             if isinstance(param[0], QgsMapLayer):
-                is_adding = True
                 adding_layers += param
 
         parsed_copyrights = self._parse_copyrights(adding_layers=adding_layers)
@@ -178,7 +177,7 @@ class MapTiler:
             copyrights_to_text.append(c)
         
         copyrights_text = ' '.join(copyrights_to_text)
-        
+
         #if user defined copyright exists and visible
         if self._default_copyright and self._default_copyright_is_visible:
             copyrights_text += " " + self._default_copyright
@@ -198,12 +197,11 @@ class MapTiler:
 
         self._previous_copyrights = copyrights_to_text
         self._previous_copyright_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        self._default_copyright = self._trim_copyrights_to_default()
+        self._default_copyright = self._trim_copyrights_to_default(copyrights_to_text=copyrights_to_text)
 
-    def _trim_copyrights_to_default(self):
+    def _trim_copyrights_to_default(self, copyrights_to_text = []):
         current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        copyrights = self._parse_copyrights()
-        for c in copyrights:
+        for c in copyrights_to_text:
             current_copyrights_text = current_copyrights_text.replace(c, "")
         current_copyrights_text = current_copyrights_text.strip()
         return current_copyrights_text
@@ -228,7 +226,6 @@ class MapTiler:
             for attr in parsed_attributions:
                 if attr == '':
                     continue
-
                 if not attr in copyrights:
                     copyrights.append(attr)
         
