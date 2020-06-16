@@ -109,6 +109,8 @@ def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
     is_literal_value = isinstance(json_expr[-1], (int, float))
+    is_string_value = isinstance(json_expr[-1], str)
+    print(json_expr)
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         if None in lst:
@@ -126,14 +128,19 @@ def parse_expression(json_expr):
         if op == "==":
             if is_literal_value:
                 op = "="
+            elif is_string_value:
+                op = " LIKE "
             else:
-                op = "IS"
+                op = " IS "
         elif op == "!=":
             if is_literal_value:
                 op = "!="
+            elif is_string_value:
+                op = " NOT LIKE "
             else:
-                op = "NOT IS"
-        return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
+                op = " IS NOT "
+        print("{}{}{}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2])))
+        return "{}{}{}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
     elif op == '!has':
