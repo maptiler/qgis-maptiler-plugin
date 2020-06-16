@@ -20,7 +20,6 @@ from qgis.core import *
 
 PX_TO_MM = 0.254  # TODO: some good conversion ratio
 TEXT_SIZE_MULTIPLIER = 1
-BUFFER_SIZE_MULTIPLIER = 2
 
 
 def parse_color(json_color: str):
@@ -591,6 +590,10 @@ def parse_line_layer(json_layer, style_name):
 
 
 def parse_symbol_layer(json_layer, style_name):
+    if style_name.lower() in ["basic", "hybrid", "toner", "topo"]:
+        BUFFER_SIZE_MULTIPLIER = 2
+    else:
+        BUFFER_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
