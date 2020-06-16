@@ -128,19 +128,14 @@ def parse_expression(json_expr):
         if op == "==":
             if is_literal_value:
                 op = "="
-            elif is_string_value:
-                op = " LIKE "
             else:
-                op = " IS "
+                op = "IS"
         elif op == "!=":
             if is_literal_value:
                 op = "!="
-            elif is_string_value:
-                op = " NOT LIKE "
             else:
-                op = " IS NOT "
-        print("{}{}{}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2])))
-        return "{}{}{}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
+                op = "NOT IS"
+        return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
     elif op == '!has':
