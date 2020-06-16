@@ -20,8 +20,6 @@ from qgis.core import *
 
 PX_TO_MM = 0.254  # TODO: some good conversion ratio
 TEXT_SIZE_MULTIPLIER = 1
-BUFFER_SIZE_MULTIPLIER = 2
-LINE_WIDTH_MULTIPLIER = 0.5
 
 
 def parse_color(json_color: str):
@@ -108,7 +106,6 @@ def parse_value(json_value):
 def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
-    is_literal_value = isinstance(json_expr[-1], (int, float))
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         if None in lst:
@@ -124,15 +121,9 @@ def parse_expression(json_expr):
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
-            if is_literal_value:
-                op = "="
-            else:
-                op = "IS"
+            op = "IS"
         elif op == "!=":
-            if is_literal_value:
-                op = "!="
-            else:
-                op = "NOT IS"
+            op = "IS NOT"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
@@ -372,7 +363,7 @@ def parse_interpolate_color_by_zoom(json_obj):
     return case_str
 
 
-def parse_fill_layer(json_layer):
+def parse_fill_layer(json_layer, style_name):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -476,7 +467,14 @@ def parse_fill_layer(json_layer):
     return st
 
 
-def parse_line_layer(json_layer):
+def parse_line_layer(json_layer, style_name):
+    if style_name.lower() == "bright":
+        LINE_WIDTH_MULTIPLIER = 0.8
+    elif style_name.lower() == "basic":
+        LINE_WIDTH_MULTIPLIER = 0.3
+    else:
+        LINE_WIDTH_MULTIPLIER = 1
+
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -588,7 +586,11 @@ def parse_line_layer(json_layer):
     return st
 
 
-def parse_symbol_layer(json_layer):
+def parse_symbol_layer(json_layer, style_name):
+    if style_name.lower() in ["basic", "hybrid", "toner", "topo"]:
+        BUFFER_SIZE_MULTIPLIER = 2
+    else:
+        BUFFER_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -719,7 +721,7 @@ def parse_symbol_layer(json_layer):
     return lb
 
 
-def parse_layers(json_layers):
+def parse_layers(json_layers, style_name):
     """ Parse list of layers from JSON and return QgsVectorTileBasicRenderer + QgsVectorTileBasicLabeling in a tuple """
     renderer_styles = []
     labeling_styles = []
@@ -748,11 +750,11 @@ def parse_layers(json_layers):
 
         st, lb = None, None
         if layer_type == 'fill':
-            st = parse_fill_layer(json_layer)
+            st = parse_fill_layer(json_layer, style_name)
         elif layer_type == 'line':
-            st = parse_line_layer(json_layer)
+            st = parse_line_layer(json_layer, style_name)
         elif layer_type == 'symbol':
-            lb = parse_symbol_layer(json_layer)
+            lb = parse_symbol_layer(json_layer, style_name)
         else:
             print("skipping unknown layer type", layer_type)
             continue

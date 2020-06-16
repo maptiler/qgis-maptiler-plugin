@@ -94,7 +94,7 @@ def get_renderer_labeling(source_name: str, style_json_data: dict):
             continue
         source_layers.append(layer)
 
-    renderer, labeling = parse_layers(source_layers)
+    renderer, labeling = parse_layers(source_layers, style_json_data.get('id'))
     return renderer, labeling
 
 
