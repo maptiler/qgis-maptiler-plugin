@@ -134,7 +134,7 @@ def parse_expression(json_expr):
             if is_literal_value:
                 op = "!="
             else:
-                op = "NOT IS"
+                op = "IS NOT"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
