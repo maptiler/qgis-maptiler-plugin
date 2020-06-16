@@ -88,6 +88,8 @@ def parse_line_join(json_line_join):
 def parse_key(json_key):
     if json_key == '$type':
         return "_geom_type"
+    if isinstance(json_key, list):
+        return json_key[1]
     return '"{}"'.format(json_key)  # TODO: better escaping
 
 
@@ -136,11 +138,21 @@ def parse_expression(json_expr):
             return "{} IN ({})".format(key, ", ".join(lst))
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+    elif op == 'get':
+        return parse_key(json_expr[1][1])
     elif op == 'match':
-        # TODO implement match operator
-        print(f"Skipping not implemented operator {op}")
+        attr = json_expr[1][1]
+        true_cond = json_expr[3]
+        false_cond = json_expr[4]
+        if len(json_expr[2]) > 1:
+            attr_value = tuple(json_expr[2])
+            return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
+        else:
+            attr_value = json_expr[2][0]
+            return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
+    else:
+        print(f"Skipping {json_expr}")
         return
-
     raise ValueError(json_expr)
 
 
@@ -163,6 +175,7 @@ class PropertyType(enum.Enum):
     Color = 1
     Line = 2
     Opacity = 3
+    Text = 4
 
 
 def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier: float = 1):
@@ -176,6 +189,9 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
         base = 1
     elif json_obj[1][0] == "exponential":
         base = json_obj[1][1]
+    elif json_obj[1][0] == "cubic-bezier":
+        print(f"QGIS does not support cubic-bezier interpolation, linear used instead. {json_obj[1][0]}")
+        base = 1
     else:
         print(f"Skipping not implemented interpolation method {json_obj[1][0]}")
         return None
@@ -189,7 +205,7 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
     d = {"base": base, "stops": stops}
     if prop_type == PropertyType.Color:
         expr = parse_interpolate_color_by_zoom(d)
-    elif prop_type == PropertyType.Line:
+    elif prop_type == PropertyType.Line or prop_type == PropertyType.Text:
         expr = parse_interpolate_by_zoom(d, multiplier)
     elif prop_type == PropertyType.Opacity:
         expr = parse_interpolate_opacity_by_zoom(d)
@@ -228,7 +244,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i+1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str}"
     else:
         # base != 1 -> scale_exp
@@ -241,7 +257,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
     return case_str
@@ -615,6 +631,10 @@ def parse_symbol_layer(json_layer, style_name):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
                 json_text_size, TEXT_SIZE_MULTIPLIER)
+        elif isinstance(json_text_size, list):
+            text_size = None
+            dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_list_by_zoom(
+                json_text_size, PropertyType.Text, TEXT_SIZE_MULTIPLIER)
         else:
             print("skipping non-float text-size", json_text_size)
 
