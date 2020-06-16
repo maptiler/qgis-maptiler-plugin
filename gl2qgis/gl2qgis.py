@@ -15,7 +15,7 @@ import enum
 import json
 import os
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
+from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
 
 # SCREEN SETTING
@@ -29,8 +29,6 @@ PX_TO_MM = INCH / (dpi * deviceRatio)
 # PX_TO_MM = 0.266 * deviceRatio
 # PX_TO_MM = INCH / DPI  # TODO: some good conversion ratio
 TEXT_SIZE_MULTIPLIER = 1
-BUFFER_SIZE_MULTIPLIER = 1
-LINE_WIDTH_MULTIPLIER = 0.5
 
 
 def parse_color(json_color: str):
@@ -99,6 +97,8 @@ def parse_line_join(json_line_join):
 def parse_key(json_key):
     if json_key == '$type':
         return "_geom_type"
+    if isinstance(json_key, list):
+        return json_key[1]
     return '"{}"'.format(json_key)  # TODO: better escaping
 
 
@@ -117,7 +117,6 @@ def parse_value(json_value):
 def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
-    is_literal_value = isinstance(json_expr[-1], (int, float))
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         if None in lst:
@@ -133,15 +132,9 @@ def parse_expression(json_expr):
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
-            if is_literal_value:
-                op = "="
-            else:
-                op = "IS"
+            op = "IS"
         elif op == "!=":
-            if is_literal_value:
-                op = "!="
-            else:
-                op = "NOT IS"
+            op = "IS NOT"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
@@ -154,11 +147,21 @@ def parse_expression(json_expr):
             return "{} IN ({})".format(key, ", ".join(lst))
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+    elif op == 'get':
+        return parse_key(json_expr[1][1])
     elif op == 'match':
-        # TODO implement match operator
-        print(f"Skipping not implemented operator {op}")
+        attr = json_expr[1][1]
+        true_cond = json_expr[3]
+        false_cond = json_expr[4]
+        if len(json_expr[2]) > 1:
+            attr_value = tuple(json_expr[2])
+            return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
+        else:
+            attr_value = json_expr[2][0]
+            return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
+    else:
+        print(f"Skipping {json_expr}")
         return
-
     raise ValueError(json_expr)
 
 
@@ -181,6 +184,7 @@ class PropertyType(enum.Enum):
     Color = 1
     Line = 2
     Opacity = 3
+    Text = 4
 
 
 def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, multiplier: float = 1):
@@ -194,6 +198,9 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
         base = 1
     elif json_obj[1][0] == "exponential":
         base = json_obj[1][1]
+    elif json_obj[1][0] == "cubic-bezier":
+        print(f"QGIS does not support cubic-bezier interpolation, linear used instead. {json_obj[1][0]}")
+        base = 1
     else:
         print(f"Skipping not implemented interpolation method {json_obj[1][0]}")
         return None
@@ -207,7 +214,7 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
     d = {"base": base, "stops": stops}
     if prop_type == PropertyType.Color:
         expr = parse_interpolate_color_by_zoom(d)
-    elif prop_type == PropertyType.Line:
+    elif prop_type == PropertyType.Line or prop_type == PropertyType.Text:
         expr = parse_interpolate_by_zoom(d, multiplier)
     elif prop_type == PropertyType.Opacity:
         expr = parse_interpolate_opacity_by_zoom(d)
@@ -246,7 +253,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i+1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str}"
     else:
         # base != 1 -> scale_exp
@@ -259,7 +266,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
-                           f"* {multiplier}"
+                           f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
     return case_str
@@ -381,7 +388,7 @@ def parse_interpolate_color_by_zoom(json_obj):
     return case_str
 
 
-def parse_fill_layer(json_layer):
+def parse_fill_layer(json_layer, style_name):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -485,7 +492,14 @@ def parse_fill_layer(json_layer):
     return st
 
 
-def parse_line_layer(json_layer):
+def parse_line_layer(json_layer, style_name):
+    if style_name.lower() == "bright":
+        LINE_WIDTH_MULTIPLIER = 0.8
+    elif style_name.lower() == "basic":
+        LINE_WIDTH_MULTIPLIER = 0.3
+    else:
+        LINE_WIDTH_MULTIPLIER = 1
+
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -597,7 +611,11 @@ def parse_line_layer(json_layer):
     return st
 
 
-def parse_symbol_layer(json_layer):
+def parse_symbol_layer(json_layer, style_name):
+    if style_name.lower() in ["basic", "hybrid", "toner", "topo"]:
+        BUFFER_SIZE_MULTIPLIER = 2
+    else:
+        BUFFER_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -622,10 +640,28 @@ def parse_symbol_layer(json_layer):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
                 json_text_size, TEXT_SIZE_MULTIPLIER)
+        elif isinstance(json_text_size, list):
+            text_size = None
+            dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_list_by_zoom(
+                json_text_size, PropertyType.Text, TEXT_SIZE_MULTIPLIER)
         else:
             print("skipping non-float text-size", json_text_size)
 
-    # TODO: text-font
+    text_font = None
+    if 'text-font' in json_layout:
+        json_text_font = json_layout['text-font']
+        if not isinstance(json_text_font, (str, list)):
+            print(f"Skipping non implemented text-font expression {json_text_font}")
+        else:
+            if isinstance(json_text_font, str):
+                font_name = json_text_font
+            elif isinstance(json_text_font, list):
+                font_name = json_text_font[0]
+            text_font = QFont(font_name)
+            if 'bold' in font_name.lower():
+                text_font.setBold(True)
+            if 'italic' in font_name.lower():
+                text_font.setItalic(True)
 
     text_color = Qt.black
     if 'text-color' in json_paint:
@@ -667,8 +703,8 @@ def parse_symbol_layer(json_layer):
     if text_size:
         format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
     format.setSizeUnit(QgsUnitTypes.RenderPixels)
-    # if font:
-    #     format.setFont(font)
+    if text_font:
+        format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
@@ -714,7 +750,7 @@ def parse_symbol_layer(json_layer):
     return lb
 
 
-def parse_layers(json_layers):
+def parse_layers(json_layers, style_name):
     """ Parse list of layers from JSON and return QgsVectorTileBasicRenderer + QgsVectorTileBasicLabeling in a tuple """
     renderer_styles = []
     labeling_styles = []
@@ -743,11 +779,11 @@ def parse_layers(json_layers):
 
         st, lb = None, None
         if layer_type == 'fill':
-            st = parse_fill_layer(json_layer)
+            st = parse_fill_layer(json_layer, style_name)
         elif layer_type == 'line':
-            st = parse_line_layer(json_layer)
+            st = parse_line_layer(json_layer, style_name)
         elif layer_type == 'symbol':
-            lb = parse_symbol_layer(json_layer)
+            lb = parse_symbol_layer(json_layer, style_name)
         else:
             print("skipping unknown layer type", layer_type)
             continue
