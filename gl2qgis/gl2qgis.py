@@ -374,7 +374,7 @@ def parse_interpolate_color_by_zoom(json_obj):
     return case_str
 
 
-def parse_fill_layer(json_layer):
+def parse_fill_layer(json_layer, style_name):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -478,7 +478,7 @@ def parse_fill_layer(json_layer):
     return st
 
 
-def parse_line_layer(json_layer):
+def parse_line_layer(json_layer, style_name):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -590,7 +590,7 @@ def parse_line_layer(json_layer):
     return st
 
 
-def parse_symbol_layer(json_layer):
+def parse_symbol_layer(json_layer, style_name):
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -721,7 +721,7 @@ def parse_symbol_layer(json_layer):
     return lb
 
 
-def parse_layers(json_layers):
+def parse_layers(json_layers, style_name):
     """ Parse list of layers from JSON and return QgsVectorTileBasicRenderer + QgsVectorTileBasicLabeling in a tuple """
     renderer_styles = []
     labeling_styles = []
@@ -750,11 +750,11 @@ def parse_layers(json_layers):
 
         st, lb = None, None
         if layer_type == 'fill':
-            st = parse_fill_layer(json_layer)
+            st = parse_fill_layer(json_layer, style_name)
         elif layer_type == 'line':
-            st = parse_line_layer(json_layer)
+            st = parse_line_layer(json_layer, style_name)
         elif layer_type == 'symbol':
-            lb = parse_symbol_layer(json_layer)
+            lb = parse_symbol_layer(json_layer, style_name)
         else:
             print("skipping unknown layer type", layer_type)
             continue
