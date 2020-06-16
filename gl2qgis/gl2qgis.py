@@ -106,9 +106,6 @@ def parse_value(json_value):
 def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
-    is_literal_value = isinstance(json_expr[-1], (int, float))
-    is_string_value = isinstance(json_expr[-1], str)
-    print(json_expr)
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         if None in lst:
