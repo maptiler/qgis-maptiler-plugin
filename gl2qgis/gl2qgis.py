@@ -125,15 +125,9 @@ def parse_expression(json_expr):
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
-            if is_literal_value:
-                op = "="
-            else:
-                op = "IS"
+            op = "IS"
         elif op == "!=":
-            if is_literal_value:
-                op = "!="
-            else:
-                op = "IS NOT"
+            op = "IS NOT"
         return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2]))
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
