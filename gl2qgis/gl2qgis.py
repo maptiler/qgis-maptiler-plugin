@@ -21,7 +21,7 @@ from qgis.core import *
 PX_TO_MM = 0.254  # TODO: some good conversion ratio
 TEXT_SIZE_MULTIPLIER = 1
 BUFFER_SIZE_MULTIPLIER = 2
-LINE_WIDTH_MULTIPLIER = 0.5
+LINE_WIDTH_MULTIPLIER = 1
 
 
 def parse_color(json_color: str):
