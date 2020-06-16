@@ -77,9 +77,9 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 def get_style_json(style_json_url: str) -> dict:
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith("style.json"):
-        # style_json_data = json.loads(requests.get(style_json_url).text)
-        with open('/home/adam/dev/qgis_plugin/styles/Streets.json') as fp:
-            style_json_data = json.loads(fp.read())
+        style_json_data = json.loads(requests.get(style_json_url).text)
+        # with open('/home/adam/dev/qgis_plugin/styles/Streets.json') as fp:
+        #     style_json_data = json.loads(fp.read())
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
         print(f"Url to tiles, not to style supplied: {style_json_url}")
