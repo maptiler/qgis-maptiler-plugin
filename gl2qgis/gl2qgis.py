@@ -21,15 +21,9 @@ from qgis.gui import *
 
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
-# TODO use devicePixelRatio()
-dpi = screen.logicalDotsPerInch()
-deviceRatio = screen.devicePixelRatio()
-INCH = 25.4
-PX_TO_MM = INCH / (dpi * deviceRatio)
 # TODO do we need PX_TO_MM
-PX_TO_MM = 1
-TEXT_SIZE_MULTIPLIER = 1
-RENDER_UNIT = QgsUnitTypes.RenderPixels
+PX_RATIO = screen.devicePixelRatio()
+RENDER_UNIT = QgsUnitTypes.RenderPoints
 
 
 def parse_color(json_color: str):
@@ -500,8 +494,6 @@ def parse_fill_layer(json_layer, style_name):
 
 
 def parse_line_layer(json_layer, style_name):
-    LINE_WIDTH_MULTIPLIER = 1
-
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -538,11 +530,11 @@ def parse_line_layer(json_layer, style_name):
         elif isinstance(json_line_width, dict):
             line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
-                json_line_width, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+                json_line_width, PX_RATIO)
         elif isinstance(json_line_width, list):
             line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_list_by_zoom(
-                json_line_width, PropertyType.Line, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+                json_line_width, PropertyType.Line, PX_RATIO)
         else:
             print("skipping not implemented line-width expression",
                   json_line_width, type(json_line_width))
@@ -573,10 +565,10 @@ def parse_line_layer(json_layer, style_name):
     if 'line-dasharray' in json_paint:
         json_dasharray = json_paint['line-dasharray']
         if isinstance(json_dasharray, list):
-            dash_vector = [i * PX_TO_MM for i in json_dasharray]
+            dash_vector = [i * PX_RATIO for i in json_dasharray]
         elif isinstance(json_dasharray, dict):
             # TODO improve parsing (use PropertyCustomDash?)
-            dash_vector = [i * PX_TO_MM for i in json_dasharray["stops"][-1][1]]
+            dash_vector = [i * PX_RATIO for i in json_dasharray["stops"][-1][1]]
         else:
             print(f"Skipping non implemented dash vector expression: {json_dasharray}")
 
@@ -608,7 +600,7 @@ def parse_line_layer(json_layer, style_name):
     if line_color:
         line_symbol.setColor(line_color)
     if line_width:
-        line_symbol.setWidth(line_width * PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+        line_symbol.setWidth(line_width * PX_RATIO)
     if line_opacity:
         sym.setOpacity(line_opacity)
     st = QgsVectorTileBasicRendererStyle()
@@ -619,6 +611,7 @@ def parse_line_layer(json_layer, style_name):
 
 def parse_symbol_layer(json_layer, style_name):
     BUFFER_SIZE_MULTIPLIER = 1
+    TEXT_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -700,18 +693,19 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-float text-halo-width", json_text_halo_width)
 
     format = QgsTextFormat()
+    format.setSizeUnit(QgsUnitTypes.RenderPoints)
     if text_color:
         format.setColor(text_color)
     if text_size:
         format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
-    format.setSizeUnit(QgsUnitTypes.RenderPoints)
     if text_font:
         format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
         buffer_settings.setEnabled(True)
-        buffer_settings.setSize(buffer_size * PX_TO_MM * BUFFER_SIZE_MULTIPLIER)
+        buffer_settings.setSize(buffer_size * PX_RATIO * BUFFER_SIZE_MULTIPLIER)
+        buffer_settings.setSizeUnit(RENDER_UNIT)
         buffer_settings.setColor(buffer_color)
         format.setBuffer(buffer_settings)
 
