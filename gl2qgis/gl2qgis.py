@@ -376,10 +376,10 @@ def parse_interpolate_color_by_zoom(json_obj):
             tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
 
             when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha}, {base})) "
+                       f"{interpolate_exp(bz, tz, bc_hue, tc_hue, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_sat, tc_sat, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_light, tc_light, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_alpha, tc_alpha, base)}) "
             case_str = case_str + when_str
     # Top color
     tz = stops[-1][0]
@@ -546,9 +546,6 @@ def parse_line_layer(json_layer, style_name):
         else:
             print("skipping not implemented line-width expression",
                   json_line_width, type(json_line_width))
-
-    if json_layer['id'] == "highway-secondary-tertiary-casing":
-        print(dd_properties)
 
 
     line_opacity = 1
