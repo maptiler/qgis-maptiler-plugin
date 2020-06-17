@@ -670,7 +670,7 @@ def parse_symbol_layer(json_layer, style_name):
         else:
             print("skipping non-string text-color", json_text_color)
 
-    buffer_color = QColor(0, 0, 0, 0)
+    buffer_color = None
     if 'text-halo-color' in json_paint:
         json_text_halo_color = json_paint['text-halo-color']
         if isinstance(json_text_halo_color, str):
@@ -679,7 +679,7 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-string text-halo-color", json_text_halo_color)
 
     buffer_size = 0
-    if 'text-halo-width' in json_paint:
+    if 'text-halo-width' in json_paint and buffer_color is not None:
         json_text_halo_width = json_paint['text-halo-width']
         if isinstance(json_text_halo_width, (float, int)):
             buffer_size = json_text_halo_width
