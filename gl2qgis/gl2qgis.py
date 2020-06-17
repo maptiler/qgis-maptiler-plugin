@@ -25,10 +25,10 @@ dpi = screen.logicalDotsPerInch()
 deviceRatio = screen.devicePixelRatio()
 INCH = 25.4
 PX_TO_MM = INCH / (dpi * deviceRatio)
-# deviceRatio = screen.devicePixelRatio()
-# PX_TO_MM = 0.266 * deviceRatio
-# PX_TO_MM = INCH / DPI  # TODO: some good conversion ratio
+# TODO do we need PX_TO_MM
+PX_TO_MM = 1
 TEXT_SIZE_MULTIPLIER = 1
+RENDER_UNIT = QgsUnitTypes.RenderPixels
 
 
 def parse_color(json_color: str):
@@ -462,6 +462,9 @@ def parse_fill_layer(json_layer, style_name):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
+    # set render units
+    sym.setOutputUnit(RENDER_UNIT)
+    fill_symbol.setOutputUnit(RENDER_UNIT)
 
     #when fill-pattern exists, set and insert RasterFillSymbolLayer
     fill_pattern = json_paint.get("fill-pattern")
@@ -493,12 +496,7 @@ def parse_fill_layer(json_layer, style_name):
 
 
 def parse_line_layer(json_layer, style_name):
-    if style_name.lower() == "bright":
-        LINE_WIDTH_MULTIPLIER = 0.8
-    elif style_name.lower() == "basic":
-        LINE_WIDTH_MULTIPLIER = 0.3
-    else:
-        LINE_WIDTH_MULTIPLIER = 1
+    LINE_WIDTH_MULTIPLIER = 1
 
     try:
         json_paint = json_layer['paint']
@@ -588,6 +586,10 @@ def parse_line_layer(json_layer, style_name):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
     line_symbol = sym.symbolLayer(0)
+    # set render units
+    sym.setOutputUnit(RENDER_UNIT)
+    line_symbol.setOutputUnit(RENDER_UNIT)
+
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
 
@@ -604,7 +606,6 @@ def parse_line_layer(json_layer, style_name):
         line_symbol.setWidth(line_width * PX_TO_MM * LINE_WIDTH_MULTIPLIER)
     if line_opacity:
         sym.setOpacity(line_opacity)
-
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.LineGeometry)
     st.setSymbol(sym)
@@ -612,10 +613,7 @@ def parse_line_layer(json_layer, style_name):
 
 
 def parse_symbol_layer(json_layer, style_name):
-    if style_name.lower() in ["basic", "hybrid", "toner", "topo"]:
-        BUFFER_SIZE_MULTIPLIER = 2
-    else:
-        BUFFER_SIZE_MULTIPLIER = 1
+    BUFFER_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -683,7 +681,6 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-string text-halo-color", json_text_halo_color)
 
     buffer_size = 0
-    blur_size = 0
     if 'text-halo-width' in json_paint:
         json_text_halo_width = json_paint['text-halo-width']
         if isinstance(json_text_halo_width, (float, int)):
