@@ -259,7 +259,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
-                           f"THEN {interpolate_exp(bz, tz, bv, tv, base)}) " \
+                           f"THEN {interpolate_exp(bz, tz, bv, tv, base)} " \
                            f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
