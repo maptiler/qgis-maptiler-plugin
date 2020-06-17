@@ -280,7 +280,7 @@ def parse_interpolate_opacity_by_zoom(json_obj):
                          f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
         else:
             scale_expr = f"set_color_part(@symbol_color, 'alpha', " \
-                         f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1]*255, stops[-1][1]*255)})"
+                         f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1]*255, stops[-1][1]*255, base)})"
     else:
         scale_expr = parse_opacity_stops(base, stops)
     return scale_expr
