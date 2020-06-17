@@ -702,7 +702,7 @@ def parse_symbol_layer(json_layer, style_name):
         format.setColor(text_color)
     if text_size:
         format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
-    format.setSizeUnit(QgsUnitTypes.RenderPixels)
+    format.setSizeUnit(QgsUnitTypes.RenderPoints)
     if text_font:
         format.setFont(text_font)
 
