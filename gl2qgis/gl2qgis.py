@@ -17,6 +17,7 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
+from qgis.gui import *
 
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
@@ -29,6 +30,25 @@ PX_TO_MM = INCH / (dpi * deviceRatio)
 PX_TO_MM = 1
 TEXT_SIZE_MULTIPLIER = 1
 RENDER_UNIT = QgsUnitTypes.RenderPixels
+
+
+def interpolate_exp(domain_min, domain_max, range_min, range_max, base):
+    # def get_t_factor(input, base, lowerValue, upperValue):
+    #     difference = upperValue - lowerValue
+    #     progress = input - lowerValue
+    #     if difference == 0:
+    #         return 0
+    #     elif base == 1:
+    #         return progress/difference
+    #     else:
+    #         return (base ** progress -1)/(base ** difference -1)
+    #
+    # t = get_t_factor(input, base, range_min, range_max)
+    # result = domain_min + (domain_max - domain_min) * t
+    # print(f"{domain_min} + {domain_max - domain_min} * {base}^(@zoom_level-{range_min})-1)/({base}^{range_max-range_min}-1)")
+
+    return f"{domain_min} + {domain_max - domain_min} * " \
+           f"({base}^(@zoom_level-{range_min})-1)/({base}^({range_max}-{range_min})-1)"
 
 
 def parse_color(json_color: str):
@@ -231,8 +251,7 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
                          f"{stops[0][1]}, {stops[-1][1]}) " \
                          f"* {multiplier}"
         else:
-            scale_expr = f"scale_exp(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
-                         f"{stops[0][1]}, {stops[-1][1]}, {base}) " \
+            scale_expr = f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)} " \
                          f"* {multiplier}"
     else:
         scale_expr = parse_stops(base, stops, multiplier)
@@ -265,7 +284,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
-                           f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
+                           f"THEN {interpolate_exp(bz, tz, bv, tv, base)}) " \
                            f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
@@ -285,8 +304,8 @@ def parse_interpolate_opacity_by_zoom(json_obj):
             scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
                          f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
         else:
-            scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_exp(@zoom_level, " \
-                         f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}, {base}))"
+            scale_expr = f"set_color_part(@symbol_color, 'alpha', " \
+                         f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1]*255, stops[-1][1]*255)})"
     else:
         scale_expr = parse_opacity_stops(base, stops)
     return scale_expr
@@ -311,8 +330,7 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
-                           f"scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
-                           f"{stops[i][1]}, {stops[i+1][1]}, {base})"
+                           f"{interpolate_exp(stops[i][0], stops[i+1][0], stops[i][1], stops[i+1][1], base)}"
             case_str = case_str + f"{interval_str} "
     case_str = case_str + "END"
     return case_str
@@ -542,6 +560,10 @@ def parse_line_layer(json_layer, style_name):
         else:
             print("skipping not implemented line-width expression",
                   json_line_width, type(json_line_width))
+
+    if json_layer['id'] == "highway-secondary-tertiary-casing":
+        print(dd_properties)
+
 
     line_opacity = 1
     if 'line-opacity' in json_paint:
