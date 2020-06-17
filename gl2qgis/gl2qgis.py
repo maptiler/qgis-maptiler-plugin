@@ -683,12 +683,13 @@ def parse_symbol_layer(json_layer, style_name):
         json_text_halo_width = json_paint['text-halo-width']
         if isinstance(json_text_halo_width, (float, int)):
             buffer_size = json_text_halo_width
-            if 'text-halo-blur' in json_paint:
-                json_text_halo_blur = json_paint['text-halo-blur']
-                if isinstance(json_text_halo_blur, (float, int)):
-                    buffer_size = buffer_size - json_text_halo_blur
-                else:
-                    print("skipping non-float text-halo-blur", json_text_halo_blur)
+            # TODO implement blur
+            # if 'text-halo-blur' in json_paint:
+            #     json_text_halo_blur = json_paint['text-halo-blur']
+            #     if isinstance(json_text_halo_blur, (float, int)):
+            #         buffer_size = buffer_size - json_text_halo_blur
+            #     else:
+            #         print("skipping non-float text-halo-blur", json_text_halo_blur)
         else:
             print("skipping non-float text-halo-width", json_text_halo_width)
 
