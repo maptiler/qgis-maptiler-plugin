@@ -717,6 +717,12 @@ def parse_symbol_layer(json_layer, style_name):
     label_settings = QgsPalLayerSettings()
     label_settings.fieldName = '"name:latin"'  # TODO: parse field name
     label_settings.isExpression = True
+    if "text-transform" in json_layout:
+        text_transform = json_layout["text-transform"]
+        if text_transform == "uppercase":
+            label_settings.fieldName = 'upper("name:latin")'
+        elif text_transform == "lowercase":
+            label_settings.fieldName = 'lower("name:latin")'
 
     label_settings.placement = QgsPalLayerSettings.OverPoint
     wkb_type = QgsWkbTypes.PointGeometry
