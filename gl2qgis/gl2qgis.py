@@ -32,25 +32,6 @@ TEXT_SIZE_MULTIPLIER = 1
 RENDER_UNIT = QgsUnitTypes.RenderPixels
 
 
-def interpolate_exp(domain_min, domain_max, range_min, range_max, base):
-    # def get_t_factor(input, base, lowerValue, upperValue):
-    #     difference = upperValue - lowerValue
-    #     progress = input - lowerValue
-    #     if difference == 0:
-    #         return 0
-    #     elif base == 1:
-    #         return progress/difference
-    #     else:
-    #         return (base ** progress -1)/(base ** difference -1)
-    #
-    # t = get_t_factor(input, base, range_min, range_max)
-    # result = domain_min + (domain_max - domain_min) * t
-    # print(f"{domain_min} + {domain_max - domain_min} * {base}^(@zoom_level-{range_min})-1)/({base}^{range_max-range_min}-1)")
-
-    return f"{domain_min} + {domain_max - domain_min} * " \
-           f"({base}^(@zoom_level-{range_min})-1)/({base}^({range_max}-{range_min})-1)"
-
-
 def parse_color(json_color: str):
     """
     Parse color in one of these supported formats:
@@ -334,6 +315,11 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
             case_str = case_str + f"{interval_str} "
     case_str = case_str + "END"
     return case_str
+
+
+def interpolate_exp(zoom_min, zoom_max, value_min, value_max, base):
+    return f"{value_min} + {value_max - value_min} * " \
+           f"({base}^(@zoom_level-{zoom_min})-1)/({base}^({zoom_max}-{zoom_min})-1)"
 
 
 def get_color_as_hsla_components(qcolor):
