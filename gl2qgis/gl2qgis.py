@@ -193,7 +193,7 @@ def parse_interpolate_list_by_zoom(json_obj: list, prop_type: PropertyType, mult
     elif json_obj[1][0] == "exponential":
         base = json_obj[1][1]
     elif json_obj[1][0] == "cubic-bezier":
-        print(f"QGIS does not support cubic-bezier interpolation, linear used instead. {json_obj[1][0]}")
+        print(f"QGIS does not support cubic-bezier interpolation, linear used instead.")
         base = 1
     else:
         print(f"Skipping not implemented interpolation method {json_obj[1][0]}")
