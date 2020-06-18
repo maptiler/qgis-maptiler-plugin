@@ -10,14 +10,15 @@ version=1.1.0
 author=MapTiler
 email=info@maptiler.com
 
-about=Beautiful base maps using OpenStreetMap data via vector tiles - served from MapTiler Cloud.
-Satellite map of the entire world, outdoor map, hillshading and landcover, Ordnance Survey Open ZoomStack, Dutch Kadaster via Cartiqo, or GSI data in Japan - or your own datasets!
+about=- Beautiful base maps using OpenStreetMap data via vector tiles - served from MapTiler Cloud.
 
-Customize language & colors of your map with a few clicks!
+  - Satellite map of the entire world, outdoor map, hillshading and landcover, Ordnance Survey Open ZoomStack, Dutch Kadaster via Cartiqo, or GSI data in Japan - or your own datasets!
 
-Import your own Mapbox GL JSON style or TileJSON from any URL - even hosted on your own server.
+  - Customize language & colors of your map with a few clicks!
 
-Print the maps using vector PDF.
+  - Import your own Mapbox GL JSON style or TileJSON from any URL - even hosted on your own server.
+
+  - Print the maps using vector PDF.
 
 tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
 repository=https://github.com/maptiler/qgis-maptiler-plugin
