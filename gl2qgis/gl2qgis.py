@@ -21,7 +21,6 @@ from qgis.gui import *
 
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
-# TODO do we need PX_TO_MM
 PX_RATIO = screen.devicePixelRatio()
 RENDER_UNIT = QgsUnitTypes.RenderPixels
 
@@ -610,8 +609,6 @@ def parse_line_layer(json_layer, style_name):
 
 
 def parse_symbol_layer(json_layer, style_name):
-    BUFFER_SIZE_MULTIPLIER = 1
-    TEXT_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -635,11 +632,11 @@ def parse_symbol_layer(json_layer, style_name):
         elif isinstance(json_text_size, dict):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
-                json_text_size, TEXT_SIZE_MULTIPLIER)
+                json_text_size)
         elif isinstance(json_text_size, list):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_list_by_zoom(
-                json_text_size, PropertyType.Text, TEXT_SIZE_MULTIPLIER)
+                json_text_size, PropertyType.Text)
         else:
             print("skipping non-float text-size", json_text_size)
 
@@ -698,14 +695,14 @@ def parse_symbol_layer(json_layer, style_name):
     if text_color:
         format.setColor(text_color)
     if text_size:
-        format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
+        format.setSize(text_size)
     if text_font:
         format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
         buffer_settings.setEnabled(True)
-        buffer_settings.setSize(buffer_size * PX_RATIO * BUFFER_SIZE_MULTIPLIER)
+        buffer_settings.setSize(buffer_size * PX_RATIO)
         buffer_settings.setSizeUnit(RENDER_UNIT)
         buffer_settings.setColor(buffer_color)
         format.setBuffer(buffer_settings)
