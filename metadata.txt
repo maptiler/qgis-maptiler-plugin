@@ -5,12 +5,12 @@
 [general]
 name=MapTiler
 qgisMinimumVersion=3.0
-description=Street and satellite base maps powered by vector tiles
+description=Street and satellite base maps with vector tiles
 version=1.1.0
 author=MapTiler
 email=info@maptiler.com
 
-about=- Beautiful base maps using OpenStreetMap data via vector tiles - served from MapTiler Cloud.
+about=- Beautiful base maps using OpenStreetMap data powered by vector tiles - served from MapTiler Cloud.
 
   - Satellite map of the entire world, outdoor map, hillshading and landcover, Ordnance Survey Open ZoomStack, Dutch Kadaster via Cartiqo, or GSI data in Japan - or your own datasets!
 
