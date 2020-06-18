@@ -5,12 +5,19 @@
 [general]
 name=MapTiler
 qgisMinimumVersion=3.0
-description=Customizable street and satellite base maps
-version=1.0.2
+description=Street and satellite base maps powered by vector tiles
+version=1.1.0
 author=MapTiler
 email=info@maptiler.com
 
-about=Load OpenStreetMap data with beautiful predefined maps or import your own GL JSON styles or TileJSON from any URL. Customize look and feel of map and export as a vector map.
+about=Beautiful base maps using OpenStreetMap data via vector tiles - served from MapTiler Cloud.
+Satellite map of the entire world, outdoor map, hillshading and landcover, Ordnance Survey Open ZoomStack, Dutch Kadaster via Cartiqo, or GSI data in Japan - or your own datasets!
+
+Customize language & colors of your map with a few clicks!
+
+Import your own Mapbox GL JSON style or TileJSON from any URL - even hosted on your own server.
+
+Print the maps using vector PDF.
 
 tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
 repository=https://github.com/maptiler/qgis-maptiler-plugin
@@ -23,7 +30,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=maptiler, open, map, maps, tiles, openmaptiles, osm, openstreetmap, streets, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemap, basemaps, quick, vector-tiles, geojson, reader, service, services, xyz
+tags=maptiler, open, map, maps, tiles, openmaptiles, osm, openstreetmap, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemaps, quickmapservices, vector-tiles, geojson, reader, xyz, print, ordnance survey, zoomstack, kadaster, cartiqo, gsi, japan
 
 homepage=https://maptiler.link/qgisplugin
 category=Web
