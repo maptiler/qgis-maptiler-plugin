@@ -713,7 +713,13 @@ def parse_symbol_layer(json_layer, style_name):
         symbol_placement = json_layout['symbol-placement']
 
     label_settings = QgsPalLayerSettings()
-    label_settings.fieldName = '"name:latin"'  # TODO: parse field name
+    # TODO: parse field name
+    label_settings.fieldName = '"name:latin"'
+    if "text-field" in json_layout:
+        text_field = json_layout["text-field"]
+        if isinstance(text_field, list):
+            label_settings.fieldName = f'\"{text_field[1][1]}\"'
+
     label_settings.isExpression = True
     if "text-transform" in json_layout:
         text_transform = json_layout["text-transform"]
