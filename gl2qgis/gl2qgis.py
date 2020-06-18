@@ -17,9 +17,12 @@ import os
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
+from qgis.gui import *
 
-PX_TO_MM = 0.254  # TODO: some good conversion ratio
-TEXT_SIZE_MULTIPLIER = 1
+# SCREEN SETTING
+screen = QgsApplication.primaryScreen()
+PX_RATIO = 1
+RENDER_UNIT = QgsUnitTypes.RenderPixels
 
 
 def parse_color(json_color: str):
@@ -222,8 +225,7 @@ def parse_interpolate_by_zoom(json_obj, multiplier=1):
                          f"{stops[0][1]}, {stops[-1][1]}) " \
                          f"* {multiplier}"
         else:
-            scale_expr = f"scale_exp(@zoom_level, {stops[0][0]}, {stops[-1][0]}, " \
-                         f"{stops[0][1]}, {stops[-1][1]}, {base}) " \
+            scale_expr = f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base)} " \
                          f"* {multiplier}"
     else:
         scale_expr = parse_stops(base, stops, multiplier)
@@ -256,7 +258,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
-                           f"THEN scale_exp(@zoom_level, {bz}, {tz}, {bv}, {tv}, {base}) " \
+                           f"THEN {interpolate_exp(bz, tz, bv, tv, base)} " \
                            f"* {multiplier} "
             case_str = case_str + f"{interval_str} "
     case_str = case_str + f"END"
@@ -276,8 +278,8 @@ def parse_interpolate_opacity_by_zoom(json_obj):
             scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_linear(@zoom_level, " \
                          f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}))"
         else:
-            scale_expr = f"set_color_part(@symbol_color, 'alpha', scale_exp(@zoom_level, " \
-                         f"{stops[0][0]}, {stops[-1][0]}, {stops[0][1]*255}, {stops[-1][1]*255}, {base}))"
+            scale_expr = f"set_color_part(@symbol_color, 'alpha', " \
+                         f"{interpolate_exp(stops[0][0], stops[-1][0], stops[0][1]*255, stops[-1][1]*255, base)})"
     else:
         scale_expr = parse_opacity_stops(base, stops)
     return scale_expr
@@ -302,11 +304,15 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
-                           f"scale_exp(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
-                           f"{stops[i][1]}, {stops[i+1][1]}, {base})"
+                           f"{interpolate_exp(stops[i][0], stops[i+1][0], stops[i][1], stops[i+1][1], base)}"
             case_str = case_str + f"{interval_str} "
     case_str = case_str + "END"
     return case_str
+
+
+def interpolate_exp(zoom_min, zoom_max, value_min, value_max, base):
+    return f"{value_min} + {value_max - value_min} * " \
+           f"({base}^(@zoom_level-{zoom_min})-1)/({base}^({zoom_max}-{zoom_min})-1)"
 
 
 def get_color_as_hsla_components(qcolor):
@@ -363,10 +369,10 @@ def parse_interpolate_color_by_zoom(json_obj):
             tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
 
             when_str = f"WHEN @zoom_level >= {bz} AND @zoom_level < {tz} THEN color_hsla(" \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_hue}, {tc_hue}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_sat}, {tc_sat}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_light}, {tc_light}, {base}), " \
-                       f"scale_exp(@zoom_level, {bz}, {tz}, {bc_alpha}, {tc_alpha}, {base})) "
+                       f"{interpolate_exp(bz, tz, bc_hue, tc_hue, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_sat, tc_sat, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_light, tc_light, base)}, " \
+                       f"{interpolate_exp(bz, tz, bc_alpha, tc_alpha, base)}) "
             case_str = case_str + when_str
     # Top color
     tz = stops[-1][0]
@@ -453,6 +459,9 @@ def parse_fill_layer(json_layer, style_name):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
     fill_symbol = sym.symbolLayer(0)
+    # set render units
+    sym.setOutputUnit(RENDER_UNIT)
+    fill_symbol.setOutputUnit(RENDER_UNIT)
 
     #when fill-pattern exists, set and insert RasterFillSymbolLayer
     fill_pattern = json_paint.get("fill-pattern")
@@ -484,13 +493,6 @@ def parse_fill_layer(json_layer, style_name):
 
 
 def parse_line_layer(json_layer, style_name):
-    if style_name.lower() == "bright":
-        LINE_WIDTH_MULTIPLIER = 0.8
-    elif style_name.lower() == "basic":
-        LINE_WIDTH_MULTIPLIER = 0.3
-    else:
-        LINE_WIDTH_MULTIPLIER = 1
-
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -519,7 +521,7 @@ def parse_line_layer(json_layer, style_name):
         print("skipping not implemented line-color expression",
               json_line_color, type(json_line_color))
 
-    line_width = 0
+    line_width = 1
     if 'line-width' in json_paint:
         json_line_width = json_paint['line-width']
         if isinstance(json_line_width, (float, int)):
@@ -527,14 +529,15 @@ def parse_line_layer(json_layer, style_name):
         elif isinstance(json_line_width, dict):
             line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_by_zoom(
-                json_line_width, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+                json_line_width, PX_RATIO)
         elif isinstance(json_line_width, list):
             line_width = None
             dd_properties[QgsSymbolLayer.PropertyStrokeWidth] = parse_interpolate_list_by_zoom(
-                json_line_width, PropertyType.Line, PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+                json_line_width, PropertyType.Line, PX_RATIO)
         else:
             print("skipping not implemented line-width expression",
                   json_line_width, type(json_line_width))
+
 
     line_opacity = 1
     if 'line-opacity' in json_paint:
@@ -561,10 +564,10 @@ def parse_line_layer(json_layer, style_name):
     if 'line-dasharray' in json_paint:
         json_dasharray = json_paint['line-dasharray']
         if isinstance(json_dasharray, list):
-            dash_vector = [i * PX_TO_MM for i in json_dasharray]
+            dash_vector = [i * PX_RATIO for i in json_dasharray]
         elif isinstance(json_dasharray, dict):
             # TODO improve parsing (use PropertyCustomDash?)
-            dash_vector = [i * PX_TO_MM for i in json_dasharray["stops"][-1][1]]
+            dash_vector = [i * PX_RATIO for i in json_dasharray["stops"][-1][1]]
         else:
             print(f"Skipping non implemented dash vector expression: {json_dasharray}")
 
@@ -579,6 +582,10 @@ def parse_line_layer(json_layer, style_name):
 
     sym = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
     line_symbol = sym.symbolLayer(0)
+    # set render units
+    sym.setOutputUnit(RENDER_UNIT)
+    line_symbol.setOutputUnit(RENDER_UNIT)
+
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
 
@@ -592,10 +599,9 @@ def parse_line_layer(json_layer, style_name):
     if line_color:
         line_symbol.setColor(line_color)
     if line_width:
-        line_symbol.setWidth(line_width * PX_TO_MM * LINE_WIDTH_MULTIPLIER)
+        line_symbol.setWidth(line_width * PX_RATIO)
     if line_opacity:
         sym.setOpacity(line_opacity)
-
     st = QgsVectorTileBasicRendererStyle()
     st.setGeometryType(QgsWkbTypes.LineGeometry)
     st.setSymbol(sym)
@@ -603,10 +609,6 @@ def parse_line_layer(json_layer, style_name):
 
 
 def parse_symbol_layer(json_layer, style_name):
-    if style_name.lower() in ["basic", "hybrid", "toner", "topo"]:
-        BUFFER_SIZE_MULTIPLIER = 2
-    else:
-        BUFFER_SIZE_MULTIPLIER = 1
     try:
         json_paint = json_layer['paint']
     except KeyError as e:
@@ -630,11 +632,11 @@ def parse_symbol_layer(json_layer, style_name):
         elif isinstance(json_text_size, dict):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_by_zoom(
-                json_text_size, TEXT_SIZE_MULTIPLIER)
+                json_text_size)
         elif isinstance(json_text_size, list):
             text_size = None
             dd_properties[QgsPalLayerSettings.Size] = parse_interpolate_list_by_zoom(
-                json_text_size, PropertyType.Text, TEXT_SIZE_MULTIPLIER)
+                json_text_size, PropertyType.Text)
         else:
             print("skipping non-float text-size", json_text_size)
 
@@ -665,7 +667,7 @@ def parse_symbol_layer(json_layer, style_name):
         else:
             print("skipping non-string text-color", json_text_color)
 
-    buffer_color = QColor(0, 0, 0, 0)
+    buffer_color = None
     if 'text-halo-color' in json_paint:
         json_text_halo_color = json_paint['text-halo-color']
         if isinstance(json_text_halo_color, str):
@@ -674,33 +676,34 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-string text-halo-color", json_text_halo_color)
 
     buffer_size = 0
-    blur_size = 0
-    if 'text-halo-width' in json_paint:
+    if 'text-halo-width' in json_paint and buffer_color is not None:
         json_text_halo_width = json_paint['text-halo-width']
         if isinstance(json_text_halo_width, (float, int)):
             buffer_size = json_text_halo_width
-            if 'text-halo-blur' in json_paint:
-                json_text_halo_blur = json_paint['text-halo-blur']
-                if isinstance(json_text_halo_blur, (float, int)):
-                    buffer_size = buffer_size - json_text_halo_blur
-                else:
-                    print("skipping non-float text-halo-blur", json_text_halo_blur)
+            # TODO implement blur
+            # if 'text-halo-blur' in json_paint:
+            #     json_text_halo_blur = json_paint['text-halo-blur']
+            #     if isinstance(json_text_halo_blur, (float, int)):
+            #         buffer_size = buffer_size - json_text_halo_blur
+            #     else:
+            #         print("skipping non-float text-halo-blur", json_text_halo_blur)
         else:
             print("skipping non-float text-halo-width", json_text_halo_width)
 
     format = QgsTextFormat()
+    format.setSizeUnit(QgsUnitTypes.RenderPoints)
     if text_color:
         format.setColor(text_color)
     if text_size:
-        format.setSize(text_size * TEXT_SIZE_MULTIPLIER)
-    format.setSizeUnit(QgsUnitTypes.RenderPixels)
+        format.setSize(text_size)
     if text_font:
         format.setFont(text_font)
 
     if buffer_size > 0:
         buffer_settings = QgsTextBufferSettings()
         buffer_settings.setEnabled(True)
-        buffer_settings.setSize(buffer_size * PX_TO_MM * BUFFER_SIZE_MULTIPLIER)
+        buffer_settings.setSize(buffer_size * PX_RATIO)
+        buffer_settings.setSizeUnit(RENDER_UNIT)
         buffer_settings.setColor(buffer_color)
         format.setBuffer(buffer_settings)
 
@@ -710,8 +713,20 @@ def parse_symbol_layer(json_layer, style_name):
         symbol_placement = json_layout['symbol-placement']
 
     label_settings = QgsPalLayerSettings()
-    label_settings.fieldName = '"name:latin"'  # TODO: parse field name
+    # TODO: parse field name
+    label_settings.fieldName = '"name:latin"'
+    if "text-field" in json_layout:
+        text_field = json_layout["text-field"]
+        if isinstance(text_field, list):
+            label_settings.fieldName = f'\"{text_field[1][1]}\"'
+
     label_settings.isExpression = True
+    if "text-transform" in json_layout:
+        text_transform = json_layout["text-transform"]
+        if text_transform == "uppercase":
+            label_settings.fieldName = 'upper("name:latin")'
+        elif text_transform == "lowercase":
+            label_settings.fieldName = 'lower("name:latin")'
 
     label_settings.placement = QgsPalLayerSettings.OverPoint
     wkb_type = QgsWkbTypes.PointGeometry

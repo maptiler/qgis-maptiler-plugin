@@ -213,13 +213,14 @@ class MapDataItem(QgsDataItem):
         sources = converter.get_sources_dict_from_style_json(
             style_json_data)
         ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
-        for source_name, source_data in ordered_sources.items():
+        for source_id, source_data in ordered_sources.items():
             zxy_url = source_data["zxy_url"]
+            name = source_data["name"]
             url = f"type=xyz&url={zxy_url}"
             if source_data["type"] == "vector":
-                vector = QgsVectorTileLayer(url, source_name)
+                vector = QgsVectorTileLayer(url, name)
                 renderer, labeling = converter.get_renderer_labeling(
-                    source_name, style_json_data)
+                    source_id, style_json_data)
                 vector.setLabeling(labeling)
                 vector.setRenderer(renderer)
                 vector.setAttribution(attribution_text)
@@ -227,7 +228,7 @@ class MapDataItem(QgsDataItem):
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
                 # TODO solve layer style
-                raster = QgsRasterLayer(url, source_name, "wms")
+                raster = QgsRasterLayer(url, name, "wms")
                 raster.setAttribution(attribution_text)
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
@@ -238,7 +239,7 @@ class MapDataItem(QgsDataItem):
                     max_zoom = source_data["maxzoom"]
                     url = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}"
                 rlayers = converter.get_source_layers_by(
-                    source_name, style_json_data)
+                    source_id, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
                     raster = QgsRasterLayer(url, layer_id, "wms")
