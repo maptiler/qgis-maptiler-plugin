@@ -522,7 +522,7 @@ def parse_line_layer(json_layer, style_name):
         print("skipping not implemented line-color expression",
               json_line_color, type(json_line_color))
 
-    line_width = 0
+    line_width = 1
     if 'line-width' in json_paint:
         json_line_width = json_paint['line-width']
         if isinstance(json_line_width, (float, int)):
