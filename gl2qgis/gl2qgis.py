@@ -23,7 +23,7 @@ from qgis.gui import *
 screen = QgsApplication.primaryScreen()
 # TODO do we need PX_TO_MM
 PX_RATIO = screen.devicePixelRatio()
-RENDER_UNIT = QgsUnitTypes.RenderPoints
+RENDER_UNIT = QgsUnitTypes.RenderPixels
 
 
 def parse_color(json_color: str):
