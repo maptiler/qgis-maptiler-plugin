@@ -21,7 +21,7 @@ from qgis.gui import *
 
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
-PX_RATIO = screen.devicePixelRatio()
+PX_RATIO = 1
 RENDER_UNIT = QgsUnitTypes.RenderPixels
 
 
