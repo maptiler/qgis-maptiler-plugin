@@ -147,11 +147,11 @@ def parse_expression(json_expr):
         attr = json_expr[1][1]
         true_cond = json_expr[3]
         false_cond = json_expr[4]
-        if len(json_expr[2]) > 1:
+        if isinstance(json_expr[2], (list,tuple)):
             attr_value = tuple(json_expr[2])
             return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
-        else:
-            attr_value = json_expr[2][0]
+        elif isinstance(json_expr[2], (str, float, int)):
+            attr_value = json_expr[2]
             return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
     else:
         print(f"Skipping {json_expr}")
@@ -241,6 +241,9 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Bottom zoom and value
             bz = stops[i][0]
             bv = stops[i][1]
+            if isinstance(bv, list):
+                bv = parse_expression(bv)
+                print(f"bv: {bv}")
             # Top zoom and value
             tz = stops[i+1][0]
             tv = stops[i+1][1]
@@ -588,6 +591,10 @@ def parse_line_layer(json_layer, style_name):
 
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
+
+    if json_layer['id'] == "road_minor":
+        print(dd_properties)
+        print(line_width)
 
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
