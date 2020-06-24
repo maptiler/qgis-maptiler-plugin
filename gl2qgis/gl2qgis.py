@@ -247,12 +247,22 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             bz = stops[i][0]
             bv = stops[i][1]
             if isinstance(bv, list):
-                bv = parse_expression(bv)
+                parsed_expr = parse_expression(bv)
+                if not isinstance(bv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {bv}")
+                    return
+                else:
+                    bv = parsed_expr
             # Top zoom and value
             tz = stops[i+1][0]
             tv = stops[i+1][1]
-            if isinstance(bv, list):
-                tv = parse_expression(tv)
+            if isinstance(tv, list):
+                parsed_expr = parse_expression(tv)
+                if not isinstance(tv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {tv}")
+                    return
+                else:
+                    tv = parsed_expr
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
                            f"* {multiplier} "
@@ -264,12 +274,22 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             bz = stops[i][0]
             bv = stops[i][1]
             if isinstance(bv, list):
-                bv = parse_expression(bv)
+                parsed_expr = parse_expression(bv)
+                if not isinstance(bv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {bv}")
+                    return
+                else:
+                    bv = parsed_expr
             # Top zoom and value
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
-            if isinstance(bv, list):
-                tv = parse_expression(tv)
+            if isinstance(tv, list):
+                parsed_expr = parse_expression(tv)
+                if not isinstance(tv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {tv}")
+                    return
+                else:
+                    tv = parsed_expr
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN {interpolate_exp(bz, tz, bv, tv, base)} " \
                            f"* {multiplier} "
