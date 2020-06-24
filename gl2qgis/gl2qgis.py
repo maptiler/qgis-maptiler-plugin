@@ -145,14 +145,19 @@ def parse_expression(json_expr):
         return parse_key(json_expr[1][1])
     elif op == 'match':
         attr = json_expr[1][1]
-        true_cond = json_expr[3]
-        false_cond = json_expr[4]
-        if len(json_expr[2]) > 1:
-            attr_value = tuple(json_expr[2])
-            return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
-        else:
-            attr_value = json_expr[2][0]
-            return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
+        case_str = "CASE "
+        for i in range(2, len(json_expr)-2):
+            if isinstance(json_expr[i], (list, tuple)):
+                attr_value = tuple(json_expr[i])
+                when_str = f"WHEN ({attr} IN {attr_value}) "
+            elif isinstance(json_expr[i], (str, float, int)):
+                attr_value = json_expr[i]
+                when_str = f"WHEN ({attr}='{attr_value}') "
+            then_str= f"THEN {json_expr[i+1]}"
+            case_str = f"{case_str} {when_str} {then_str}"
+            i += 2
+        case_str = f"{case_str} ELSE {json_expr[-1]}"
+        return case_str
     else:
         print(f"Skipping {json_expr}")
         return
@@ -241,9 +246,23 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Bottom zoom and value
             bz = stops[i][0]
             bv = stops[i][1]
+            if isinstance(bv, list):
+                parsed_expr = parse_expression(bv)
+                if not isinstance(bv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {bv}")
+                    return
+                else:
+                    bv = parsed_expr
             # Top zoom and value
             tz = stops[i+1][0]
             tv = stops[i+1][1]
+            if isinstance(tv, list):
+                parsed_expr = parse_expression(tv)
+                if not isinstance(tv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {tv}")
+                    return
+                else:
+                    tv = parsed_expr
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
                            f"* {multiplier} "
@@ -254,9 +273,23 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Bottom zoom and value
             bz = stops[i][0]
             bv = stops[i][1]
+            if isinstance(bv, list):
+                parsed_expr = parse_expression(bv)
+                if not isinstance(bv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {bv}")
+                    return
+                else:
+                    bv = parsed_expr
             # Top zoom and value
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
+            if isinstance(tv, list):
+                parsed_expr = parse_expression(tv)
+                if not isinstance(tv, (int, float)):
+                    print(f"QGIS does not support expressions in interpolation function, skipping. Expression: {tv}")
+                    return
+                else:
+                    tv = parsed_expr
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN {interpolate_exp(bz, tz, bv, tv, base)} " \
                            f"* {multiplier} "
@@ -588,6 +621,10 @@ def parse_line_layer(json_layer, style_name):
 
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
+
+    if json_layer['id'] == "road_minor":
+        print(dd_properties)
+        print(line_width)
 
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
