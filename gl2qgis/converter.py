@@ -40,9 +40,9 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 
     layer_sources = style_json_data.get("sources")
     source_zxy_dict = {}
-    for source_name, source_data in layer_sources.items():
+    for source_id, source_data in layer_sources.items():
         # For sources that are not used in layers
-        if source_name not in source_order:
+        if source_id not in source_order:
             continue
         layer_zxy_url = ""
         min_zoom = None
@@ -58,16 +58,21 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
                 min_zoom = tile_json_data.get("minzoom")
             if "maxzoom" in tile_json_data:
                 max_zoom = tile_json_data.get("maxzoom")
+            if "name" in tile_json_data:
+                source_name = tile_json_data.get("name")
+            else:
+                source_name = source_id
         # style.json can have no tiles.json
         else:
             if source_data.get("tiles") is None:
                 continue
             layer_zxy_url = source_data.get("tiles")[0]
+            source_name = source_id
 
         source_type = source_data.get("type")
-        source_zxy_dict[source_name] = {
+        source_zxy_dict[source_id] = {
             "name": source_name, "zxy_url": layer_zxy_url,
-            "type": source_type, "order": source_order.index(source_name),
+            "type": source_type, "order": source_order.index(source_id),
             "maxzoom": max_zoom, "minzoom": min_zoom
         }
 
@@ -94,7 +99,7 @@ def get_renderer_labeling(source_name: str, style_json_data: dict):
             continue
         source_layers.append(layer)
 
-    renderer, labeling = parse_layers(source_layers)
+    renderer, labeling = parse_layers(source_layers, style_json_data.get('id'))
     return renderer, labeling
 
 

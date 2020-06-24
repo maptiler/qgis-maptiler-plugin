@@ -1,3 +1,5 @@
+<img src=https://user-images.githubusercontent.com/19833762/85034825-c65bef00-b182-11ea-8be6-36195165de3f.png>
+
 # QGIS MapTiler Plugin
 
 Simply add global base maps to QGIS. This plugin adds OpenStreetMap data with OpenMapTiles project. Maps for this plugin are available from the MapTiler Cloud. Customize look and feel of maps or import GL JSON styles of TileJSON.
@@ -36,6 +38,15 @@ Then MapTiler should be added to your QGIS Browser.
 
 ## Feature & Usage
 
+### Load a map in Mapbox GL JSON format
+
+You can add your own map from the tab `From URL`. Add the name of your map and URL to JSON.
+
+For **vector tiles** you can add either URL to style.json or TileJSON. Note that if you add URL to TileJSON you will get only tiles data with basic QGIS styling. For **raster tiles** you have to add URL to TileJSON.
+
+<img src='imgs/readme_07.png'>
+
+
 ### Add background maps to a project
 
 MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser.
@@ -50,6 +61,7 @@ More maps are available after you click on `Add a new map...` from MapTiler plug
    
 <img src='imgs/readme_06.png'>
    
+
 ### Vector and raster tiles
 
 MapTiler plugin supports loading maps via both vector and raster tiles.  You can choose from the contextual menu of the map and clicking either on `Add as Raster` or `Add as Vector`.
@@ -61,14 +73,6 @@ Vector tiles support requires QGIS 3.13 or higher.
 You can read about the difference between vector and raster tiles here [https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/](https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/?utm_source=github.com&utm_medium=referral&utm_campaign=qgis-plugin)
 
  
-### Load a map in Mapbox GL JSON format
-
-You can also add your own map from the tab `From URL`. Add the name of your map and URL to JSON.
-
-For **vector tiles** you can add either URL to style.json or TileJSON. Note that if you add URL to TileJSON you will get only tiles data with basic QGIS styling. For **raster tiles** you have to add URL to TileJSON.
-
-<img src='imgs/readme_06.png'>
-
 ### Customize quickly the look&feel of the base maps 
 
 There is a possibility to simply adjust the default base maps in [Customize tool](https://cloud.maptiler.com/customize/?utm_source=github.com&utm_medium=referral&utm_campaign=qgis-plugin) - via a context menu on right-click in QGIS.
