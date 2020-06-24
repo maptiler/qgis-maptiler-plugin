@@ -67,6 +67,7 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
             if source_data.get("tiles") is None:
                 continue
             layer_zxy_url = source_data.get("tiles")[0]
+            source_name = source_id
 
         source_type = source_data.get("type")
         source_zxy_dict[source_id] = {
