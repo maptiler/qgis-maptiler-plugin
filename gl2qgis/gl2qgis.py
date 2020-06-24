@@ -145,14 +145,19 @@ def parse_expression(json_expr):
         return parse_key(json_expr[1][1])
     elif op == 'match':
         attr = json_expr[1][1]
-        true_cond = json_expr[3]
-        false_cond = json_expr[4]
-        if isinstance(json_expr[2], (list,tuple)):
-            attr_value = tuple(json_expr[2])
-            return f"if({attr} IN {attr_value}, {true_cond}, {false_cond}"
-        elif isinstance(json_expr[2], (str, float, int)):
-            attr_value = json_expr[2]
-            return f"if({attr}='{attr_value}', {true_cond}, {false_cond})"
+        case_str = "CASE "
+        for i in range(2, len(json_expr)-2):
+            if isinstance(json_expr[i], (list, tuple)):
+                attr_value = tuple(json_expr[i])
+                when_str = f"WHEN ({attr} IN {attr_value}) "
+            elif isinstance(json_expr[i], (str, float, int)):
+                attr_value = json_expr[i]
+                when_str = f"WHEN ({attr}='{attr_value}') "
+            then_str= f"THEN {json_expr[i+1]}"
+            case_str = f"{case_str} {when_str} {then_str}"
+            i += 2
+        case_str = f"{case_str} ELSE {json_expr[-1]}"
+        return case_str
     else:
         print(f"Skipping {json_expr}")
         return
@@ -243,10 +248,11 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             bv = stops[i][1]
             if isinstance(bv, list):
                 bv = parse_expression(bv)
-                print(f"bv: {bv}")
             # Top zoom and value
             tz = stops[i+1][0]
             tv = stops[i+1][1]
+            if isinstance(bv, list):
+                tv = parse_expression(tv)
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN scale_linear(@zoom_level, {bz}, {tz}, {bv}, {tv}) " \
                            f"* {multiplier} "
@@ -257,9 +263,13 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float)) -> st
             # Bottom zoom and value
             bz = stops[i][0]
             bv = stops[i][1]
+            if isinstance(bv, list):
+                bv = parse_expression(bv)
             # Top zoom and value
             tz = stops[i + 1][0]
             tv = stops[i + 1][1]
+            if isinstance(bv, list):
+                tv = parse_expression(tv)
             interval_str = f"WHEN @zoom_level > {bz} AND @zoom_level <= {tz} " \
                            f"THEN {interpolate_exp(bz, tz, bv, tv, base)} " \
                            f"* {multiplier} "
