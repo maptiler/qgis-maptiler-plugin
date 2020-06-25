@@ -77,7 +77,7 @@ class MapTiler:
 
         #copyright variables
         self._is_copyright_written_by_plugin = False
-        self._previous_copyright_text = ""
+        self._previous_copyrights_text = ""
         self._previous_copyrights = []
         self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == "true"
@@ -149,19 +149,6 @@ class MapTiler:
         self.iface.mapCanvas().refresh()
 
     def _write_copyright_entries(self, param):
-        current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        if not self._is_copyright_written_by_plugin and self._previous_copyright_text == "" and QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == 'true':
-            self._default_copyright = current_copyrights_text
-            self._default_copyright_is_visible = True
-            self._is_copyright_written_by_plugin = True
-        elif not self._previous_copyright_text == current_copyrights_text:
-            print("copyright is over-written")
-            self._default_copyright = current_copyrights_text
-            for c in self._previous_copyrights:
-                self._default_copyright = self._default_copyright.replace(c, "")
-                self._default_copyright = self._default_copyright.strip()
-            self._default_copyright_is_visible = True
-
         adding_layers = []
         if isinstance(param, QgsMapLayer):
             adding_layers.append(param)
@@ -177,6 +164,14 @@ class MapTiler:
             copyrights_to_text.append(c)
         
         copyrights_text = ' '.join(copyrights_to_text)
+
+        #trim copyright to raw
+        copyrights_to_trim = parsed_copyrights + self._previous_copyrights
+        trimed_copyrights_text = self._trim_copyrights_to_default(copyrights_to_trim)
+        if not trimed_copyrights_text == "":
+            print(trimed_copyrights_text)
+            self._default_copyright = trimed_copyrights_text
+            self._default_copyright_is_visible = True
 
         #if user defined copyright exists and visible
         if self._default_copyright and self._default_copyright_is_visible:
@@ -196,8 +191,6 @@ class MapTiler:
         self.iface.mapCanvas().refresh()
 
         self._previous_copyrights = copyrights_to_text
-        self._previous_copyright_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
-        self._default_copyright = self._trim_copyrights_to_default(copyrights_to_text=copyrights_to_text)
 
     def _trim_copyrights_to_default(self, copyrights_to_text = []):
         current_copyrights_text = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
