@@ -728,7 +728,7 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-float text-halo-width", json_text_halo_width)
 
     format = QgsTextFormat()
-    format.setSizeUnit(QgsUnitTypes.RenderPoints)
+    format.setSizeUnit(QgsUnitTypes.RenderPixels)
     if text_color:
         format.setColor(text_color)
     if text_size:
