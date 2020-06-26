@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import os
+import warnings
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui
 from qgis.core import Qgis
@@ -13,8 +14,10 @@ class ConfigueDialog(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
 
+        warnings.simplefilter('ignore', DeprecationWarning)
         self.ui = uic.loadUi(os.path.join(os.path.dirname(
             __file__), 'configue_dialog_base.ui'), self)
+        warnings.resetwarnings()
 
         self.ui.button_box.accepted.connect(self._accepted)
         self.ui.button_box.rejected.connect(self._rejected)
