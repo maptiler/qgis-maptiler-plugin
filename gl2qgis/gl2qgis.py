@@ -622,10 +622,6 @@ def parse_line_layer(json_layer, style_name):
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
 
-    if json_layer['id'] == "road_minor":
-        print(dd_properties)
-        print(line_width)
-
     for dd_key, dd_expression in dd_properties.items():
         line_symbol.setDataDefinedProperty(
             dd_key, QgsProperty.fromExpression(dd_expression))
@@ -728,7 +724,7 @@ def parse_symbol_layer(json_layer, style_name):
             print("skipping non-float text-halo-width", json_text_halo_width)
 
     format = QgsTextFormat()
-    format.setSizeUnit(QgsUnitTypes.RenderPoints)
+    format.setSizeUnit(QgsUnitTypes.RenderPixels)
     if text_color:
         format.setColor(text_color)
     if text_size:
