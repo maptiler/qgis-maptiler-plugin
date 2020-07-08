@@ -92,7 +92,12 @@ def parse_key(json_key):
     if json_key == '$type':
         return "_geom_type"
     if isinstance(json_key, list):
-        return json_key[1]
+        try:
+            return json_key[1]
+        # e.g. len(json_key) == 1
+        except IndexError:
+            return json_key[0]
+    
     return '"{}"'.format(json_key)  # TODO: better escaping
 
 
@@ -123,6 +128,12 @@ def parse_expression(json_expr):
     elif op == 'none':
         lst = [parse_value(v) for v in json_expr[1:]]
         return "NOT ({})".format(") AND NOT (".join(lst))
+    elif op == '!':
+        # ! inverts next expression meaning
+        contra_json_expr = json_expr[1]
+        contra_json_expr[0] = op + contra_json_expr[0]
+        # ['!', ['has', 'level']] -> ['!has', 'level']
+        return parse_key(contra_json_expr)
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
@@ -496,8 +507,21 @@ def parse_fill_layer(json_layer, style_name):
     sym.setOutputUnit(RENDER_UNIT)
     fill_symbol.setOutputUnit(RENDER_UNIT)
 
-    #when fill-pattern exists, set and insert RasterFillSymbolLayer
+    #get fill-pattern to set sprite
+    #sprite imgs will already have been downloaded in converter.py
     fill_pattern = json_paint.get("fill-pattern")
+
+    # fill-pattern can be String or Object
+    # String: {"fill-pattern": "dash-t"}
+    # Object: {"fill-pattern":{"stops":[[11,"wetland8"],[12,"wetland16"]]}}
+
+    # if Object, simpify into one sprite.
+    # TODO: 
+    if isinstance(fill_pattern, dict):
+        pattern_stops = fill_pattern.get("stops", [None])
+        fill_pattern = pattern_stops[-1][-1]
+    
+    #when fill-pattern exists, set and insert RasterFillSymbolLayer
     if fill_pattern:
         SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
         raster_fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
