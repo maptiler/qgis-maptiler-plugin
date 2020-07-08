@@ -92,7 +92,12 @@ def parse_key(json_key):
     if json_key == '$type':
         return "_geom_type"
     if isinstance(json_key, list):
-        return json_key[1]
+        try:
+            return json_key[1]
+        # e.g. len(json_key) == 1
+        except IndexError:
+            return json_key[0]
+    
     return '"{}"'.format(json_key)  # TODO: better escaping
 
 
@@ -111,6 +116,7 @@ def parse_value(json_value):
 def parse_expression(json_expr):
     """ Parses expression into QGIS expression string """
     op = json_expr[0]
+    print(op)
     if op == 'all':
         lst = [parse_value(v) for v in json_expr[1:]]
         if None in lst:
@@ -118,7 +124,10 @@ def parse_expression(json_expr):
             return
         return "({})".format(") AND (".join(lst))
     elif op == 'any':
+        print("op is:")
+        print(json_expr)
         lst = [parse_value(v) for v in json_expr[1:]]
+        print(lst)
         return "({})".format(") OR (".join(lst))
     elif op == 'none':
         lst = [parse_value(v) for v in json_expr[1:]]
@@ -496,8 +505,21 @@ def parse_fill_layer(json_layer, style_name):
     sym.setOutputUnit(RENDER_UNIT)
     fill_symbol.setOutputUnit(RENDER_UNIT)
 
-    #when fill-pattern exists, set and insert RasterFillSymbolLayer
+    #get fill-pattern to set sprite
+    #sprite imgs will already have been downloaded in converter.py
     fill_pattern = json_paint.get("fill-pattern")
+
+    # fill-pattern can be String or Object
+    # String: {"fill-pattern": "dash-t"}
+    # Object: {"fill-pattern":{"stops":[[11,"wetland8"],[12,"wetland16"]]}}
+
+    # if Object, simpify into one sprite.
+    # TODO: 
+    if isinstance(fill_pattern, dict):
+        pattern_stops = fill_pattern.get("stops", [None])
+        fill_pattern = pattern_stops[-1][-1]
+    
+    #when fill-pattern exists, set and insert RasterFillSymbolLayer
     if fill_pattern:
         SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "sprites")
         raster_fill_symbol = QgsRasterFillSymbolLayer(os.path.join(SPRITES_PATH, fill_pattern + ".png"))
