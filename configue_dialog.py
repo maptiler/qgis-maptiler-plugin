@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 
 import os
-import warnings
 
 from PyQt5 import uic, QtWidgets, QtCore, QtGui
 from qgis.core import Qgis
