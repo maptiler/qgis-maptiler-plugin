@@ -59,7 +59,10 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
             if "maxzoom" in tile_json_data:
                 max_zoom = tile_json_data.get("maxzoom")
             if "name" in tile_json_data:
-                source_name = tile_json_data.get("name")
+                if not tile_json_data.get("name") or tile_json_data.get("name").isspace():
+                    source_name = source_id
+                else:
+                    source_name = tile_json_data.get("name")
             else:
                 source_name = source_id
         # style.json can have no tiles.json
