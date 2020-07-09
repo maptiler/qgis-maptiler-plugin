@@ -340,15 +340,15 @@ def parse_opacity_stops(base: (int, float), stops: list) -> str:
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
-                           f"scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]}, " \
-                           f"{stops[i][1]}, {stops[i+1][1]})"
+                           f"scale_linear(@zoom_level, {stops[i][0]}, {stops[i+1][0]*255}, " \
+                           f"{stops[i][1]}, {stops[i+1][1]*255})) "
             case_str = case_str + f"{interval_str}"
     else:
         # base != 1 -> scale_expr
         for i in range(len(stops)-1):
             interval_str = f" WHEN @zoom_level > {stops[i][0]} AND @zoom_level <= {stops[i+1][0]} " \
                            f"THEN set_color_part(@symbol_color, 'alpha', " \
-                           f"{interpolate_exp(stops[i][0], stops[i+1][0], stops[i][1], stops[i+1][1], base)}"
+                           f"{interpolate_exp(stops[i][0], stops[i+1][0]*255, stops[i][1], stops[i+1][1]*255, base)}"
             case_str = case_str + f"{interval_str} "
     case_str = case_str + "END"
     return case_str
