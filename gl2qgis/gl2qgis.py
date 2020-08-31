@@ -780,6 +780,13 @@ def parse_symbol_layer(json_layer, style_name):
         else:
             label_settings.fieldName = str(text_field)
 
+    if label_settings.fieldName == '{_name_global}':
+        label_settings.fieldName = '_name_global'
+    elif label_settings.fieldName == '{_name_local}':
+        label_settings.fieldName = '_name_local'
+    elif label_settings.fieldName == '{_name}':
+        label_settings.fieldName = '_name'
+
     label_settings.isExpression = True
     if "text-transform" in json_layout:
         text_transform = json_layout["text-transform"]
