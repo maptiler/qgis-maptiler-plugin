@@ -777,6 +777,8 @@ def parse_symbol_layer(json_layer, style_name):
         text_field = json_layout["text-field"]
         if isinstance(text_field, list):
             label_settings.fieldName = f'\"{text_field[1][1]}\"'
+        else:
+            label_settings.fieldName = str(text_field)
 
     label_settings.isExpression = True
     if "text-transform" in json_layout:
