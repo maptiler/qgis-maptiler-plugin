@@ -708,11 +708,27 @@ def parse_symbol_layer(json_layer, style_name):
                 font_name = json_text_font
             elif isinstance(json_text_font, list):
                 font_name = json_text_font[0]
-            text_font = QFont(font_name)
-            if 'bold' in font_name.lower():
-                text_font.setBold(True)
-            if 'italic' in font_name.lower():
-                text_font.setItalic(True)
+
+            # mapbox GL text-font property includes font style along with family,
+            # we have to test to see exactly where this split occurs!
+            found = False
+            text_font_parts = font_name.split(' ')
+            for i in range(1, len(text_font_parts)):
+                candidate_font_family= ' '.join(text_font_parts[:-i])
+                candidate_font_style = ' '.join(text_font_parts[-i:])
+                if QgsFontUtils.fontFamilyHasStyle(candidate_font_family, candidate_font_style):
+                    text_font = QFont(candidate_font_family)
+                    text_font.setStyleName(candidate_font_style)
+                    found = True
+                    break
+
+            if not found:
+                # fallback -- just pretend text-font string is a font family alone!
+                text_font = QFont(font_name)
+                if 'bold' in font_name.lower():
+                    text_font.setBold(True)
+                if 'italic' in font_name.lower():
+                    text_font.setItalic(True)
 
     text_color = Qt.black
     if 'text-color' in json_paint:
