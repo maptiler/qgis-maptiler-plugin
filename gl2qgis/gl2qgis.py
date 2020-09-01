@@ -824,6 +824,11 @@ def parse_symbol_layer(json_layer, style_name):
         label_settings.priority = min(text_size/3., 10.)
     else:
         label_settings.priority = 10
+
+    # set a quite low obstacle weight by default -- generally we'd prefer to see labels even
+    # if they are covering these features
+    label_settings.obstacleFactor = 0.1
+
     label_settings.setFormat(format)
 
     if dd_properties:
