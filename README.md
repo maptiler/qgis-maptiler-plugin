@@ -9,6 +9,7 @@ Homepage: [https://www.maptiler.com/qgis-plugin/](https://www.maptiler.com/qgis-
 <!-- TOC -->
 
 - [Instalation](#instalation)
+    - [Requirements](#requirements)
 - [Feature & Usage](#feature--usage)
     - [Add background maps to a project](#add-background-maps-to-a-project)
     - [Vector and raster tiles](#vector-and-raster-tiles)
@@ -33,6 +34,15 @@ In case you do not see MapTiler plugin in your QGIS Browser try to **re-launch Q
 Then MapTiler should be added to your QGIS Browser.
 
 <img src='imgs/readme_01.png'>
+
+### Requirements
+
+You need to have installed Python Pillow [Pillow](https://pillow.readthedocs.io/en/stable/)
+library to use MapTiler plugin.
+
+On Debian/Ubuntu systems you can install it by:
+
+`python3 -m pip install Pillow`
 
 ---
 
