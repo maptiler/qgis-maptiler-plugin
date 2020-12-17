@@ -44,6 +44,22 @@ On Debian/Ubuntu systems you can install it by:
 
 `python3 -m pip install Pillow`
 
+### Known issue for macOS users
+
+Sometimes macOS users get following or similar error when running MapTiler plugin:
+```
+ImportError: dlopen(/Applications/QGIS.app/Contents/MacOS/lib/python3.7/site-packages/Pillow-7.2.0-py3.7-macosx-10.13.0-x86_64.egg/PIL/_imaging.cpython-37m-darwin.so, 2): Library not loaded: /opt/X11/lib/libxcb.1.dylib
+  Referenced from: /Applications/QGIS.app/Contents/MacOS/lib/python3.7/site-packages/Pillow-7.2.0-py3.7-macosx-10.13.0-x86_64.egg/PIL/_imaging.cpython-37m-darwin.so
+  Reason: image not found
+```
+
+macOS users need to upgrade their Pillow library from QGIS bundled Python:
+```
+/Applications/QGIS.app/Contents/MacOS/bin/pip3 install pillow -U
+```
+
+After running this command and restarting QGIS, MapTiler plugin should work. 
+
 ---
 
 ## Feature & Usage
