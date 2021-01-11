@@ -18,6 +18,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QColor, QFont
 from qgis.core import *
 from qgis.gui import *
+from qgis.PyQt.QtWidgets import QMessageBox
 
 # SCREEN SETTING
 screen = QgsApplication.primaryScreen()
@@ -67,7 +68,18 @@ def parse_color(json_color: str):
         assert len(lst) == 3
         return QColor(int(lst[0]), int(lst[1]), int(lst[2]))
     else:
-        raise ValueError("unknown color syntax", json_color)
+        try:
+            from PIL import ImageColor
+            image_color = ImageColor.getrgb(json_color)
+            return QColor(int(image_color[0]), int(image_color[1]), int(image_color[2]))
+        except ImportError:
+            import_error_message = "You do not have PIL/Pillow library installed on your system. " \
+                                   "Proper color name parsing might not be supported.\n" \
+                                   "MacOS users: To install Pillow library, run following code in terminal:\n" \
+                                   "/Applications/QGIS.app/Contents/MacOS/bin/pip3 install pillow -U"
+            QMessageBox.warning(None, 'Missing PIL/Pillow library', import_error_message)
+        except ValueError as e:
+            print(e("unknown color syntax", json_color))
 
 
 def parse_line_cap(json_line_cap):
