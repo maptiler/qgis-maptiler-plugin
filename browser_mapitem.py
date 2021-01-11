@@ -111,8 +111,10 @@ class MapDataItem(QgsDataItem):
 
     def _is_vector_json(self, json_url: str) -> bool:
         url_endpoint = json_url.split("?")[0]
-        if url_endpoint.endswith("style.json"):
-            return True
+        if url_endpoint.endswith(".json"):
+            style_json_data = converter.get_style_json(json_url)
+            if "sources" in style_json_data and "layers" in style_json_data:
+                return True
         # tiles.json
         else:
             json_data = json.loads(requests.get(json_url).text)

@@ -83,7 +83,7 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 
 def get_style_json(style_json_url: str) -> dict:
     url_endpoint = style_json_url.split("?")[0]
-    if url_endpoint.endswith("style.json"):
+    if url_endpoint.endswith(".json"):
         style_json_data = json.loads(requests.get(style_json_url).text)
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
