@@ -16,9 +16,9 @@ import requests
 import io
 import os
 
-from .gl2qgis import parse_layers, parse_background, parse_interpolate_list_by_zoom
-from .gl2qgis import parse_interpolate_opacity_by_zoom, PropertyType
+from .gl2qgis import parse_layers, parse_background
 from qgis.PyQt.QtWidgets import QMessageBox
+from qgis.core import QgsMapBoxGlStyleConversionContext
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -93,16 +93,9 @@ def get_style_json(style_json_url: str) -> dict:
         raise Exception(f"Invalid url: {style_json_url}")
 
 
-def get_renderer_labeling(source_name: str, style_json_data: dict):
-    layers = style_json_data.get("layers")
-    source_layers = []
-    for layer in layers:
-        if "source" not in layer or layer["source"] != source_name:
-            continue
-        source_layers.append(layer)
-
-    renderer, labeling = parse_layers(source_layers, style_json_data.get('id'))
-    return renderer, labeling
+def convert(source_name: str, style_json_data: dict, context: QgsMapBoxGlStyleConversionContext):
+    renderer, labeling, warnings = parse_layers(source_name, style_json_data, context)
+    return renderer, labeling, warnings
 
 
 def get_bg_renderer(style_json_data: dict):
