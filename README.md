@@ -35,30 +35,9 @@ Then MapTiler should be added to your QGIS Browser.
 
 <img src='imgs/readme_01.png'>
 
-### Requirements
+## Requirements
 
-You need to have installed Python Pillow [Pillow](https://pillow.readthedocs.io/en/stable/)
-library to use MapTiler plugin.
-
-On Debian/Ubuntu systems you can install it by:
-
-`python3 -m pip install Pillow`
-
-### Known issue for macOS users
-
-Sometimes macOS users get following or similar error when running MapTiler plugin:
-```
-ImportError: dlopen(/Applications/QGIS.app/Contents/MacOS/lib/python3.7/site-packages/Pillow-7.2.0-py3.7-macosx-10.13.0-x86_64.egg/PIL/_imaging.cpython-37m-darwin.so, 2): Library not loaded: /opt/X11/lib/libxcb.1.dylib
-  Referenced from: /Applications/QGIS.app/Contents/MacOS/lib/python3.7/site-packages/Pillow-7.2.0-py3.7-macosx-10.13.0-x86_64.egg/PIL/_imaging.cpython-37m-darwin.so
-  Reason: image not found
-```
-
-macOS users need to upgrade their Pillow library from QGIS bundled Python:
-```
-/Applications/QGIS.app/Contents/MacOS/bin/pip3 install pillow -U
-```
-
-After running this command and restarting QGIS, MapTiler plugin should work. 
+For plugin version 2.0, you need QGIS 3.16 or higher.
 
 ---
 
@@ -95,6 +74,7 @@ MapTiler plugin supports loading maps via both vector and raster tiles.  You can
 You can choose the default type of tiles by checking/unchecking `Use vector tiles by default` in the Account dialog window.
 
 Vector tiles support requires QGIS 3.13 or higher.
+For the plugin version 2.0 and higher you need QGIS 3.16 or higher.
 
 You can read about the difference between vector and raster tiles here [https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/](https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/?utm_source=github.com&utm_medium=referral&utm_campaign=qgis-plugin)
 
@@ -141,5 +121,3 @@ The native vector tiles python APIs in QGIS was developed by @wonder-sk from [Lu
 If you have any idea or trouble, please [post an Issue](https://github.com/maptiler/qgis-maptiler-plugin/issues) first.
 
 We very much welcome contributions from all developers out there. This project is a community-driven open-source tool - please help us to make it better.
-
- 

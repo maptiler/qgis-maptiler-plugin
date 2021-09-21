@@ -1,12 +1,13 @@
 import os
-import sip
 import json
 import requests
 import webbrowser
-import shutil
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMessageBox
+
 from qgis.core import *
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton
+from qgis.gui import QgsMessageViewer
+from qgis.utils import iface
 
 from .gl2qgis import converter
 
@@ -201,7 +202,6 @@ class MapDataItem(QgsDataItem):
             self._add_vtlayer_from_tile_json(
                 tile_json_data, node_map, attribution_text)
 
-
     def _add_vtlayer_from_style_json(self,
                                      style_json_data: dict,
                                      target_node: QgsLayerTreeGroup,
@@ -211,6 +211,13 @@ class MapDataItem(QgsDataItem):
         os.makedirs(SPRITES_PATH, exist_ok=True)
         converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
 
+        # Context
+        context = QgsMapBoxGlStyleConversionContext()
+        context.setTargetUnit(QgsUnitTypes.RenderMillimeters)
+        context.setPixelSizeConversionFactor(0.264583)  # 25.4 / 96.0
+        # context.setTargetUnit(QgsUnitTypes.RenderPixels)
+        # context.setPixelSizeConversionFactor(1)
+
         # Add other layers from sources
         sources = converter.get_sources_dict_from_style_json(
             style_json_data)
@@ -218,20 +225,27 @@ class MapDataItem(QgsDataItem):
         for source_id, source_data in ordered_sources.items():
             zxy_url = source_data["zxy_url"]
             name = source_data["name"]
-            url = f"type=xyz&url={zxy_url}"
+            max_zoom = source_data["maxzoom"]
+            url = f"type=xyz&url={zxy_url}&zmax={max_zoom}"
             if source_data["type"] == "vector":
                 vector = QgsVectorTileLayer(url, name)
-                renderer, labeling = converter.get_renderer_labeling(
-                    source_id, style_json_data)
+                renderer, labeling, candidate_warnings = converter.convert(source_id, style_json_data, context)
                 vector.setLabeling(labeling)
                 vector.setRenderer(renderer)
                 vector.setAttribution(attribution_text)
                 proj.addMapLayer(vector, False)
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
-                # TODO solve layer style
-                raster = QgsRasterLayer(url, name, "wms")
-                raster.setAttribution(attribution_text)
+                # TODO remove this after RGB tiles implementation (Outdoor)
+                if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
+                    url = f"zmin=0&zmax=12&type=xyz&url={source_data.get('zxy_url').replace('terrain-rgb', 'hillshades')}"
+                    raster = QgsRasterLayer(url, "hillshades", "wms")
+                    renderer = raster.renderer().clone()
+                    renderer.setOpacity(0.2)
+                    raster.setRenderer(renderer)
+                else:
+                    raster = QgsRasterLayer(url, name, "wms")
+                    raster.setAttribution(attribution_text)
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
             elif source_data["type"] == "raster":
@@ -240,8 +254,7 @@ class MapDataItem(QgsDataItem):
                     min_zoom = source_data["minzoom"]
                     max_zoom = source_data["maxzoom"]
                     url = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}"
-                rlayers = converter.get_source_layers_by(
-                    source_id, style_json_data)
+                rlayers = converter.get_source_layers_by(source_id, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
                     raster = QgsRasterLayer(url, layer_id, "wms")
@@ -259,6 +272,37 @@ class MapDataItem(QgsDataItem):
                     raster.setAttribution(attribution_text)
                     proj.addMapLayer(raster, False)
                     target_node.insertLayer(source_data["order"], raster)
+
+        # Print conversion warnings
+        # Removed known warnings
+        if bool(candidate_warnings):
+            warnings = list()
+            for candidate in candidate_warnings:
+                if "Could not retrieve sprite ''" in candidate:
+                    continue
+                warnings.append(candidate)
+            # Print warnings during conversion
+            if bool(warnings):
+                widget = iface.messageBar().createMessage("Vector tiles:",
+                                                          "Style could not be completely converted")
+                button = QPushButton(widget)
+                button.setText("Details")
+
+                def show_warnings():
+                    warnings_dlg = QgsMessageViewer()
+                    warnings_dlg.setTitle("Vector Tiles")
+                    html_text = "<p>The following warnings were generated while converting the vector tile style:</p><ul>"
+                    for cw in warnings:
+                        # Skip known issues
+
+                        html_text += f"<li>{cw}</li>"
+                    html_text += "</ul>"
+                    warnings_dlg.setMessage(html_text, 1)
+                    warnings_dlg.showMessage()
+
+                button.pressed.connect(show_warnings)
+                widget.layout().addWidget(button)
+                iface.messageBar().pushWidget(widget, Qgis.Warning)
 
         # Add background layer as last if exists
         bg_renderer = converter.get_bg_renderer(style_json_data)
@@ -305,22 +349,6 @@ class MapDataItem(QgsDataItem):
                     attribution_text = str(attribution)
             else:
                 attribution_text = custom_json_data.get("attribution", "")
-
-        return attribution_text
-
-    def _get_attr_of_custom_json(self, custom_json_data) -> str:
-        attribution_text = ""
-
-        url_endpoint = custom_json_url.split("?")[0]
-        # get attribution from custom tiles or style json
-        if url_endpoint.endswith("style.json"):
-            sources = custom_json_data.get("sources")
-            maptiler_attribution = sources.get("maptiler_attribution")
-            if maptiler_attribution:
-                attribution = maptiler_attribution.get("attribution", "")
-                attribution_text = str(attribution)
-        else:
-            attribution_text = custom_json_data.get("attribution", "")
 
         return attribution_text
 

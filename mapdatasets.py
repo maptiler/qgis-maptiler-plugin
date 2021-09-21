@@ -13,6 +13,11 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json?key='
     },
+    'Outdoor': {
+        'raster': r'https://api.maptiler.com/maps/outdoor/256/tiles.json?key=',
+        'vector': r'https://api.maptiler.com/maps/outdoor/style.json?key=',
+        'customize_url': r'https://maptiler.link/qgisoutdoor'
+    },
     'Pastel': {
         'raster': r'https://api.maptiler.com/maps/pastel/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/pastel/style.json?key=',
