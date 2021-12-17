@@ -238,8 +238,9 @@ class MapDataItem(QgsDataItem):
             elif source_data["type"] == "raster-dem":
                 # TODO remove this after RGB tiles implementation (Outdoor)
                 if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
-                    url = f"zmin=0&zmax=12&type=xyz&url={source_data.get('zxy_url').replace('terrain-rgb', 'hillshades')}"
-                    raster = QgsRasterLayer(url, "hillshades", "wms")
+                    replaced_url = zxy_url.replace('terrain-rgb', 'hillshade').replace('png', 'webp')
+                    url = f"zmin=0&zmax=12&type=xyz&url={replaced_url}"
+                    raster = QgsRasterLayer(url, "hillshade", "wms")
                     renderer = raster.renderer().clone()
                     renderer.setOpacity(0.2)
                     raster.setRenderer(renderer)
