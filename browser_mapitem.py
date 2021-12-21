@@ -19,6 +19,8 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
+TRGB_XML_PATH = os.path.join(DATA_PATH, "terrain-rgb.xml")
+CUSTOM_TRGB_XML_PATH = os.path.join(DATA_PATH, "custom-terrain-rgb.xml")
 SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
@@ -236,14 +238,22 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(vector, False)
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
-                # TODO remove this after RGB tiles implementation (Outdoor)
-                if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
-                    replaced_url = zxy_url.replace('terrain-rgb', 'hillshade').replace('png', 'webp')
-                    url = f"zmin=0&zmax=12&type=xyz&url={replaced_url}"
-                    raster = QgsRasterLayer(url, "hillshade", "wms")
-                    renderer = raster.renderer().clone()
-                    renderer.setOpacity(0.2)
-                    raster.setRenderer(renderer)
+                if source_data.get("name") == "Terrain RGB" and "tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
+                    if utils.is_qgs_virtual_raster_enable():
+                        url = utils.create_virtual_raster_url(TRGB_XML_PATH, CUSTOM_TRGB_XML_PATH)
+                        raster = QgsRasterLayer(url, "Terrain RGB", "virtualraster")
+                        resampleFilter = raster.resampleFilter()
+                        resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
+                        resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+                        renderer = QgsHillshadeRenderer(raster.dataProvider(), 1, 315, 45)
+                        renderer.setOpacity(0.2)
+                        raster.setRenderer(renderer)
+                    else:
+                        url = utils.create_hillshade_url(zxy_url)
+                        raster = QgsRasterLayer(url, "hillshade", "wms")
+                        renderer = raster.renderer().clone()
+                        renderer.setOpacity(0.2)
+                        raster.setRenderer(renderer)
                 else:
                     raster = QgsRasterLayer(url, name, "wms")
                     raster.setAttribution(attribution_text)
