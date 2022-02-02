@@ -323,20 +323,21 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         line_color = QColor(0, 0, 0)
 
     # Line width
-    line_width = -1
+    line_width = 1.0
+    line_width_property = None
     json_line_width = json_paint.get("line-width")
     if json_line_width:
         if isinstance(json_line_width, (float, int)):
             line_width = float(json_line_width * context.pixelSizeConversionFactor())
         elif isinstance(json_line_width, dict):
             line_width = None
-            dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeWidth,
-                                      parse_interpolate_by_zoom(json_line_width, context, context.pixelSizeConversionFactor()))
+            line_width_property = parse_interpolate_by_zoom(json_line_width, context,
+                                                            context.pixelSizeConversionFactor())
+            dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeWidth, line_width_property)
         elif isinstance(json_line_width, list):
-            line_width = None
-            dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeWidth,
-                                      parse_value_list(json_line_width, PropertyType.Numeric, context,
-                                                       context.pixelSizeConversionFactor(), 255))
+            line_width_property = parse_value_list(json_line_width, PropertyType.Numeric, context,
+                                                       context.pixelSizeConversionFactor(), 255)
+            dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeWidth, line_width_property)
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported fill-width type ({type(json_line_width).__name__}).")
 
@@ -348,6 +349,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             line_offset = - float(json_line_offset) * context.pixelSizeConversionFactor()
         elif isinstance(json_line_offset, dict):
             line_offset = None
+            line_width = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyOffset,
                                       parse_interpolate_by_zoom(json_line_offset, context,
                                                                 context.pixelSizeConversionFactor() * -1))
@@ -390,12 +392,33 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
     json_dasharray = json_paint.get("line-dasharray")
     if json_dasharray:
         if isinstance(json_dasharray, dict):
-            # TODO improve parsing (use PropertyCustomDash?)
-            dash_vector = [i * context.pixelSizeConversionFactor() for i in json_dasharray["stops"][-1][1]]
+            stops = json_dasharray.get("stops")
+            if line_width_property:
+                expr = f"array_to_string(" \
+                       f"array_foreach({parse_array_stops(stops, context.pixelSizeConversionFactor())}," \
+                       f"@element * ({line_width_property.asExpression()})), ';')"
+            else:
+                expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
+            dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
+            dash_source = stops[1][0]
+            if line_width:
+                dash_vector = [i * line_width for i in dash_source]
+            else:
+                dash_vector = json_dasharray
         elif isinstance(json_dasharray, list):
-            dash_vector = [i * context.pixelSizeConversionFactor() for i in json_dasharray]
+            if line_width_property:
+                expr = f"array_to_string(" \
+                       f"array_foreach(array({','.join(map(str,json_dasharray))})," \
+                       f"@element * ({line_width_property.asExpression()})), ';')"
+                dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
+            if line_width:
+                dash_vector = [i * line_width for i in json_dasharray]
+            else:
+                dash_vector = json_dasharray
+
         else:
-            context.pushWarning(f"{context.layerId()}: Skipping unsupported line-dasharray type ({type(json_dasharray).__name__}).")
+            context.pushWarning(f"{context.layerId()}: Skipping unsupported line-dasharray type"
+                                f" ({type(json_dasharray).__name__}).")
 
     # Layout
     pen_cap_style = Qt.FlatCap
@@ -429,8 +452,6 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         symbol.setOpacity(line_opacity)
     if line_width:
         line_symbol.setWidth(line_width)
-    elif line_width == -1:
-        line_symbol.setColor(QColor("black"))
 
     style = QgsVectorTileBasicRendererStyle()
     style.setGeometryType(QgsWkbTypes.LineGeometry)
@@ -1071,6 +1092,32 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float), conte
     z = stops[-1][0]
     v = stops[-1][1]
     case_str += f"WHEN @vector_tile_zoom > {z} THEN {v * multiplier} END"
+    return case_str
+
+
+def parse_array_stops(stops: list, multiplier: (int, float)):
+    if len(stops) < 2:
+        return
+    case_str = "CASE "
+    for i in range(len(stops)-1):
+        bz = stops[i][0]
+        bv = stops[i][1]
+        bl = []
+        for v in bv:
+            print(v, multiplier)
+            bl.append(str(float(v) * multiplier))
+        tz = stops[i+1][0]
+
+        case_str += f"WHEN @vector_tile_zoom > {bz} AND @vector_tile_zoom <= {tz} THEN array({','.join(bl)}) "
+
+    lz = stops[-1][0]
+    lv = stops[-1][1]
+    ll = []
+    for v in lv:
+        print(v, multiplier)
+        ll.append(str(float(v) * multiplier))
+    case_str += f"WHEN @vector_tile_zoom > {lz} THEN array({','.join(ll)}) "
+    case_str += f"END"
     return case_str
 
 
