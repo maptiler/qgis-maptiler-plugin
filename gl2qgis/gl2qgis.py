@@ -1143,11 +1143,14 @@ def process_label_field(string: str):
         for part in parts:
             if not part:
                 continue
-            # part will start at a {field} reference
-            split = part.split("}")
-            res.append(QgsExpression.quotedColumnRef(split[0][1:]))
-            if split[1]:
-                res.append(QgsExpression.quotedValue(split[1]))
+            elif "}" in part:
+                # part will start at a {field} reference
+                split = part.split("}")
+                res.append(QgsExpression.quotedColumnRef(split[0][1:]))
+                if split[1]:
+                    res.append(QgsExpression.quotedValue(split[1]))
+            else:
+                res.append(QgsExpression.quotedValue(part))
         return f"concat({','.join(res)})", is_expression
     else:
         is_expression = False
