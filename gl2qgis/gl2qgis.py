@@ -118,7 +118,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
 
 def parse_fill_layer(json_layer, context):
     json_paint = json_layer.get('paint')
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return False, None
 
@@ -290,7 +290,7 @@ def parse_fill_layer(json_layer, context):
 
 def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContext):
     json_paint = json_layer.get('paint')
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return False, None
 
@@ -480,7 +480,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         return has_renderer, renderer_style, has_labeling, None
 
     json_paint = json_layer.get("paint")
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return has_renderer, None, has_labeling, None
 
