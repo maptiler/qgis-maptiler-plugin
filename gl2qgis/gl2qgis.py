@@ -298,6 +298,11 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         context.pushWarning(f"{context.layerId()}: Skipping unsupported line-pattern property.")
         return False, None
 
+    # Default
+    symbol = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
+    line_symbol = symbol.symbolLayer(0)
+    symbol.setOutputUnit(context.targetUnit())
+    line_symbol.setOutputUnit(context.targetUnit())
     dd_properties = QgsPropertyCollection()
 
     # Line color
@@ -396,7 +401,9 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             if line_width_property:
                 expr = f"array_to_string(" \
                        f"array_foreach({parse_array_stops(stops, context.pixelSizeConversionFactor())}," \
-                       f"@element * ({line_width_property.asExpression()})), ';')"
+                       f"@element * coalesce(" \
+                       f"({line_width_property.asExpression()}), " \
+                       f"{line_symbol.width()} * {context.pixelSizeConversionFactor()})), ';')"
             else:
                 expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
             dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
@@ -409,7 +416,9 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             if line_width_property:
                 expr = f"array_to_string(" \
                        f"array_foreach(array({','.join(map(str,json_dasharray))})," \
-                       f"@element * ({line_width_property.asExpression()})), ';')"
+                       f"@element * coalesce(" \
+                       f"({line_width_property.asExpression()}), " \
+                       f"{line_symbol.width()} * {context.pixelSizeConversionFactor()})), ';')"
                 dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
             if line_width:
                 dash_vector = [i * line_width for i in json_dasharray]
@@ -431,10 +440,6 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         if 'line-join' in json_layout:
             pen_join_style = parse_join_style(json_layout.get("line-join"))
 
-    symbol = QgsSymbol.defaultSymbol(QgsWkbTypes.LineGeometry)
-    line_symbol = symbol.symbolLayer(0)
-    symbol.setOutputUnit(context.targetUnit())
-    line_symbol.setOutputUnit(context.targetUnit())
     line_symbol.setPenCapStyle(pen_cap_style)
     line_symbol.setPenJoinStyle(pen_join_style)
     line_symbol.setDataDefinedProperties(dd_properties)
