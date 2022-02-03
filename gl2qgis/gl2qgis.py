@@ -704,8 +704,6 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
     if json_text_halo_blur:
         if isinstance(json_text_halo_blur, (int, float)):
             halo_blur_size = json_text_halo_blur * context.pixelSizeConversionFactor()
-        else:
-            context.pushWarning(f"{context.layerId()}: Skipping unsupported text-halo-blur type ({type(json_text_halo_blur).__name__}).")
 
     format = QgsTextFormat()
     format.setSizeUnit(context.targetUnit())
