@@ -862,6 +862,9 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         if json_text_anchor:
             if isinstance(json_text_anchor, str):
                 text_anchor = json_text_anchor
+            elif isinstance(json_text_anchor, dict):
+                stops = json_text_anchor.get("stops")
+                text_anchor = stops[-1][-1]
             else:
                 context.pushWarning(f"{context.layerId()}: Skipping unsupported text-anchor type ({type(json_text_anchor).__name__})")
 
