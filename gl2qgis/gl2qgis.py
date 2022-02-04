@@ -54,7 +54,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
             continue
         style_id = json_layer['id']
         context.setLayerId(style_id)
-        layer_name = json_layer['source-layer']
+        layer_name = json_layer.get('source-layer')
         min_zoom = int(json_layer['minzoom']) if 'minzoom' in json_layer else -1
         max_zoom = int(json_layer['maxzoom']) if 'maxzoom' in json_layer else -1
 
@@ -147,16 +147,7 @@ def parse_fill_layer(json_layer, context):
 
     # Fill outline color
     fill_outline_color = None
-    if 'fill-outline-color' not in json_paint:
-        # Use fill_color simple string if available
-        if fill_color:
-            fill_outline_color = fill_color
-        # Use fill color data defined property
-        else:
-            if dd_properties.isActive(QgsSymbolLayer.PropertyFillColor):
-                dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
-                                          dd_properties.property(QgsSymbolLayer.PropertyFillColor))
-    else:
+    if 'fill-outline-color' in json_paint:
         json_fill_outline_color = json_paint.get('fill-outline-color')
         if isinstance(json_fill_outline_color, dict):
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
@@ -234,8 +225,8 @@ def parse_fill_layer(json_layer, context):
     # Fill-pattern
     json_fill_patern = json_paint.get("fill-pattern")
     if json_fill_patern:
-        fill_color = "fill_patern"
-        fill_outline_color = "fill_patern"
+        fill_color = "fill_pattern"
+        fill_outline_color = "fill_pattern"
 
         # fill-pattern can be String or Object
         # String: {"fill-pattern": "dash-t"}
@@ -271,12 +262,12 @@ def parse_fill_layer(json_layer, context):
     if fill_opacity:
         symbol.setOpacity(fill_opacity)
 
-    if fill_outline_color == "fill_patern":
+    if not fill_outline_color or fill_outline_color == "fill_pattern":
         fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
     elif fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
 
-    if fill_color == "fill_patern":
+    if not fill_color or fill_color == "fill_pattern":
         fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
     elif fill_color:
         fill_symbol.setFillColor(fill_color)
