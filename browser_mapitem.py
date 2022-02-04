@@ -278,7 +278,7 @@ class MapDataItem(QgsDataItem):
         if bool(candidate_warnings):
             warnings = list()
             for candidate in candidate_warnings:
-                if "Could not retrieve sprite ''" in candidate:
+                if "Could not retrieve sprite ''" or "Could not retrieve sprite ' '" in candidate:
                     continue
                 warnings.append(candidate)
             # Print warnings during conversion
