@@ -407,11 +407,11 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             else:
                 expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
             dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
-            dash_source = stops[1][0]
+            dash_source = stops[0][1]
             if line_width:
                 dash_vector = [i * line_width for i in dash_source]
             else:
-                dash_vector = json_dasharray
+                dash_vector = dash_source
         elif isinstance(json_dasharray, list):
             if line_width_property:
                 expr = f"array_to_string(" \
@@ -1107,7 +1107,6 @@ def parse_array_stops(stops: list, multiplier: (int, float)):
         bv = stops[i][1]
         bl = []
         for v in bv:
-            print(v, multiplier)
             bl.append(str(float(v) * multiplier))
         tz = stops[i+1][0]
 
@@ -1117,7 +1116,6 @@ def parse_array_stops(stops: list, multiplier: (int, float)):
     lv = stops[-1][1]
     ll = []
     for v in lv:
-        print(v, multiplier)
         ll.append(str(float(v) * multiplier))
     case_str += f"WHEN @vector_tile_zoom > {lz} THEN array({','.join(ll)}) "
     case_str += f"END"
