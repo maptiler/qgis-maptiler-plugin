@@ -118,7 +118,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
 
 def parse_fill_layer(json_layer, context):
     json_paint = json_layer.get('paint')
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return False, None
 
@@ -290,7 +290,7 @@ def parse_fill_layer(json_layer, context):
 
 def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContext):
     json_paint = json_layer.get('paint')
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return False, None
 
@@ -328,7 +328,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         line_color = QColor(0, 0, 0)
 
     # Line width
-    line_width = 1.0
+    line_width = line_symbol.width()
     line_width_property = None
     json_line_width = json_paint.get("line-width")
     if json_line_width:
@@ -407,11 +407,11 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             else:
                 expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
             dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
-            dash_source = stops[1][0]
+            dash_source = stops[0][1]
             if line_width:
                 dash_vector = [i * line_width for i in dash_source]
             else:
-                dash_vector = json_dasharray
+                dash_vector = dash_source
         elif isinstance(json_dasharray, list):
             if line_width_property:
                 expr = f"array_to_string(" \
@@ -480,7 +480,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         return has_renderer, renderer_style, has_labeling, None
 
     json_paint = json_layer.get("paint")
-    if not json_paint:
+    if json_paint is None:
         context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
         return has_renderer, None, has_labeling, None
 
@@ -704,8 +704,6 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
     if json_text_halo_blur:
         if isinstance(json_text_halo_blur, (int, float)):
             halo_blur_size = json_text_halo_blur * context.pixelSizeConversionFactor()
-        else:
-            context.pushWarning(f"{context.layerId()}: Skipping unsupported text-halo-blur type ({type(json_text_halo_blur).__name__}).")
 
     format = QgsTextFormat()
     format.setSizeUnit(context.targetUnit())
@@ -864,6 +862,9 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         if json_text_anchor:
             if isinstance(json_text_anchor, str):
                 text_anchor = json_text_anchor
+            elif isinstance(json_text_anchor, dict):
+                stops = json_text_anchor.get("stops")
+                text_anchor = stops[-1][-1]
             else:
                 context.pushWarning(f"{context.layerId()}: Skipping unsupported text-anchor type ({type(json_text_anchor).__name__})")
 
@@ -1109,7 +1110,6 @@ def parse_array_stops(stops: list, multiplier: (int, float)):
         bv = stops[i][1]
         bl = []
         for v in bv:
-            print(v, multiplier)
             bl.append(str(float(v) * multiplier))
         tz = stops[i+1][0]
 
@@ -1119,7 +1119,6 @@ def parse_array_stops(stops: list, multiplier: (int, float)):
     lv = stops[-1][1]
     ll = []
     for v in lv:
-        print(v, multiplier)
         ll.append(str(float(v) * multiplier))
     case_str += f"WHEN @vector_tile_zoom > {lz} THEN array({','.join(ll)}) "
     case_str += f"END"
@@ -1143,11 +1142,14 @@ def process_label_field(string: str):
         for part in parts:
             if not part:
                 continue
-            # part will start at a {field} reference
-            split = part.split("}")
-            res.append(QgsExpression.quotedColumnRef(split[0][1:]))
-            if split[1]:
-                res.append(QgsExpression.quotedValue(split[1]))
+            elif "}" in part:
+                # part will start at a {field} reference
+                split = part.split("}")
+                res.append(QgsExpression.quotedColumnRef(split[0][1:]))
+                if split[1]:
+                    res.append(QgsExpression.quotedValue(split[1]))
+            else:
+                res.append(QgsExpression.quotedValue(part))
         return f"concat({','.join(res)})", is_expression
     else:
         is_expression = False

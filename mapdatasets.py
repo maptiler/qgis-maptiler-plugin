@@ -56,6 +56,10 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/voyager/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/voyager/style.json?key=',
         'customize_url': r'https://maptiler.link/qgisvoyager'
+    },
+    'Winter': {
+        'raster': r'https://api.maptiler.com/maps/winter/256/tiles.json?key=',
+        'vector': r'https://api.maptiler.com/maps/winter/style.json?key='
     }
 }
 
