@@ -328,7 +328,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         line_color = QColor(0, 0, 0)
 
     # Line width
-    line_width = 1.0
+    line_width = line_symbol.width()
     line_width_property = None
     json_line_width = json_paint.get("line-width")
     if json_line_width:
