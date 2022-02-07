@@ -131,10 +131,12 @@ def parse_fill_layer(json_layer, context):
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
+            fill_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_interpolate_color_by_zoom(json_fill_color, context))
         elif isinstance(json_fill_color, list):
             # Use data defined property
+            fill_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_fill_color, PropertyType.Color, context, 1, 255))
         elif isinstance(json_fill_color, str):
@@ -150,9 +152,11 @@ def parse_fill_layer(json_layer, context):
     if 'fill-outline-color' in json_paint:
         json_fill_outline_color = json_paint.get('fill-outline-color')
         if isinstance(json_fill_outline_color, dict):
+            fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_interpolate_color_by_zoom(json_fill_outline_color, context))
         elif isinstance(json_fill_outline_color, list):
+            fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_outline_color, PropertyType.Color,
                                                        context, 1, 255, fill_outline_color))
@@ -262,15 +266,24 @@ def parse_fill_layer(json_layer, context):
     if fill_opacity:
         symbol.setOpacity(fill_opacity)
 
-    if not fill_outline_color or fill_outline_color == "fill_pattern":
+    if fill_outline_color == "fill_pattern":
         fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
+    elif fill_outline_color == "dd_props":
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.SolidLine))
     elif fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
+    elif fill_outline_color is None:
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
 
-    if not fill_color or fill_color == "fill_pattern":
+    if  fill_color == "fill_pattern":
         fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
+    elif  fill_color == "dd_props":
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.SolidPattern))
     elif fill_color:
         fill_symbol.setFillColor(fill_color)
+    elif fill_color is None:
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
+
 
     style = QgsVectorTileBasicRendererStyle()
     style.setGeometryType(QgsWkbTypes.PolygonGeometry)
@@ -391,14 +404,14 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             stops = json_dasharray.get("stops")
             if line_width_property:
                 expr = f"array_to_string(" \
-                       f"array_foreach({parse_array_stops(stops, context.pixelSizeConversionFactor())}," \
+                       f"array_foreach({parse_array_stops(stops, 1)}," \
                        f"@element * coalesce(" \
                        f"({line_width_property.asExpression()}), " \
                        f"{line_symbol.width()} * {context.pixelSizeConversionFactor()})), ';')"
             else:
-                expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
+                expr = f"array_to_string({parse_array_stops(stops, 1)}, ';')"
             dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
-            dash_source = stops[0][1]
+            dash_source = stops[-1][1]
             if line_width:
                 dash_vector = [i * line_width for i in dash_source]
             else:
@@ -1193,21 +1206,26 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
 
     case_str = "CASE "
     for i in range(2, len(json_list)-1, 2):
-        keys = json_list[i]
-        match_str_lst = [QgsExpression.quotedValue(key) for key in keys]
-        value = json_list[i+1]
-
+        # THEN value
+        then_value = json_list[i+1]
         if property_type == PropertyType.Color:
-            color = parse_color(value, context)
-            value_str = QgsExpression.quotedString(color.name())
+            color = parse_color(then_value, context)
+            then_value_str = QgsExpression.quotedString(color.name())
         elif property_type == PropertyType.Numeric:
-            value_str = str(value * multiplier)
+            then_value_str = str(then_value * multiplier)
         elif property_type == PropertyType.Opacity:
-            value_str = str(value * max_opacity)
+            then_value_str = str(then_value * max_opacity)
         elif property_type == PropertyType.Point:
-            value_str = f"array({value[0] * multiplier},{value[0] * multiplier})"
-
-        case_str += f"WHEN {attr} IN {','.join(match_str_lst)} THEN {value_str} "
+            then_value_str = f"array({then_value[0] * multiplier},{then_value[0] * multiplier})"
+        # WHEN value
+        when_value = json_list[i]
+        # IN operator for list
+        if isinstance(when_value, list):
+            match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
+            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
+        # EQUAL operator for single key
+        elif isinstance(when_value, str):
+            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
 
     if property_type == PropertyType.Color:
         color = parse_color(json_list[-1], context)
@@ -1354,7 +1372,7 @@ def parse_expression(json_expr, context):
             op = "IS"
         elif op == "!=":
             op = "IS NOT"
-        return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2], context))
+        return f"{parse_key(json_expr[1])} {op} {parse_value(json_expr[2], context)}"
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
     elif op == '!has':
@@ -1370,15 +1388,15 @@ def parse_expression(json_expr, context):
         else:  # not in
             return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
     elif op == 'get':
-        return parse_key(json_expr[1])
+        return f"attribute('{json_expr[1]}')"
     elif op == 'match':
         attr = json_expr[1][1]
 
-        if len(json_expr) == 5 and json_expr[3] == 'true' and json_expr[4] == 'false':
+        if len(json_expr) == 5 and isinstance(json_expr[3], bool) and isinstance(json_expr[4], bool):
             if isinstance(json_expr[2], list):
                 lst = map(QgsExpression.quotedValue, json_expr[2])
-                if len(lst) > 1:
-                    return "{} IN ({})".format(QgsExpression.quotedColumnRef(attr), ", ".join(lst))
+                if len(json_expr[2]) > 1:
+                    return f"{attr} IS NULL OR {QgsExpression.quotedColumnRef(attr)} IN ({', '.join(lst)})"
                 else:
                     return QgsExpression.createFieldEqualityExpression(attr, json_expr[2][0])
             elif isinstance(json_expr[2], str, float, int):
@@ -1420,13 +1438,13 @@ def parse_value(json_value, context):
 
 
 def parse_key(json_key):
-    if json_key == '$type':
+    if json_key == '$type' or json_key == 'geometry-type':
         return "_geom_type"
     elif isinstance(json_key, list):
         if len(json_key) > 1:
-            return json_key[1]
+            return parse_key(json_key[1])
         else:
-            return json_key[0]
+            return parse_key(json_key[0])
     return QgsExpression.quotedColumnRef(json_key)
 
 
