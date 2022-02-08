@@ -897,7 +897,10 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 dd_label_properties.setProperty(QgsPalLayerSettings.OffsetXY,
                                                 parse_interpolate_point_by_zoom(json_text_offset, context, text_size))
             elif isinstance(json_text_offset, list):
-                text_offset = QPointF(json_text_offset[0] * text_size, json_text_offset[1] * text_size)
+                if json_text_offset[0] == "literal":
+                    text_offset = QPointF(json_text_offset[1][0] * text_size, json_text_offset[1][1] * text_size)
+                else:
+                    text_offset = QPointF(json_text_offset[0] * text_size, json_text_offset[1] * text_size)
             else:
                 context.pushWarning(f"{context.layerId()}: Skipping unsupported text-offset type ({type(json_text_offset).__name__})")
 
