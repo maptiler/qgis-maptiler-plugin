@@ -1399,7 +1399,7 @@ def parse_expression(json_expr, context):
                     return f"{attr} IS NULL OR {QgsExpression.quotedColumnRef(attr)} IN ({', '.join(lst)})"
                 else:
                     return QgsExpression.createFieldEqualityExpression(attr, json_expr[2][0])
-            elif isinstance(json_expr[2], str, float, int):
+            elif isinstance(json_expr[2], (str, float, int)):
                 return QgsExpression.createFieldEqualityExpression(attr, json_expr[2])
             else:
                 context.pushWarning("{}: Skipping unsupported expression.".format(context.layerId))
