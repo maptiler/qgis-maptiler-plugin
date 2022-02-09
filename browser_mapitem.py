@@ -284,7 +284,8 @@ class MapDataItem(QgsDataItem):
             # Print warnings during conversion
             if bool(warnings):
                 widget = iface.messageBar().createMessage("Vector tiles:",
-                                                          "Style could not be completely converted")
+                                                          f"Style {style_json_data.get('name')} "
+                                                          f"could not be completely converted")
                 button = QPushButton(widget)
                 button.setText("Details")
 
