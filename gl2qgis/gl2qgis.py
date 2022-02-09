@@ -547,23 +547,38 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     # Text font
     text_font = QFont()
-    found_font = False
+
+    def check_font_dbs(font_name, font_style):
+        if QgsFontUtils.fontFamilyOnSystem(font_name):
+            if font_style == " " or font_style is None:
+                return font_name, None
+            elif QgsFontUtils.fontFamilyHasStyle(font_name, font_style):
+                return font_name, font_style
+        elif font_name in QFontDatabase().families():
+            if font_style == " ":
+                return font_name, None
+            elif font_style in QFontDatabase().styles(font_name):
+                return f"{font_name} {font_style}", None
+        return None, None
 
     def split_font_family(font_name):
         text_font_parts = font_name.split(" ")
-        for i in range(1, len(text_font_parts)):
-            candidate_font_name = " ".join(text_font_parts[:i])
-            candidate_font_style = " ".join(text_font_parts[i:])
-            if QgsFontUtils.fontFamilyHasStyle(candidate_font_name, candidate_font_style):
-                family = candidate_font_name
-                style = candidate_font_style
-                return True, family, style
-
-            if candidate_font_name in QFontDatabase().families() and candidate_font_style in QFontDatabase().styles(candidate_font_name):
-                # the json isn't following the spec correctly!!
-                family = font_name
-                style = None
-                return True, family, style
+        for i in range(len(text_font_parts)):
+            candidate_font_name = " ".join(text_font_parts[:i+1])
+            candidate_font_style = " ".join(text_font_parts[i+1:])
+            # Check as-is
+            found_name, found_style = check_font_dbs(candidate_font_name, candidate_font_style)
+            if found_name:
+                return True, found_name, found_style
+            # Remove gaps after "Extra" or "Semi"
+            if "Extra " in candidate_font_style:
+                candidate_font_style = candidate_font_style.replace("Extra ", "Extra")
+            if "Semi " in candidate_font_style:
+                candidate_font_style = candidate_font_style.replace("Semi ", "Semi")
+            # Check again with no gaps
+            found_name, found_style = check_font_dbs(candidate_font_name, candidate_font_style)
+            if found_name:
+                return True, found_name, found_style
         return False, None, None
 
 
@@ -573,10 +588,20 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         if not isinstance(json_text_font, (str, list, dict)):
             context.pushWarning(f"{context.layerId()}: Skipping unsupported text-font type {type(json_text_font)}")
         else:
+            split_ok = False
             if isinstance(json_text_font, list):
-                font_name = json_text_font[0]
+                for font_name in json_text_font:
+                    split_ok, font_family, font_style = split_font_family(font_name)
+                    if split_ok:
+                        break
+                if not split_ok:
+                    context.pushWarning(f"{context.layerId()}: None of fonts in {json_text_font} is available on "
+                                    f"your system. Default font will be used.")
             elif isinstance(json_text_font, str):
-                font_name = json_text_font
+                split_ok, font_family, font_style = split_font_family(json_text_font)
+                if not split_ok:
+                    context.pushWarning(f"{context.layerId()}: Referenced font {json_text_font} is not available on your "
+                                        f"system. Default font will be used.")
             elif isinstance(json_text_font, dict):
                 family_case_string = "CASE "
                 style_case_string = "CASE "
@@ -587,13 +612,15 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                     bz = stops[i][0]
                     bv = stops[i][1] if isinstance(stops[i][1], str) else stops[i][1][0]
                     if isinstance(bz, list):
-                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are note supported, skipping")
+                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are not "
+                                            f"supported, skipping")
                         error = True
 
                     # Top zoom
                     tz = stops[i+1][0]
                     if isinstance(tz, list):
-                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are note supported, skipping")
+                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are not "
+                                            f"supported, skipping")
                         error = True
                     split_ok, font_family, font_style = split_font_family(bv)
                     if split_ok:
@@ -602,7 +629,8 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                         style_case_string += f"WHEN @vector_tile_zoom > {bz} AND @vector_tile_zoom <= {bz} " \
                                              f"THEN {QgsExpression.quotedValue(font_style)} "
                     else:
-                        context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system.")
+                        context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your "
+                                            f"system. Default font will be used.")
                 if error:
                     return False, None, False, None
                 bv = stops[-1][1] if isinstance(stops[-1][1], str) else stops[-1][1][0]
@@ -610,39 +638,17 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 if split_ok:
                     family_case_string += f"ELSE {QgsExpression.quotedValue(font_family)} END"
                     style_case_string += f"ElSE {QgsExpression.quotedValue(font_style)} END"
+                    dd_label_properties.setProperty(QgsPalLayerSettings.Family,
+                                                    QgsProperty.fromExpression(family_case_string))
+                    dd_label_properties.setProperty(QgsPalLayerSettings.FontStyle,
+                                                    QgsProperty.fromExpression(style_case_string))
                 else:
-                    context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system.")
-                    return False, None, False, None
-
-                dd_label_properties.setProperty(QgsPalLayerSettings.Family,
-                                                QgsProperty.fromExpression(family_case_string))
-                dd_label_properties.setProperty(QgsPalLayerSettings.FontStyle,
-                                                QgsProperty.fromExpression(style_case_string))
-
-                found_font = True
-                font_name = font_family
-            split_ok, font_family, font_style = split_font_family(font_name)
+                    context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system. "
+                                        f"Default font will be used.")
             if split_ok:
                 text_font = QFont(font_family)
                 if font_style:
                     text_font.setStyleName(font_style)
-                found_font = True
-    else:
-        # Defaults to["Open Sans Regular", "Arial Unicode MS Regular"].
-        if QgsFontUtils.fontFamilyHasStyle("Open Sans", "Regular"):
-            font_name = "Open Sans"
-            text_font = QFont(font_name)
-            text_font.setStyleName("Regular")
-            found_font = True
-        elif QgsFontUtils.fontFamilyHasStyle("Arial Unicode MS", "Regular"):
-            font_name = "Arial Unicode MS"
-            text_font = QFont(font_name)
-            text_font.setStyleName("Regular")
-            found_font = True
-        else:
-            font_name = "Open Sans, Arial Unicode MS"
-    if not found_font and font_name:
-        context.pushWarning(f"{context.layerId()}: Referenced font {font_name} is not available on your system.")
 
     # Text color
     text_color = None
@@ -715,7 +721,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         format.setColor(text_color)
     if text_size:
         format.setSize(text_size)
-    if found_font:
+    if text_font:
         format.setFont(text_font)
     if text_letter_spacing:
         f = format.font()
@@ -842,20 +848,18 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
     json_text_justify = json_layout.get("text-justify")
 
     if json_text_justify:
-
         if isinstance(json_text_justify, str):
             text_align = json_text_justify
+            if text_align == "left":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiLeft
+            elif text_align == "right":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiRight
+            elif text_align == "center":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
+            elif text_align == "follow":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiFollowPlacement
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported text-justify type ({type(json_text_justify).__name__}).")
-
-        if text_align == "left":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiLeft
-        elif text_align == "right":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiRight
-        elif text_align == "center":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
-        elif text_align == "follow":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiFollowPlacement
     else:
         label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
 
