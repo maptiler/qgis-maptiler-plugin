@@ -104,8 +104,6 @@ def get_bg_renderer(style_json_data: dict):
     for layer in layers:
         if layer["id"] == "background":
             renderer = parse_background(layer)
-    if not renderer:
-        print("No background layer in style.json.")
     return renderer
 
 
