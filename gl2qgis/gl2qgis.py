@@ -995,10 +995,7 @@ def parse_interpolate_by_zoom(json_obj: dict, context: QgsMapBoxGlStyleConversio
     base = json_obj.get('base') if json_obj.get('base') else 1
     stops = json_obj.get("stops")
 
-    if len(stops) <= 2:
-        scale_expression = interpolate_expression(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base, multiplier)
-    else:
-        scale_expression = parse_stops(base, stops, multiplier, context)
+    scale_expression = parse_stops(base, stops, multiplier, context)
 
     if isinstance(scale_expression, (int, float)):
         return scale_expression
