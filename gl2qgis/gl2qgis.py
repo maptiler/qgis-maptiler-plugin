@@ -885,15 +885,15 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
             elif text_anchor == "top":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelow
             elif text_anchor == "bottom":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAbove
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantOver
             elif text_anchor == "top-left":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelowRight
             elif text_anchor == "top-right":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelowLeft
             elif text_anchor == "bottom-left":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAboveRight
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantRight
             elif text_anchor == "bottom-right":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAboveLeft
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantLeft
 
         json_text_offset = json_layout.get("text-offset")
         if json_text_offset:
