@@ -1030,7 +1030,7 @@ def parse_opacity_stops(base: (int, float), stops: list, max_opacity: int):
         case_str += f" WHEN @vector_tile_zoom >= {stops[i][0]} AND @vector_tile_zoom < {stops[i + 1][0]} " \
                     f"THEN set_color_part(@symbol_color, 'alpha', " \
                     f"{interpolate_expression(stops[i][0], stops[i+1][0], stops[i][1] * max_opacity, stops[i+1][1], max_opacity, base)})"
-    case_str = f" WHEN @vector_tile_zoom >= {stops[-1][0]}" \
+    case_str += f" WHEN @vector_tile_zoom >= {stops[-1][0]}" \
                f" THEN set_color_part(@symbol_color, 'alpha', {stops[-1][1]}) END"
     return case_str
 
