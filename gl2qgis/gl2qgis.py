@@ -119,7 +119,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
 def parse_fill_layer(json_layer, context):
     json_paint = json_layer.get('paint')
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return False, None
 
     dd_properties = QgsPropertyCollection()
@@ -131,10 +131,12 @@ def parse_fill_layer(json_layer, context):
         json_fill_color = json_paint['fill-color']
         if isinstance(json_fill_color, dict):
             # Use data defined property
+            fill_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_interpolate_color_by_zoom(json_fill_color, context))
         elif isinstance(json_fill_color, list):
             # Use data defined property
+            fill_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_fill_color, PropertyType.Color, context, 1, 255))
         elif isinstance(json_fill_color, str):
@@ -150,9 +152,11 @@ def parse_fill_layer(json_layer, context):
     if 'fill-outline-color' in json_paint:
         json_fill_outline_color = json_paint.get('fill-outline-color')
         if isinstance(json_fill_outline_color, dict):
+            fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_interpolate_color_by_zoom(json_fill_outline_color, context))
         elif isinstance(json_fill_outline_color, list):
+            fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_outline_color, PropertyType.Color,
                                                        context, 1, 255, fill_outline_color))
@@ -262,15 +266,24 @@ def parse_fill_layer(json_layer, context):
     if fill_opacity:
         symbol.setOpacity(fill_opacity)
 
-    if not fill_outline_color or fill_outline_color == "fill_pattern":
+    if fill_outline_color == "fill_pattern":
         fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
+    elif fill_outline_color == "dd_props":
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.SolidLine))
     elif fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
+    elif fill_outline_color is None:
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
 
-    if not fill_color or fill_color == "fill_pattern":
+    if  fill_color == "fill_pattern":
         fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
+    elif  fill_color == "dd_props":
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.SolidPattern))
     elif fill_color:
         fill_symbol.setFillColor(fill_color)
+    elif fill_color is None:
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
+
 
     style = QgsVectorTileBasicRendererStyle()
     style.setGeometryType(QgsWkbTypes.PolygonGeometry)
@@ -282,7 +295,7 @@ def parse_fill_layer(json_layer, context):
 def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContext):
     json_paint = json_layer.get('paint')
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return False, None
 
     if "line-pattern" in json_paint:
@@ -391,14 +404,14 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             stops = json_dasharray.get("stops")
             if line_width_property:
                 expr = f"array_to_string(" \
-                       f"array_foreach({parse_array_stops(stops, context.pixelSizeConversionFactor())}," \
+                       f"array_foreach({parse_array_stops(stops, 1)}," \
                        f"@element * coalesce(" \
                        f"({line_width_property.asExpression()}), " \
                        f"{line_symbol.width()} * {context.pixelSizeConversionFactor()})), ';')"
             else:
-                expr = f"array_to_string({parse_array_stops(stops, context.pixelSizeConversionFactor())}, ';')"
+                expr = f"array_to_string({parse_array_stops(stops, 1)}, ';')"
             dd_properties.setProperty(QgsSymbolLayer.PropertyCustomDash, QgsProperty.fromExpression(expr))
-            dash_source = stops[0][1]
+            dash_source = stops[-1][1]
             if line_width:
                 dash_vector = [i * line_width for i in dash_source]
             else:
@@ -463,7 +476,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     json_layout = json_layer.get("layout")
     if not json_layout:
-        context.pushWarning("{}: Layer has no layout property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no layout property, skipping.")
         return has_renderer, None, has_labeling, None
 
     if "text-field" not in json_layout:
@@ -472,7 +485,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     json_paint = json_layer.get("paint")
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return has_renderer, None, has_labeling, None
 
     dd_label_properties = QgsPropertyCollection()
@@ -534,23 +547,38 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     # Text font
     text_font = QFont()
-    found_font = False
+
+    def check_font_dbs(font_name, font_style):
+        if QgsFontUtils.fontFamilyOnSystem(font_name):
+            if font_style == " " or font_style is None:
+                return font_name, None
+            elif QgsFontUtils.fontFamilyHasStyle(font_name, font_style):
+                return font_name, font_style
+        elif font_name in QFontDatabase().families():
+            if font_style == " ":
+                return font_name, None
+            elif font_style in QFontDatabase().styles(font_name):
+                return f"{font_name} {font_style}", None
+        return None, None
 
     def split_font_family(font_name):
         text_font_parts = font_name.split(" ")
-        for i in range(1, len(text_font_parts)):
-            candidate_font_name = " ".join(text_font_parts[:i])
-            candidate_font_style = " ".join(text_font_parts[i:])
-            if QgsFontUtils.fontFamilyHasStyle(candidate_font_name, candidate_font_style):
-                family = candidate_font_name
-                style = candidate_font_style
-                return True, family, style
-
-            if candidate_font_name in QFontDatabase().families() and candidate_font_style in QFontDatabase().styles(candidate_font_name):
-                # the json isn't following the spec correctly!!
-                family = font_name
-                style = None
-                return True, family, style
+        for i in range(len(text_font_parts)):
+            candidate_font_name = " ".join(text_font_parts[:i+1])
+            candidate_font_style = " ".join(text_font_parts[i+1:])
+            # Check as-is
+            found_name, found_style = check_font_dbs(candidate_font_name, candidate_font_style)
+            if found_name:
+                return True, found_name, found_style
+            # Remove gaps after "Extra" or "Semi"
+            if "Extra " in candidate_font_style:
+                candidate_font_style = candidate_font_style.replace("Extra ", "Extra")
+            if "Semi " in candidate_font_style:
+                candidate_font_style = candidate_font_style.replace("Semi ", "Semi")
+            # Check again with no gaps
+            found_name, found_style = check_font_dbs(candidate_font_name, candidate_font_style)
+            if found_name:
+                return True, found_name, found_style
         return False, None, None
 
 
@@ -560,10 +588,20 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         if not isinstance(json_text_font, (str, list, dict)):
             context.pushWarning(f"{context.layerId()}: Skipping unsupported text-font type {type(json_text_font)}")
         else:
+            split_ok = False
             if isinstance(json_text_font, list):
-                font_name = json_text_font[0]
+                for font_name in json_text_font:
+                    split_ok, font_family, font_style = split_font_family(font_name)
+                    if split_ok:
+                        break
+                if not split_ok:
+                    context.pushWarning(f"{context.layerId()}: None of fonts in {json_text_font} is available on "
+                                    f"your system. Default font will be used.")
             elif isinstance(json_text_font, str):
-                font_name = json_text_font
+                split_ok, font_family, font_style = split_font_family(json_text_font)
+                if not split_ok:
+                    context.pushWarning(f"{context.layerId()}: Referenced font {json_text_font} is not available on your "
+                                        f"system. Default font will be used.")
             elif isinstance(json_text_font, dict):
                 family_case_string = "CASE "
                 style_case_string = "CASE "
@@ -574,13 +612,15 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                     bz = stops[i][0]
                     bv = stops[i][1] if isinstance(stops[i][1], str) else stops[i][1][0]
                     if isinstance(bz, list):
-                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are note supported, skipping")
+                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are not "
+                                            f"supported, skipping")
                         error = True
 
                     # Top zoom
                     tz = stops[i+1][0]
                     if isinstance(tz, list):
-                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are note supported, skipping")
+                        context.pushWarning(f"{context.layerId()}: Expressions in interpolation function are not "
+                                            f"supported, skipping")
                         error = True
                     split_ok, font_family, font_style = split_font_family(bv)
                     if split_ok:
@@ -589,7 +629,8 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                         style_case_string += f"WHEN @vector_tile_zoom > {bz} AND @vector_tile_zoom <= {bz} " \
                                              f"THEN {QgsExpression.quotedValue(font_style)} "
                     else:
-                        context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system.")
+                        context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your "
+                                            f"system. Default font will be used.")
                 if error:
                     return False, None, False, None
                 bv = stops[-1][1] if isinstance(stops[-1][1], str) else stops[-1][1][0]
@@ -597,39 +638,17 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 if split_ok:
                     family_case_string += f"ELSE {QgsExpression.quotedValue(font_family)} END"
                     style_case_string += f"ElSE {QgsExpression.quotedValue(font_style)} END"
+                    dd_label_properties.setProperty(QgsPalLayerSettings.Family,
+                                                    QgsProperty.fromExpression(family_case_string))
+                    dd_label_properties.setProperty(QgsPalLayerSettings.FontStyle,
+                                                    QgsProperty.fromExpression(style_case_string))
                 else:
-                    context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system.")
-                    return False, None, False, None
-
-                dd_label_properties.setProperty(QgsPalLayerSettings.Family,
-                                                QgsProperty.fromExpression(family_case_string))
-                dd_label_properties.setProperty(QgsPalLayerSettings.FontStyle,
-                                                QgsProperty.fromExpression(style_case_string))
-
-                found_font = True
-                font_name = font_family
-            split_ok, font_family, font_style = split_font_family(font_name)
+                    context.pushWarning(f"{context.layerId()}: Referenced font {bv} is not available on your system. "
+                                        f"Default font will be used.")
             if split_ok:
                 text_font = QFont(font_family)
                 if font_style:
                     text_font.setStyleName(font_style)
-                found_font = True
-    else:
-        # Defaults to["Open Sans Regular", "Arial Unicode MS Regular"].
-        if QgsFontUtils.fontFamilyHasStyle("Open Sans", "Regular"):
-            font_name = "Open Sans"
-            text_font = QFont(font_name)
-            text_font.setStyleName("Regular")
-            found_font = True
-        elif QgsFontUtils.fontFamilyHasStyle("Arial Unicode MS", "Regular"):
-            font_name = "Arial Unicode MS"
-            text_font = QFont(font_name)
-            text_font.setStyleName("Regular")
-            found_font = True
-        else:
-            font_name = "Open Sans, Arial Unicode MS"
-    if not found_font and font_name:
-        context.pushWarning(f"{context.layerId()}: Referenced font {font_name} is not available on your system.")
 
     # Text color
     text_color = None
@@ -702,7 +721,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
         format.setColor(text_color)
     if text_size:
         format.setSize(text_size)
-    if found_font:
+    if text_font:
         format.setFont(text_font)
     if text_letter_spacing:
         f = format.font()
@@ -829,20 +848,18 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
     json_text_justify = json_layout.get("text-justify")
 
     if json_text_justify:
-
         if isinstance(json_text_justify, str):
             text_align = json_text_justify
+            if text_align == "left":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiLeft
+            elif text_align == "right":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiRight
+            elif text_align == "center":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
+            elif text_align == "follow":
+                label_settings.multilineAlign = QgsPalLayerSettings.MultiFollowPlacement
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported text-justify type ({type(json_text_justify).__name__}).")
-
-        if text_align == "left":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiLeft
-        elif text_align == "right":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiRight
-        elif text_align == "center":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
-        elif text_align == "follow":
-            label_settings.multilineAlign = QgsPalLayerSettings.MultiFollowPlacement
     else:
         label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
 
@@ -868,15 +885,15 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
             elif text_anchor == "top":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelow
             elif text_anchor == "bottom":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAbove
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantOver
             elif text_anchor == "top-left":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelowRight
             elif text_anchor == "top-right":
                 label_settings.quadOffset = QgsPalLayerSettings.QuadrantBelowLeft
             elif text_anchor == "bottom-left":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAboveRight
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantRight
             elif text_anchor == "bottom-right":
-                label_settings.quadOffset = QgsPalLayerSettings.QuadrantAboveLeft
+                label_settings.quadOffset = QgsPalLayerSettings.QuadrantLeft
 
         json_text_offset = json_layout.get("text-offset")
         if json_text_offset:
@@ -884,7 +901,10 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 dd_label_properties.setProperty(QgsPalLayerSettings.OffsetXY,
                                                 parse_interpolate_point_by_zoom(json_text_offset, context, text_size))
             elif isinstance(json_text_offset, list):
-                text_offset = QPointF(json_text_offset[0] * text_size, json_text_offset[1] * text_size)
+                if json_text_offset[0] == "literal":
+                    text_offset = QPointF(json_text_offset[1][0] * text_size, json_text_offset[1][1] * text_size)
+                else:
+                    text_offset = QPointF(json_text_offset[0] * text_size, json_text_offset[1] * text_size)
             else:
                 context.pushWarning(f"{context.layerId()}: Skipping unsupported text-offset type ({type(json_text_offset).__name__})")
 
@@ -979,10 +999,7 @@ def parse_interpolate_by_zoom(json_obj: dict, context: QgsMapBoxGlStyleConversio
     base = json_obj.get('base') if json_obj.get('base') else 1
     stops = json_obj.get("stops")
 
-    if len(stops) <= 2:
-        scale_expression = interpolate_expression(stops[0][0], stops[-1][0], stops[0][1], stops[-1][1], base, multiplier)
-    else:
-        scale_expression = parse_stops(base, stops, multiplier, context)
+    scale_expression = parse_stops(base, stops, multiplier, context)
 
     if isinstance(scale_expression, (int, float)):
         return scale_expression
@@ -1013,7 +1030,7 @@ def parse_opacity_stops(base: (int, float), stops: list, max_opacity: int):
         case_str += f" WHEN @vector_tile_zoom >= {stops[i][0]} AND @vector_tile_zoom < {stops[i + 1][0]} " \
                     f"THEN set_color_part(@symbol_color, 'alpha', " \
                     f"{interpolate_expression(stops[i][0], stops[i+1][0], stops[i][1] * max_opacity, stops[i+1][1], max_opacity, base)})"
-    case_str = f" WHEN @vector_tile_zoom >= {stops[-1][0]}" \
+    case_str += f" WHEN @vector_tile_zoom >= {stops[-1][0]}" \
                f" THEN set_color_part(@symbol_color, 'alpha', {stops[-1][1]}) END"
     return case_str
 
@@ -1073,22 +1090,46 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float), conte
         bz = stops[i][0]
         bv = stops[i][1]
         if isinstance(bv, list):
-            context.pushWarning(
-                f"{context.layerId()}: Expressions in interpolation function are not supported, skipping.")
-            return
+            bv = parse_expression(bv, context)
         tz = stops[i + 1][0]
         tv = stops[i + 1][1]
         if isinstance(tv, list):
-            context.pushWarning(
-                f"{context.layerId()}: Expressions in interpolation function are not supported, skipping.")
-            return
+            tv = parse_expression(tv, context)
 
         case_str += f"WHEN @vector_tile_zoom > {bz} AND @vector_tile_zoom <= {tz} " \
                     f"THEN {interpolate_expression(bz, tz, bv, tv, base, multiplier)} "
 
     z = stops[-1][0]
     v = stops[-1][1]
-    case_str += f"WHEN @vector_tile_zoom > {z} THEN {v * multiplier} END"
+    if isinstance(v, list):
+        v = parse_expression(v, context)
+    case_str += f"WHEN @vector_tile_zoom > {z} THEN {v} * {multiplier} END"
+    return case_str
+
+
+def parse_discrete(json_list: list, context: QgsMapBoxGlStyleConversionContext):
+    attr = parse_expression(json_list[1], context)
+
+    if not attr:
+        context.pushWarning(f"{context.layerId()}: Could not interpret step expression.")
+        return
+
+    case_str = "CASE "
+    for i in range(2, len(json_list)-1, 2):
+        # WHEN value
+        when_value = json_list[i]
+        # THEN value
+        then_value = json_list[i+1]
+        # IN operator for list
+        if isinstance(when_value, list):
+            match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
+            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
+        # EQUAL operator for single key
+        elif isinstance(when_value, str):
+            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
+
+    else_value = json_list[-1]
+    case_str += f"ELSE {else_value} END"
     return case_str
 
 
@@ -1193,21 +1234,26 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
 
     case_str = "CASE "
     for i in range(2, len(json_list)-1, 2):
-        keys = json_list[i]
-        match_str_lst = [QgsExpression.quotedValue(key) for key in keys]
-        value = json_list[i+1]
-
+        # THEN value
+        then_value = json_list[i+1]
         if property_type == PropertyType.Color:
-            color = parse_color(value, context)
-            value_str = QgsExpression.quotedString(color.name())
+            color = parse_color(then_value, context)
+            then_value_str = QgsExpression.quotedString(color.name())
         elif property_type == PropertyType.Numeric:
-            value_str = str(value * multiplier)
+            then_value_str = str(then_value * multiplier)
         elif property_type == PropertyType.Opacity:
-            value_str = str(value * max_opacity)
+            then_value_str = str(then_value * max_opacity)
         elif property_type == PropertyType.Point:
-            value_str = f"array({value[0] * multiplier},{value[0] * multiplier})"
-
-        case_str += f"WHEN {attr} IN {','.join(match_str_lst)} THEN {value_str} "
+            then_value_str = f"array({then_value[0] * multiplier},{then_value[0] * multiplier})"
+        # WHEN value
+        when_value = json_list[i]
+        # IN operator for list
+        if isinstance(when_value, list):
+            match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
+            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
+        # EQUAL operator for single key
+        elif isinstance(when_value, str):
+            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
 
     if property_type == PropertyType.Color:
         color = parse_color(json_list[-1], context)
@@ -1290,13 +1336,13 @@ def get_color_as_hsla_components(qcolor: QColor):
 
 
 def interpolate_expression(zoom_min: float, zoom_max: float, value_min: float, value_max: float, base: float, multiplier: float=1):
-    if qgsDoubleNear(value_min, value_max):
+    if isinstance(value_min, (int, float)) and isinstance(value_max, (int, float)) and qgsDoubleNear(value_min, value_max):
         return value_min * multiplier
 
     if base == 1:
         expression = f"scale_linear(@vector_tile_zoom,{zoom_min},{zoom_max},{value_min},{value_max})"
     else:
-        expression = f"{value_min} + {value_max - value_min} * " \
+        expression = f"{value_min} + ({value_max} - {value_min}) * " \
                      f"({base}^(@vector_tile_zoom-{zoom_min})-1)/({base}^({zoom_max}-{zoom_min})-1)"
 
     if multiplier != 1:
@@ -1332,16 +1378,16 @@ def parse_expression(json_expr, context):
     if op in ('all', "any", "none"):
         lst = [parse_value(v, context) for v in json_expr[1:]]
         if None in lst:
-            context.pushWarning(f"{context.layerId}: Skipping unsupported expression")
+            context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
             return
         if op == "none":
             operator_string = ") AND NOT ("
-            return "NOT ({})".format(operator_string.join(lst))
+            return f"NOT ({operator_string.join(lst)})"
         if op == 'all':
             operator_string = ") AND ("
         elif op == 'any':
             operator_string = ") OR ("
-        return "({})".format(operator_string.join(lst))
+        return f"({operator_string.join(lst)})"
     elif op == '!':
         # ! inverts next expression meaning
         contra_json_expr = json_expr[1]
@@ -1354,7 +1400,7 @@ def parse_expression(json_expr, context):
             op = "IS"
         elif op == "!=":
             op = "IS NOT"
-        return "{} {} {}".format(parse_key(json_expr[1]), op, parse_value(json_expr[2], context))
+        return f"{parse_key(json_expr[1])} {op} {parse_value(json_expr[2], context)}"
     elif op == 'has':
         return parse_key(json_expr[1]) + " IS NOT NULL"
     elif op == '!has':
@@ -1363,28 +1409,28 @@ def parse_expression(json_expr, context):
         key = parse_key(json_expr[1])
         lst = [parse_value(v, context) for v in json_expr[2:]]
         if None in lst:
-            context.pushWarning(f"{context.layerId}: Skipping unsupported expression")
+            context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
             return
         if op == 'in':
-            return "{} IN ({})".format(key, ", ".join(lst))
+            return f"{key} IN ({', '.join(lst)})"
         else:  # not in
-            return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+            return f"({key} IS NULL OR {key} NOT IN ({', '.join(lst)}))"
     elif op == 'get':
-        return parse_key(json_expr[1])
+        return f"attribute('{json_expr[1]}')"
     elif op == 'match':
         attr = json_expr[1][1]
 
-        if len(json_expr) == 5 and json_expr[3] == 'true' and json_expr[4] == 'false':
+        if len(json_expr) == 5 and isinstance(json_expr[3], bool) and isinstance(json_expr[4], bool):
             if isinstance(json_expr[2], list):
                 lst = map(QgsExpression.quotedValue, json_expr[2])
-                if len(lst) > 1:
-                    return "{} IN ({})".format(QgsExpression.quotedColumnRef(attr), ", ".join(lst))
+                if len(json_expr[2]) > 1:
+                    return f"{attr} IS NULL OR {QgsExpression.quotedColumnRef(attr)} IN ({', '.join(lst)})"
                 else:
                     return QgsExpression.createFieldEqualityExpression(attr, json_expr[2][0])
-            elif isinstance(json_expr[2], str, float, int):
+            elif isinstance(json_expr[2], (str, float, int)):
                 return QgsExpression.createFieldEqualityExpression(attr, json_expr[2])
             else:
-                context.pushWarning("{}: Skipping unsupported expression.".format(context.layerId))
+                context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
                 return
         else:
             case_str = "CASE "
@@ -1392,18 +1438,20 @@ def parse_expression(json_expr, context):
                 if isinstance(json_expr[i], (list, tuple)):
                     lst = list(map(QgsExpression.quotedValue, json_expr[i]))
                     if len(lst) > 1:
-                        case_str += "WHEN {} IN ({}) ".format(QgsExpression.quotedValue(attr), ". ".join(lst))
+                        case_str += f"WHEN {QgsExpression.quotedValue(attr)} IN ({', '.join(lst)}) "
                     else:
-                        case_str += "WHEN {} ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i]))
+                        case_str += f"WHEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i])} "
                 elif isinstance(json_expr[i], (str, float, int)):
-                    case_str += "WHEN ({}) ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i]))
-                case_str += "THEN {} ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1]))
-            case_str += "ELSE {} END".format(QgsExpression.quotedValue(json_expr[-1]))
+                    case_str += f"WHEN ({QgsExpression.createFieldEqualityExpression(attr, json_expr[i])}) "
+                case_str += f"THEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1])} "
+            case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
-        return "to_string()".format(parse_expression(json_expr[1], context))
+        return f"to_string({parse_expression(json_expr[1], context)})"
+    elif op == "step":
+        return parse_discrete(json_expr, context)
     else:
-        context.pushWarning("{}: Skipping unsupported expression".format(context.layerId()))
+        context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
 
 
@@ -1420,13 +1468,13 @@ def parse_value(json_value, context):
 
 
 def parse_key(json_key):
-    if json_key == '$type':
+    if json_key == '$type' or json_key == 'geometry-type':
         return "_geom_type"
     elif isinstance(json_key, list):
         if len(json_key) > 1:
-            return json_key[1]
+            return parse_key(json_key[1])
         else:
-            return json_key[0]
+            return parse_key(json_key[0])
     return QgsExpression.quotedColumnRef(json_key)
 
 

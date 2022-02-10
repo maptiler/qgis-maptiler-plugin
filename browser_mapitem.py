@@ -274,17 +274,20 @@ class MapDataItem(QgsDataItem):
                     target_node.insertLayer(source_data["order"], raster)
 
         # Print conversion warnings
-        # Removed known warnings
         if bool(candidate_warnings):
             warnings = list()
+            # Remove duplicates
+            candidate_warnings = list(set(candidate_warnings))
             for candidate in candidate_warnings:
-                if "Could not retrieve sprite ''" or "Could not retrieve sprite ' '" in candidate:
+                # Removed known warnings
+                if "Could not retrieve sprite ''" in candidate or "Could not retrieve sprite ' '" in candidate:
                     continue
                 warnings.append(candidate)
             # Print warnings during conversion
             if bool(warnings):
                 widget = iface.messageBar().createMessage("Vector tiles:",
-                                                          "Style could not be completely converted")
+                                                          f"Style {style_json_data.get('name')} "
+                                                          f"could not be completely converted")
                 button = QPushButton(widget)
                 button.setText("Details")
 
