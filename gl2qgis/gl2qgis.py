@@ -1107,6 +1107,32 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float), conte
     return case_str
 
 
+def parse_discrete(json_list: list, context: QgsMapBoxGlStyleConversionContext):
+    attr = parse_expression(json_list[1], context)
+
+    if not attr:
+        context.pushWarning(f"{context.layerId()}: Could not interpret step expression.")
+        return
+
+    case_str = "CASE "
+    for i in range(2, len(json_list)-1, 2):
+        # WHEN value
+        when_value = json_list[i]
+        # THEN value
+        then_value = json_list[i+1]
+        # IN operator for list
+        if isinstance(when_value, list):
+            match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
+            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
+        # EQUAL operator for single key
+        elif isinstance(when_value, str):
+            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
+
+    else_value = json_list[-1]
+    case_str += f"ELSE {else_value} END"
+    return case_str
+
+
 def parse_array_stops(stops: list, multiplier: (int, float)):
     if len(stops) < 2:
         return
@@ -1422,6 +1448,8 @@ def parse_expression(json_expr, context):
             return case_str
     elif op == "to-string":
         return f"to_string({parse_expression(json_expr[1], context)})"
+    elif op == "step":
+        return parse_discrete(json_expr, context)
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
