@@ -274,10 +274,12 @@ class MapDataItem(QgsDataItem):
                     target_node.insertLayer(source_data["order"], raster)
 
         # Print conversion warnings
-        # Removed known warnings
         if bool(candidate_warnings):
             warnings = list()
+            # Remove duplicates
+            candidate_warnings = list(set(candidate_warnings))
             for candidate in candidate_warnings:
+                # Removed known warnings
                 if "Could not retrieve sprite ''" in candidate or "Could not retrieve sprite ' '" in candidate:
                     continue
                 warnings.append(candidate)
