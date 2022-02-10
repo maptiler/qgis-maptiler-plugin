@@ -45,7 +45,7 @@ class MapDataItem(QgsDataItem):
 
         if 'custom' in self._dataset:
             self._add_custom_to_canvas()
-        elif utils.is_qgs_vectortile_api_enable() and prefervector:
+        elif utils.is_qgs_vectortile_api_enable() and prefervector and 'vector' in self._dataset:
             self._add_vector_to_canvas()
         else:
             self._add_raster_to_canvas()
