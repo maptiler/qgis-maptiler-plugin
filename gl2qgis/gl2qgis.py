@@ -1090,22 +1090,20 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float), conte
         bz = stops[i][0]
         bv = stops[i][1]
         if isinstance(bv, list):
-            context.pushWarning(
-                f"{context.layerId()}: Expressions in interpolation function are not supported, skipping.")
-            return
+            bv = parse_expression(bv, context)
         tz = stops[i + 1][0]
         tv = stops[i + 1][1]
         if isinstance(tv, list):
-            context.pushWarning(
-                f"{context.layerId()}: Expressions in interpolation function are not supported, skipping.")
-            return
+            tv = parse_expression(tv, context)
 
         case_str += f"WHEN @vector_tile_zoom > {bz} AND @vector_tile_zoom <= {tz} " \
                     f"THEN {interpolate_expression(bz, tz, bv, tv, base, multiplier)} "
 
     z = stops[-1][0]
     v = stops[-1][1]
-    case_str += f"WHEN @vector_tile_zoom > {z} THEN {v * multiplier} END"
+    if isinstance(v, list):
+        v = parse_expression(v, context)
+    case_str += f"WHEN @vector_tile_zoom > {z} THEN {v} * {multiplier} END"
     return case_str
 
 
@@ -1312,13 +1310,13 @@ def get_color_as_hsla_components(qcolor: QColor):
 
 
 def interpolate_expression(zoom_min: float, zoom_max: float, value_min: float, value_max: float, base: float, multiplier: float=1):
-    if qgsDoubleNear(value_min, value_max):
+    if isinstance(value_min, (int, float)) and isinstance(value_max, (int, float)) and qgsDoubleNear(value_min, value_max):
         return value_min * multiplier
 
     if base == 1:
         expression = f"scale_linear(@vector_tile_zoom,{zoom_min},{zoom_max},{value_min},{value_max})"
     else:
-        expression = f"{value_min} + {value_max - value_min} * " \
+        expression = f"{value_min} + ({value_max} - {value_min}) * " \
                      f"({base}^(@vector_tile_zoom-{zoom_min})-1)/({base}^({zoom_max}-{zoom_min})-1)"
 
     if multiplier != 1:
@@ -1414,7 +1412,7 @@ def parse_expression(json_expr, context):
                 if isinstance(json_expr[i], (list, tuple)):
                     lst = list(map(QgsExpression.quotedValue, json_expr[i]))
                     if len(lst) > 1:
-                        case_str += "WHEN {} IN ({}) ".format(QgsExpression.quotedValue(attr), ". ".join(lst))
+                        case_str += "WHEN {} IN ({}) ".format(QgsExpression.quotedValue(attr), ", ".join(lst))
                     else:
                         case_str += "WHEN {} ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i]))
                 elif isinstance(json_expr[i], (str, float, int)):
