@@ -119,7 +119,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
 def parse_fill_layer(json_layer, context):
     json_paint = json_layer.get('paint')
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return False, None
 
     dd_properties = QgsPropertyCollection()
@@ -295,7 +295,7 @@ def parse_fill_layer(json_layer, context):
 def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContext):
     json_paint = json_layer.get('paint')
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return False, None
 
     if "line-pattern" in json_paint:
@@ -476,7 +476,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     json_layout = json_layer.get("layout")
     if not json_layout:
-        context.pushWarning("{}: Layer has no layout property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no layout property, skipping.")
         return has_renderer, None, has_labeling, None
 
     if "text-field" not in json_layout:
@@ -485,7 +485,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     json_paint = json_layer.get("paint")
     if json_paint is None:
-        context.pushWarning("{}: Layer has no paint property, skipping".format(json_layer.get("id")))
+        context.pushWarning(f"{json_layer.get('id')}: Layer has no paint property, skipping.")
         return has_renderer, None, has_labeling, None
 
     dd_label_properties = QgsPropertyCollection()
@@ -1352,16 +1352,16 @@ def parse_expression(json_expr, context):
     if op in ('all', "any", "none"):
         lst = [parse_value(v, context) for v in json_expr[1:]]
         if None in lst:
-            context.pushWarning(f"{context.layerId}: Skipping unsupported expression")
+            context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
             return
         if op == "none":
             operator_string = ") AND NOT ("
-            return "NOT ({})".format(operator_string.join(lst))
+            return f"NOT ({operator_string.join(lst)})"
         if op == 'all':
             operator_string = ") AND ("
         elif op == 'any':
             operator_string = ") OR ("
-        return "({})".format(operator_string.join(lst))
+        return f"({operator_string.join(lst)})"
     elif op == '!':
         # ! inverts next expression meaning
         contra_json_expr = json_expr[1]
@@ -1383,12 +1383,12 @@ def parse_expression(json_expr, context):
         key = parse_key(json_expr[1])
         lst = [parse_value(v, context) for v in json_expr[2:]]
         if None in lst:
-            context.pushWarning(f"{context.layerId}: Skipping unsupported expression")
+            context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
             return
         if op == 'in':
-            return "{} IN ({})".format(key, ", ".join(lst))
+            return f"{key} IN ({', '.join(lst)})"
         else:  # not in
-            return "({} IS NULL OR {} NOT IN ({}))".format(key, key, ", ".join(lst))
+            return f"({key} IS NULL OR {key} NOT IN ({', '.join(lst)}))"
     elif op == 'get':
         return f"attribute('{json_expr[1]}')"
     elif op == 'match':
@@ -1404,7 +1404,7 @@ def parse_expression(json_expr, context):
             elif isinstance(json_expr[2], (str, float, int)):
                 return QgsExpression.createFieldEqualityExpression(attr, json_expr[2])
             else:
-                context.pushWarning("{}: Skipping unsupported expression.".format(context.layerId))
+                context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
                 return
         else:
             case_str = "CASE "
@@ -1412,18 +1412,18 @@ def parse_expression(json_expr, context):
                 if isinstance(json_expr[i], (list, tuple)):
                     lst = list(map(QgsExpression.quotedValue, json_expr[i]))
                     if len(lst) > 1:
-                        case_str += "WHEN {} IN ({}) ".format(QgsExpression.quotedValue(attr), ", ".join(lst))
+                        case_str += f"WHEN {QgsExpression.quotedValue(attr)} IN ({', '.join(lst)}) "
                     else:
-                        case_str += "WHEN {} ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i]))
+                        case_str += f"WHEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i])} "
                 elif isinstance(json_expr[i], (str, float, int)):
-                    case_str += "WHEN ({}) ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i]))
-                case_str += "THEN {} ".format(QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1]))
-            case_str += "ELSE {} END".format(QgsExpression.quotedValue(json_expr[-1]))
+                    case_str += f"WHEN ({QgsExpression.createFieldEqualityExpression(attr, json_expr[i])}) "
+                case_str += f"THEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1])} "
+            case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
-        return "to_string()".format(parse_expression(json_expr[1], context))
+        return f"to_string({parse_expression(json_expr[1], context)})"
     else:
-        context.pushWarning("{}: Skipping unsupported expression".format(context.layerId()))
+        context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
 
 
