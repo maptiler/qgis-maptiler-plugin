@@ -13,6 +13,10 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json?key='
     },
+    'OpenStreetMap': {
+        'raster': r'https://api.maptiler.com/maps/osm-standard/256/tiles.json?key=',
+        'vector': r'https://api.maptiler.com/maps/osm-standard/style.json?key='
+    },
     'Outdoor': {
         'raster': r'https://api.maptiler.com/maps/outdoor/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/outdoor/style.json?key=',
