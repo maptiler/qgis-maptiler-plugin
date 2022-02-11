@@ -47,6 +47,8 @@ class MapDataItem(QgsDataItem):
             self._add_custom_to_canvas()
         elif utils.is_qgs_vectortile_api_enable() and prefervector and 'vector' in self._dataset:
             self._add_vector_to_canvas()
+        elif 'raster-dem' in self._dataset:
+            self._add_raster_dem_to_canvas()
         else:
             self._add_raster_to_canvas()
         return True
@@ -168,6 +170,55 @@ class MapDataItem(QgsDataItem):
         proj.addMapLayer(raster, False)
         root = proj.layerTreeRoot()
         root.addLayer(raster)
+
+
+    def _add_raster_dem_to_canvas(self, data_key='raster-dem'):
+        """add raster layer from tiles.json"""
+        if not self._is_apikey_valid() and data_key == 'raster-dem':
+            self._openConfigueDialog()
+            return
+
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+
+        tile_json_url = self._dataset[data_key]
+        if tile_json_url.endswith("?key="):
+            tile_json_url += apikey
+
+        tile_json_data = json.loads(requests.get(tile_json_url).text)
+
+        layer_zxy_url = tile_json_data.get("tiles")[0]
+        if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+            if ".png" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".png")
+                url = "type=xyz&url=" + url_split[0] + "@2x.png" + url_split[1]
+            elif ".jpg" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".jpg")
+                url = "type=xyz&url=" + url_split[0] + "@2x.jpg" + url_split[1]
+            elif ".webp" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".webp")
+                url = "type=xyz&url=" + \
+                    url_split[0] + "@2x.webp" + url_split[1]
+        else:
+            url = "type=xyz&interpretation=maptilerterrain&url=" + layer_zxy_url
+        raster_dem = QgsRasterLayer(url, self._name, "wms")
+
+        # change resampler to bilinear
+        qml_str = self._qml_of(raster_dem)
+        bilinear_qml = self._change_resampler_to_bilinear(qml_str)
+        ls = QgsMapLayerStyle(bilinear_qml)
+        ls.writeToLayer(raster_dem)
+
+        # add Copyright
+        attribution_text = tile_json_data.get("attribution")
+        raster_dem.setAttribution(attribution_text)
+
+        # add rlayer to project
+        proj = QgsProject().instance()
+        proj.addMapLayer(raster_dem, False)
+        root = proj.layerTreeRoot()
+        root.addLayer(raster_dem)
+
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if not self._is_apikey_valid() and data_key == "vector":

@@ -44,6 +44,9 @@ STANDARD_DATASET = {
         'vector': r'https://api.maptiler.com/maps/streets/style.json?key=',
         'customize_url': r'https://maptiler.link/qgisstreets'
     },
+    'Terrain RGB': {
+        'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key='
+    },
     'Toner': {
         'raster': r'https://api.maptiler.com/maps/toner/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/toner/style.json?key=',
