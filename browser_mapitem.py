@@ -142,19 +142,19 @@ class MapDataItem(QgsDataItem):
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+            auth_cfg_id = "63rx9tg"
             if ".png" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".png")
-                url = "type=xyz&url=" + url_split[0] + "@2x.png" + url_split[1]
+                uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
             elif ".jpg" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".jpg")
-                url = "type=xyz&url=" + url_split[0] + "@2x.jpg" + url_split[1]
+                uri = f"type=xyz&url={url_split[0]}@2x.jpg{url_split[1]}&authcfg={auth_cfg_id}"
             elif ".webp" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".webp")
-                url = "type=xyz&url=" + \
-                    url_split[0] + "@2x.webp" + url_split[1]
+                uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
         else:
-            url = "type=xyz&url=" + layer_zxy_url
-        raster = QgsRasterLayer(url, self._name, "wms")
+            uri = f"type=xyz&url={layer_zxy_url}"
+        raster = QgsRasterLayer(uri, self._name, "wms")
 
         # change resampler to bilinear
         qml_str = self._qml_of(raster)
@@ -189,20 +189,13 @@ class MapDataItem(QgsDataItem):
         tile_json_data = json.loads(requests.get(tile_json_url).text)
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
-        if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
-            if ".png" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".png")
-                url = "type=xyz&url=" + url_split[0] + "@2x.png" + url_split[1]
-            elif ".jpg" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".jpg")
-                url = "type=xyz&url=" + url_split[0] + "@2x.jpg" + url_split[1]
-            elif ".webp" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".webp")
-                url = "type=xyz&url=" + \
-                    url_split[0] + "@2x.webp" + url_split[1]
+        if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+            auth_cfg_id = "63rx9tg"
+            intprt = "maptilerterrain"
+            uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
         else:
-            url = "type=xyz&interpretation=maptilerterrain&url=" + layer_zxy_url
-        raster_dem = QgsRasterLayer(url, self._name, "wms")
+            uri = f"type=xyz&url={layer_zxy_url}"
+        raster_dem = QgsRasterLayer(uri, self._name, "wms")
 
         # Color ramp
         min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
@@ -302,9 +295,11 @@ class MapDataItem(QgsDataItem):
             zxy_url = source_data["zxy_url"]
             name = source_data["name"]
             max_zoom = source_data["maxzoom"]
-            url = f"type=xyz&url={zxy_url}&zmax={max_zoom}"
+            auth_cfg_id = "63rx9tg"
+            uri = f"type=xyz&url={zxy_url}&zmax={max_zoom}&authcfg={auth_cfg_id}"
+
             if source_data["type"] == "vector":
-                vector = QgsVectorTileLayer(url, name)
+                vector = QgsVectorTileLayer(uri, name)
                 renderer, labeling, candidate_warnings = converter.convert(source_id, style_json_data, context)
                 vector.setLabeling(labeling)
                 vector.setRenderer(renderer)
@@ -314,13 +309,15 @@ class MapDataItem(QgsDataItem):
             elif source_data["type"] == "raster-dem":
                 # TODO remove this after RGB tiles implementation (Outdoor)
                 if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
-                    url = f"zmin=0&zmax=12&type=xyz&url={source_data.get('zxy_url').replace('terrain-rgb', 'hillshades')}"
-                    raster = QgsRasterLayer(url, "hillshades", "wms")
+                    uri = f"zmin=0&zmax=12&type=xyz" \
+                          f"&url={source_data.get('zxy_url').replace('terrain-rgb', 'hillshades')}" \
+                          f"&authcfg={auth_cfg_id}"
+                    raster = QgsRasterLayer(uri, "hillshades", "wms")
                     renderer = raster.renderer().clone()
                     renderer.setOpacity(0.2)
                     raster.setRenderer(renderer)
                 else:
-                    raster = QgsRasterLayer(url, name, "wms")
+                    raster = QgsRasterLayer(uri, name, "wms")
                     raster.setAttribution(attribution_text)
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
@@ -329,11 +326,12 @@ class MapDataItem(QgsDataItem):
                 if source_data["minzoom"] is not None and source_data["maxzoom"] is not None:
                     min_zoom = source_data["minzoom"]
                     max_zoom = source_data["maxzoom"]
-                    url = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}"
+                    auth_cfg_id = "63rx9tg"
+                    uri = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
                 rlayers = converter.get_source_layers_by(source_id, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
-                    raster = QgsRasterLayer(url, layer_id, "wms")
+                    raster = QgsRasterLayer(uri, layer_id, "wms")
                     renderer = raster.renderer()
                     styled_renderer, styled_resampler = converter.get_raster_renderer_resampler(
                         renderer, rlayer_json)
@@ -396,9 +394,9 @@ class MapDataItem(QgsDataItem):
                                     tile_json_data: dict,
                                     target_node: QgsLayerTreeGroup,
                                     attribution_text: str):
-        url = "type=xyz&url=" + tile_json_data.get("tiles")[0]
+        uri = f"type=xyz&url={tile_json_data.get('tiles')[0]}"
 
-        vector = QgsVectorTileLayer(url, self._name)
+        vector = QgsVectorTileLayer(uri, self._name)
         vector.setAttribution(attribution_text)
         QgsProject.instance().addMapLayer(vector, False)
         target_node.insertLayer(-1, vector)
