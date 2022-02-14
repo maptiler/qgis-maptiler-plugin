@@ -205,21 +205,27 @@ class MapDataItem(QgsDataItem):
         raster_dem = QgsRasterLayer(url, self._name, "wms")
 
         # Color ramp
-        color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
-        fnc = QgsColorRampShader()
+        min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
+        fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
         fnc.setColorRampType(QgsColorRampShader.Interpolated)
         fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
         fnc.setColorRampItemList(color_ramp)
+        lgnd = QgsColorRampLegendNodeSettings()
+        lgnd.setUseContinuousLegend(True)
+        lgnd.setOrientation(1)
+        fnc.setLegendSettings(lgnd)
         # Shader
         shader = QgsRasterShader()
         shader.setRasterShaderFunction(fnc)
+
+        # Renderer
+        renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+        raster_dem.setRenderer(renderer)
+
         # Resampling
         resampleFilter = raster_dem.resampleFilter()
         resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
         resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
-        # Renderer
-        renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
-        raster_dem.setRenderer(renderer)
 
         # add Copyright
         attribution_text = tile_json_data.get("attribution")
@@ -230,6 +236,8 @@ class MapDataItem(QgsDataItem):
         proj.addMapLayer(raster_dem, False)
         root = proj.layerTreeRoot()
         root.addLayer(raster_dem)
+        dem_layer = root.findLayer(raster_dem)
+        dem_layer.setExpanded(False)
 
 
     def _add_vector_to_canvas(self, data_key='vector'):
