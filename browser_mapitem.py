@@ -223,6 +223,11 @@ class MapDataItem(QgsDataItem):
         raster_dem.setRenderer(renderer)
 
         # Resampling
+        # raster_dem.setResamplingStage(Qgis.RasterResamplingStage.Provider)
+        # raster_dem.dataProvider().setZoomedInResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+        # raster_dem.dataProvider().setZoomedOutResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+        # raster_dem.pipe().set(renderer)
+
         resampleFilter = raster_dem.resampleFilter()
         resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
         resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
