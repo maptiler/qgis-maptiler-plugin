@@ -19,6 +19,7 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
+COLOR_RAMP_PATH = os.path.join(DATA_PATH, "mt-terrain-color-ramp.txt")
 SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
@@ -203,11 +204,22 @@ class MapDataItem(QgsDataItem):
             url = "type=xyz&interpretation=maptilerterrain&url=" + layer_zxy_url
         raster_dem = QgsRasterLayer(url, self._name, "wms")
 
-        # change resampler to bilinear
-        qml_str = self._qml_of(raster_dem)
-        bilinear_qml = self._change_resampler_to_bilinear(qml_str)
-        ls = QgsMapLayerStyle(bilinear_qml)
-        ls.writeToLayer(raster_dem)
+        # Color ramp
+        color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
+        fnc = QgsColorRampShader()
+        fnc.setColorRampType(QgsColorRampShader.Interpolated)
+        fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
+        fnc.setColorRampItemList(color_ramp)
+        # Shader
+        shader = QgsRasterShader()
+        shader.setRasterShaderFunction(fnc)
+        # Resampling
+        resampleFilter = raster_dem.resampleFilter()
+        resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
+        resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+        # Renderer
+        renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+        raster_dem.setRenderer(renderer)
 
         # add Copyright
         attribution_text = tile_json_data.get("attribution")
