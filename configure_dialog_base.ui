@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>323</width>
+    <width>423</width>
     <height>226</height>
    </rect>
   </property>
@@ -24,7 +24,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>323</width>
+    <width>423</width>
     <height>226</height>
    </size>
   </property>
@@ -72,12 +72,12 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Auth conf id</string>
+        <string>Token</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="auth_cfg_id_txt">
+      <widget class="QLineEdit" name="token_txt">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -91,7 +91,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Credentials for MapTiler Cloud is required.&lt;br/&gt;Get FREE credentials at &lt;br/&gt;&lt;a href=&quot;https://cloud.maptiler.com/account/credentials&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiscredentials&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Credentials for MapTiler Cloud is required.&lt;br/&gt;Get FREE credentials at &lt;a href=&quot;https://cloud.maptiler.com/account/credentials/&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiscredentials&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
