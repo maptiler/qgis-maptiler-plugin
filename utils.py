@@ -106,13 +106,18 @@ def _qgis_request(url: str):
 
 def qgis_request_json(url: str) -> dict:
     reply_content = _qgis_request(url)
-    json_data = json.loads(reply_content.content().data().decode())
-    return json_data
+    if not reply_content.error():
+        json_data = json.loads(reply_content.content().data().decode())
+        return json_data
+    else:
+        return None
 
 
 def qgis_request_data(url: str) -> bytes:
     reply_content = _qgis_request(url)
-    return reply_content.content().data()
+    if not reply_content.error():
+        return reply_content.content().data()
+    return None
 
 
 if __name__ == "__main__":
