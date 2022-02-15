@@ -7,7 +7,7 @@ from qgis.PyQt.QtCore import Qt, QModelIndex, QSettings
 from qgis.PyQt.QtWidgets import QDockWidget, QCompleter, QLineEdit
 from qgis.core import *
 
-from .configue_dialog import ConfigueDialog
+from .configure_dialog import ConfigureDialog
 from .settings_manager import SettingsManager
 from . import utils
 
@@ -17,30 +17,27 @@ class MapTilerGeocoder:
         self._language = language
 
     def geocoding(self, searchword, center_lonlat):
-        # apikey validation
         smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-        if not utils.validate_key(apikey):
-            self._openConfigueDialog()
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
+        if not utils.validate_credentials(auth_cfg_id):
+            self._openConfigureDialog()
             return
 
         proximity = '%s,%s' % (str(center_lonlat[0]), str(center_lonlat[1]))
         params = {
-            'key': apikey,
             'proximity': proximity,
             'language': self._language
         }
         p = urllib.parse.urlencode(params, safe=',')
-
         query = urllib.parse.quote(searchword)
-        url = 'https://api.maptiler.com/geocoding/' + query + '.json?' + p
-        geojson_str = requests.get(url).text
-        geojson_dict = json.loads(geojson_str)
+        url = f"https://api.maptiler.com/geocoding/{query}.json?{p}"
+        geojson_dict = utils.qgis_request_json(url)
+
         return geojson_dict
 
-    def _openConfigueDialog(self):
-        configue_dialog = ConfigueDialog()
-        configue_dialog.exec_()
+    def _openConfigureDialog(self):
+        configure_dialog = ConfigureDialog()
+        configure_dialog.exec_()
 
 
 class MapTilerGeocoderToolbar:
@@ -81,7 +78,7 @@ class MapTilerGeocoderToolbar:
         searchword = self.search_line_edit.text()
         geojson_dict = self._fetch_geocoding_api(searchword)
 
-        # always dict is Non when apikey invalid
+        # always dict is None when apikey invalid
         if geojson_dict is None:
             return
 

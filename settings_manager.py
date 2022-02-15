@@ -10,11 +10,11 @@ class SettingsManager:
 
     def __init__(self):
         self._settings = {
-            'apikey': '',
             'selectedmaps': ['Basic', 'Bright', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets', 'Terrain RGB',
                              'Toner', 'Topo', 'Voyager'],
             'prefervector': '1',
-            'custommaps': {}
+            'custommaps': {},
+            'auth_cfg_id': ''
         }
         self.load_settings()
 
@@ -31,7 +31,7 @@ class SettingsManager:
             self.load_setting(key)
 
     def store_setting(self, key, value):
-        if key == "apikey":
+        if key == "auth_cfg_id":
             value = value.strip()
         qsettings = QSettings()
         qsettings.beginGroup(self.SETTING_GROUP)

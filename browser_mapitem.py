@@ -8,10 +8,12 @@ from qgis.PyQt.QtGui import QIcon
 from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton
 from qgis.gui import QgsMessageViewer
 from qgis.utils import iface
+from qgis.PyQt.QtNetwork import QNetworkRequest
+from qgis.PyQt.QtCore import QUrl
 
 from .gl2qgis import converter
 
-from .configue_dialog import ConfigueDialog
+from .configure_dialog import ConfigureDialog
 from .edit_connection_dialog import EditConnectionDialog
 from .settings_manager import SettingsManager
 from . import utils
@@ -101,14 +103,23 @@ class MapDataItem(QgsDataItem):
 
         return actions
 
-    def _is_apikey_valid(self):
-        # apikey validation
-        smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
 
+    def _is_apikey_valid(self, apikey):
+        # apikey validation
         if not utils.validate_key(apikey):
-            QMessageBox.warning(
-                None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your API-key.')
+            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your API-key.')
+            return False
+
+        return True
+
+
+    def _are_credentials_valid(self):
+        # credentials validation
+        smanager = SettingsManager()
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
+
+        if not utils.validate_credentials(auth_cfg_id):
+            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your Credentials.')
             return False
 
         return True
@@ -127,22 +138,18 @@ class MapDataItem(QgsDataItem):
 
     def _add_raster_to_canvas(self, data_key='raster'):
         """add raster layer from tiles.json"""
-        if not self._is_apikey_valid() and data_key == 'raster':
-            self._openConfigueDialog()
+        if not self._are_credentials_valid() and data_key == 'raster':
+            self._openConfigureDialog()
             return
 
         smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
         tile_json_url = self._dataset[data_key]
-        if tile_json_url.endswith("?key="):
-            tile_json_url += apikey
 
-        tile_json_data = json.loads(requests.get(tile_json_url).text)
+        tile_json_data = utils.qgis_request_json(tile_json_url)
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
-            auth_cfg_id = "63rx9tg"
             if ".png" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".png")
                 uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
@@ -152,6 +159,8 @@ class MapDataItem(QgsDataItem):
             elif ".webp" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".webp")
                 uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
+        elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
+            uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
         raster = QgsRasterLayer(uri, self._name, "wms")
@@ -175,22 +184,19 @@ class MapDataItem(QgsDataItem):
 
     def _add_raster_dem_to_canvas(self, data_key='raster-dem'):
         """add raster layer from tiles.json"""
-        if not self._is_apikey_valid() and data_key == 'raster-dem':
-            self._openConfigueDialog()
+        if not self._are_credentials_valid() and data_key == 'raster-dem':
+            self._openConfigureDialog()
             return
 
         smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
 
         tile_json_url = self._dataset[data_key]
-        if tile_json_url.endswith("?key="):
-            tile_json_url += apikey
 
-        tile_json_data = json.loads(requests.get(tile_json_url).text)
+        tile_json_data = utils.qgis_request_json(tile_json_url)
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
-            auth_cfg_id = "63rx9tg"
             intprt = "maptilerterrain"
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
         else:
@@ -239,18 +245,13 @@ class MapDataItem(QgsDataItem):
 
 
     def _add_vector_to_canvas(self, data_key='vector'):
-        if not self._is_apikey_valid() and data_key == "vector":
-            self._openConfigueDialog()
+        if not self._are_credentials_valid() and data_key == "vector":
+            self._openConfigureDialog()
             return
 
-        smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-
-        attribution_text = self._get_attribution_text(data_key, apikey)
+        attribution_text = self._get_attribution_text(data_key)
 
         json_url = self._dataset[data_key]
-        if json_url.endswith("?key="):
-            json_url += apikey
 
         style_json_data = {}
         try:
@@ -263,22 +264,21 @@ class MapDataItem(QgsDataItem):
         node_map.setExpanded(False)
 
         if style_json_data:
-            self._add_vtlayer_from_style_json(
-                style_json_data, node_map, attribution_text)
+            self._add_vtlayer_from_style_json(style_json_data, node_map, attribution_text)
         else:
             # when tiles.json for vector tile
-            tile_json_data = json.loads(requests.get(json_url).text)
-            self._add_vtlayer_from_tile_json(
-                tile_json_data, node_map, attribution_text)
+            tile_json_data = utils.qgis_request_json(json_url)
+            self._add_vtlayer_from_tile_json(tile_json_data, node_map, attribution_text)
 
     def _add_vtlayer_from_style_json(self,
                                      style_json_data: dict,
                                      target_node: QgsLayerTreeGroup,
-                                     attribution_text: str,):
+                                     attribution_text: str):
         proj = QgsProject().instance()
-
+        smanager =  SettingsManager()
         os.makedirs(SPRITES_PATH, exist_ok=True)
         converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
 
         # Context
         context = QgsMapBoxGlStyleConversionContext()
@@ -288,14 +288,12 @@ class MapDataItem(QgsDataItem):
         # context.setPixelSizeConversionFactor(1)
 
         # Add other layers from sources
-        sources = converter.get_sources_dict_from_style_json(
-            style_json_data)
+        sources = converter.get_sources_dict_from_style_json(style_json_data)
         ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
         for source_id, source_data in ordered_sources.items():
             zxy_url = source_data["zxy_url"]
             name = source_data["name"]
             max_zoom = source_data["maxzoom"]
-            auth_cfg_id = "63rx9tg"
             uri = f"type=xyz&url={zxy_url}&zmax={max_zoom}&authcfg={auth_cfg_id}"
 
             if source_data["type"] == "vector":
@@ -326,7 +324,6 @@ class MapDataItem(QgsDataItem):
                 if source_data["minzoom"] is not None and source_data["maxzoom"] is not None:
                     min_zoom = source_data["minzoom"]
                     max_zoom = source_data["maxzoom"]
-                    auth_cfg_id = "63rx9tg"
                     uri = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
                 rlayers = converter.get_source_layers_by(source_id, style_json_data)
                 for rlayer_json in rlayers:
@@ -401,21 +398,18 @@ class MapDataItem(QgsDataItem):
         QgsProject.instance().addMapLayer(vector, False)
         target_node.insertLayer(-1, vector)
 
-    def _get_attribution_text(self, data_key, apikey) -> str:
+    def _get_attribution_text(self, data_key) -> str:
         attribution_text = ""
         # MapTiler style.json doesn't always have attribution text
         # Get text from tiles.json
         if data_key == 'vector':
-            tile_json_url = self._dataset['raster'] + apikey
-            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            tile_json_url = self._dataset['raster']
+            tile_json_data = utils.qgis_request_json(tile_json_url)
             attribution_text = tile_json_data.get("attribution")
 
         elif data_key == 'custom':
             custom_json_url = self._dataset['custom']
-            if custom_json_url.endswith("?key="):
-                custom_json_url += apikey
-
-            custom_json_data = json.loads(requests.get(custom_json_url).text)
+            custom_json_data = utils.qgis_request_json(custom_json_url)
 
             url_endpoint = custom_json_url.split("?")[0]
             if url_endpoint.endswith("style.json"):
@@ -431,14 +425,13 @@ class MapDataItem(QgsDataItem):
 
     def _add_custom_to_canvas(self):
         json_url = self._dataset['custom']
-        if json_url.endswith("?key="):
-            if not self._is_apikey_valid():
-                self._openConfigueDialog()
-                return
 
-            smanager = SettingsManager()
-            apikey = smanager.get_setting('apikey')
-            json_url += apikey
+        if "key=" in json_url and "maptiler" in json_url:
+            ki = json_url.find("key=")+len("key=")
+            apikey = json_url[ki:].split("&")[0]
+            if not self._is_apikey_valid(apikey):
+                self._openConfigureDialog()
+                return
 
         if self._is_vector_json(json_url):
             if utils.is_qgs_vectortile_api_enable():
@@ -474,9 +467,9 @@ class MapDataItem(QgsDataItem):
         customize_url = self._dataset.get("customize_url")
         webbrowser.open(customize_url)
 
-    def _openConfigueDialog(self):
-        configue_dialog = ConfigueDialog()
-        configue_dialog.exec_()
+    def _openConfigureDialog(self):
+        configure_dialog = ConfigureDialog()
+        configure_dialog.exec_()
         self.refreshConnections()
 
     def _qml_of(self, layer: QgsMapLayer):

@@ -6,7 +6,7 @@ from qgis.core import *
 
 from .browser_mapitem import MapDataItem
 from .add_connection_dialog import AddConnectionDialog
-from .configue_dialog import ConfigueDialog
+from .configure_dialog import ConfigureDialog
 from .settings_manager import SettingsManager
 from . import mapdatasets
 from . import utils
@@ -75,9 +75,9 @@ class RootCollection(QgsDataCollectionItem):
         add_action.triggered.connect(self._open_add_dialog)
         actions.append(add_action)
 
-        configue_action = QAction(QIcon(), 'Account...', parent)
-        configue_action.triggered.connect(self._open_configue_dialog)
-        actions.append(configue_action)
+        configure_action = QAction(QIcon(), 'Account...', parent)
+        configure_action.triggered.connect(self._open_configure_dialog)
+        actions.append(configure_action)
 
         return actions
 
@@ -86,7 +86,7 @@ class RootCollection(QgsDataCollectionItem):
         add_dialog.exec_()
         self.refreshConnections()
 
-    def _open_configue_dialog(self):
-        configue_dialog = ConfigueDialog()
-        configue_dialog.exec_()
+    def _open_configure_dialog(self):
+        configure_dialog = ConfigureDialog()
+        configure_dialog.exec_()
         self.refreshConnections()

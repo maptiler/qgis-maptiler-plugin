@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>MapTilerConfigueDialogBase</class>
- <widget class="QDialog" name="MapTilerConfigueDialogBase">
+ <class>MapTilerConfigureDialogBase</class>
+ <widget class="QDialog" name="MapTilerConfigureDialogBase">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -72,12 +72,12 @@
      <item>
       <widget class="QLabel" name="label">
        <property name="text">
-        <string>Access key</string>
+        <string>Auth conf id</string>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QLineEdit" name="apikey_txt">
+      <widget class="QLineEdit" name="auth_cfg_id_txt">
        <property name="enabled">
         <bool>true</bool>
        </property>
@@ -91,7 +91,7 @@
    <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Access key for MapTiler Cloud is required.&lt;br/&gt;Get a FREE key at &lt;a href=&quot;https://cloud.maptiler.com/account/keys&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiskeys&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Credentials for MapTiler Cloud is required.&lt;br/&gt;Get FREE credentials at &lt;br/&gt;&lt;a href=&quot;https://cloud.maptiler.com/account/credentials&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiscredentials&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>

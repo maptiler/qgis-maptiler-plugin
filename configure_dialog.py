@@ -2,26 +2,26 @@
 
 import os
 
-from PyQt5 import uic, QtWidgets, QtCore, QtGui
+from PyQt5 import uic, QtWidgets, QtGui
 from qgis.core import Qgis
 
 from .settings_manager import SettingsManager
 from . import utils
 
 
-class ConfigueDialog(QtWidgets.QDialog):
+class ConfigureDialog(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
 
         self.ui = uic.loadUi(os.path.join(os.path.dirname(
-            __file__), 'configue_dialog_base.ui'), self)
+            __file__), 'configure_dialog_base.ui'), self)
 
         self.ui.button_box.accepted.connect(self._accepted)
         self.ui.button_box.rejected.connect(self._rejected)
 
         smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-        self.ui.apikey_txt.setText(apikey)
+        auth_cfg_id = smanager.get_setting('auth_cfg_id')
+        self.ui.auth_cfg_id_txt.setText(auth_cfg_id)
 
         # e.g. QGIS3.10.4 -> 31004
         qgis_version_str = str(Qgis.QGIS_VERSION_INT)
@@ -47,8 +47,8 @@ class ConfigueDialog(QtWidgets.QDialog):
         # get and store UI values
         smanager = SettingsManager()
 
-        apikey = self.ui.apikey_txt.text()
-        smanager.store_setting('apikey', apikey)
+        auth_cfg_id = self.ui.auth_cfg_id_txt.text()
+        smanager.store_setting('auth_cfg_id', auth_cfg_id)
 
         prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
         smanager.store_setting('prefervector', prefervector)

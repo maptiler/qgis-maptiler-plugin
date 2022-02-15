@@ -19,6 +19,7 @@ import re
 from PyQt5.QtCore import Qt
 from qgis.PyQt.Qt import QPointF, QSize, QFont, QFontDatabase, QColor, QImage, QRegularExpression
 from qgis.core import *
+from .. import utils
 
 
 class PropertyType(enum.Enum):
@@ -1542,7 +1543,8 @@ def get_sprites_from_style_json(style_json_data: dict):
     if sprite_url is None:
         return None, None
 
-    sprite_json_dict = json.loads(requests.get(sprite_url + '@2x.json').text)
+    # sprite_json_dict = json.loads(requests.get(sprite_url + '@2x.json').text)
+    sprite_json_dict = utils.qgis_request_json(f"{sprite_url}@2x.json")
     sprite_img = QImage()
-    sprite_img.loadFromData(requests.get(sprite_url + '@2x.png').content)
+    sprite_img.loadFromData(utils.qgis_request_data(f"{sprite_url}@2x.png"))
     return sprite_json_dict, sprite_img
