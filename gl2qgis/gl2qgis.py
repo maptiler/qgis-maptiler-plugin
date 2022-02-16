@@ -578,6 +578,8 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 candidate_font_style = candidate_font_style.replace("Extra ", "Extra")
             if "Semi " in candidate_font_style:
                 candidate_font_style = candidate_font_style.replace("Semi ", "Semi")
+            if "Semibold" in candidate_font_style:
+                candidate_font_style = candidate_font_style.replace("Semibold", "SemiBold")
             # Check again with no gaps
             found_name, found_style = check_font_dbs(candidate_font_name, candidate_font_style)
             if found_name:
