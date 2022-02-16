@@ -60,14 +60,7 @@ class AddConnectionDialog(QtWidgets.QDialog):
         name = self.ui.nameLineEdit.text()
         json_url = self.ui.jsonLineEdit.text()
 
-        # when inputed URL includes APIKEY
         smanager = SettingsManager()
-        apikey = smanager.get_setting('apikey')
-        if apikey:
-            if json_url.endswith(apikey):
-                apikey_char_count = len(apikey) * -1
-                json_url = json_url[:apikey_char_count]
-
         if self._has_error():
             return
 

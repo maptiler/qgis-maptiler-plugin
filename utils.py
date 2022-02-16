@@ -1,21 +1,37 @@
-import requests
-
 from qgis.PyQt.QtWidgets import QMessageBox
-from qgis.core import Qgis, QgsColorRampShader
+from qgis.core import Qgis, QgsColorRampShader, QgsNetworkAccessManager, QgsApplication, QgsAuthMethodConfig
 from qgis.PyQt.Qt import QColor
+from qgis.PyQt.QtNetwork import QNetworkRequest
+from qgis.PyQt.QtCore import QUrl
 
 import ssl
+import json
+
+from .settings_manager import SettingsManager
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
 def validate_key(apikey='') -> bool:
-    testurl = 'https://api.maptiler.com/maps/basic/style.json?key='
-    response = requests.get(testurl + apikey)
-    
-    if response.status_code == 200:
+    testurl = f'https://api.maptiler.com/maps/basic/style.json?key={apikey}'
+    request = QNetworkRequest(QUrl(testurl))
+    reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
+
+    if reply_content.error() == 0:
         return True
-    
-    print(f"key validation error code:{response.status_code}")
+    else:
+        print(f"Validation error:{reply_content.content()}")
+    return False
+
+
+def validate_credentials(auth_cfg_id='') -> bool:
+    testurl = 'https://api.maptiler.com/maps/basic/style.json'
+    request = QNetworkRequest(QUrl(testurl))
+    reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+
+    if not reply_content.error():
+        return True
+    else:
+        print(f"Validation error:{reply_content.content()}")
     return False
 
 
@@ -64,5 +80,45 @@ def load_color_ramp_from_file(fp: str) -> list:
     return min_ramp_value, max_ramp_value, ramp_lst
 
 
+def _qgis_request(url: str):
+    smanager = SettingsManager()
+    auth_cfg_id = smanager.get_setting('auth_cfg_id')
+    request = QNetworkRequest(QUrl(url))
+    if "maptiler" in url:
+        if "key=" in url:
+            ki = url.find("key=") + len("key=")
+            url_key = url[ki:].split("&")[0]
+            am = QgsApplication.authManager()
+            cfg = QgsAuthMethodConfig()
+            am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
+            token = cfg.configMap().get('token')
+            token_key = token.split("_")[0]
+            if url_key == token_key:
+                reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+            else:
+                reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
+        else:
+            reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+    else:
+        reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
+    return reply_content
+
+
+def qgis_request_json(url: str) -> dict:
+    reply_content = _qgis_request(url)
+    if not reply_content.error():
+        json_data = json.loads(reply_content.content().data().decode())
+        return json_data
+    else:
+        return None
+
+
+def qgis_request_data(url: str) -> bytes:
+    reply_content = _qgis_request(url)
+    if not reply_content.error():
+        return reply_content.content().data()
+    return None
+
+
 if __name__ == "__main__":
-    validate_key('')
+    validate_credentials('')

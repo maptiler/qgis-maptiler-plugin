@@ -19,6 +19,7 @@ import os
 from .gl2qgis import parse_layers, parse_background
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsMapBoxGlStyleConversionContext
+from .. import utils
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
@@ -50,7 +51,7 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
         if "url" in source_data:
             tile_json_url = source_data.get("url")
         if tile_json_url:
-            tile_json_data = json.loads(requests.get(tile_json_url).text)
+            tile_json_data = utils.qgis_request_json(tile_json_url)
             if "tiles" in tile_json_data:
                 layer_zxy_url = tile_json_data.get("tiles")[0]
             if "minzoom" in tile_json_data:
@@ -84,7 +85,7 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
 def get_style_json(style_json_url: str) -> dict:
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith(".json"):
-        style_json_data = json.loads(requests.get(style_json_url).text)
+        style_json_data = utils.qgis_request_json(style_json_url)
         return style_json_data
     elif url_endpoint.endswith(".pbf"):
         print(f"Url to tiles, not to style supplied: {style_json_url}")
