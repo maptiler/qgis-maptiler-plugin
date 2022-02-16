@@ -174,7 +174,9 @@ def parse_fill_layer(json_layer, context):
         if isinstance(json_fill_opacity, (float, int)):
             fill_opacity = float(json_fill_opacity)
             raster_opacity = fill_opacity
-        elif isinstance(json_fill_opacity, dict) and dd_properties.isActive(QgsSymbolLayer.PropertyFillColor):
+        elif isinstance(json_fill_opacity, dict) \
+                and (dd_properties.isActive(QgsSymbolLayer.PropertyFillColor)\
+                or dd_properties.isActive(QgsSymbolLayer.PropertyStrokeColor)):
             # opacity already defined in fill color
             fill_opacity = None
         elif isinstance(json_fill_opacity, dict):

@@ -19,6 +19,7 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
+COLOR_RAMP_PATH = os.path.join(DATA_PATH, "mt-terrain-color-ramp.txt")
 SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
@@ -45,8 +46,10 @@ class MapDataItem(QgsDataItem):
 
         if 'custom' in self._dataset:
             self._add_custom_to_canvas()
-        elif utils.is_qgs_vectortile_api_enable() and prefervector:
+        elif utils.is_qgs_vectortile_api_enable() and prefervector and 'vector' in self._dataset:
             self._add_vector_to_canvas()
+        elif 'raster-dem' in self._dataset:
+            self._add_raster_dem_to_canvas()
         else:
             self._add_raster_to_canvas()
         return True
@@ -168,6 +171,79 @@ class MapDataItem(QgsDataItem):
         proj.addMapLayer(raster, False)
         root = proj.layerTreeRoot()
         root.addLayer(raster)
+
+
+    def _add_raster_dem_to_canvas(self, data_key='raster-dem'):
+        """add raster layer from tiles.json"""
+        if not self._is_apikey_valid() and data_key == 'raster-dem':
+            self._openConfigueDialog()
+            return
+
+        smanager = SettingsManager()
+        apikey = smanager.get_setting('apikey')
+
+        tile_json_url = self._dataset[data_key]
+        if tile_json_url.endswith("?key="):
+            tile_json_url += apikey
+
+        tile_json_data = json.loads(requests.get(tile_json_url).text)
+
+        layer_zxy_url = tile_json_data.get("tiles")[0]
+        if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+            if ".png" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".png")
+                url = "type=xyz&url=" + url_split[0] + "@2x.png" + url_split[1]
+            elif ".jpg" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".jpg")
+                url = "type=xyz&url=" + url_split[0] + "@2x.jpg" + url_split[1]
+            elif ".webp" in layer_zxy_url:
+                url_split = layer_zxy_url.split(".webp")
+                url = "type=xyz&url=" + \
+                    url_split[0] + "@2x.webp" + url_split[1]
+        else:
+            url = "type=xyz&interpretation=maptilerterrain&url=" + layer_zxy_url
+        raster_dem = QgsRasterLayer(url, self._name, "wms")
+
+        # Color ramp
+        min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
+        fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
+        fnc.setColorRampType(QgsColorRampShader.Interpolated)
+        fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
+        fnc.setColorRampItemList(color_ramp)
+        lgnd = QgsColorRampLegendNodeSettings()
+        lgnd.setUseContinuousLegend(True)
+        lgnd.setOrientation(1)
+        fnc.setLegendSettings(lgnd)
+        # Shader
+        shader = QgsRasterShader()
+        shader.setRasterShaderFunction(fnc)
+
+        # Renderer
+        renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+        raster_dem.setRenderer(renderer)
+
+        # Resampling
+        # raster_dem.setResamplingStage(Qgis.RasterResamplingStage.Provider)
+        # raster_dem.dataProvider().setZoomedInResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+        # raster_dem.dataProvider().setZoomedOutResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+        # raster_dem.pipe().set(renderer)
+
+        resampleFilter = raster_dem.resampleFilter()
+        resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
+        resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+
+        # add Copyright
+        attribution_text = tile_json_data.get("attribution")
+        raster_dem.setAttribution(attribution_text)
+
+        # add rlayer to project
+        proj = QgsProject().instance()
+        proj.addMapLayer(raster_dem, False)
+        root = proj.layerTreeRoot()
+        root.addLayer(raster_dem)
+        dem_layer = root.findLayer(raster_dem)
+        dem_layer.setExpanded(False)
+
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if not self._is_apikey_valid() and data_key == "vector":

@@ -13,6 +13,10 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json?key='
     },
+    'OpenStreetMap': {
+        'raster': r'https://api.maptiler.com/maps/osm-standard/256/tiles.json?key=',
+        'vector': r'https://api.maptiler.com/maps/osm-standard/style.json?key='
+    },
     'Outdoor': {
         'raster': r'https://api.maptiler.com/maps/outdoor/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/outdoor/style.json?key=',
@@ -28,6 +32,9 @@ STANDARD_DATASET = {
         'vector': r'https://api.maptiler.com/maps/positron/style.json?key=',
     },
     'Satellite': {
+        'raster': r'https://api.maptiler.com/tiles/satellite-v2/tiles.json?key='
+    },
+    'Satellite Hybrid': {
         'raster': r'https://api.maptiler.com/maps/hybrid/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/hybrid/style.json?key=',
         'customize_url': r'https://maptiler.link/qgishybrid'
@@ -36,6 +43,9 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/streets/256/tiles.json?key=',
         'vector': r'https://api.maptiler.com/maps/streets/style.json?key=',
         'customize_url': r'https://maptiler.link/qgisstreets'
+    },
+    'Terrain RGB': {
+        'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key='
     },
     'Toner': {
         'raster': r'https://api.maptiler.com/maps/toner/256/tiles.json?key=',
