@@ -163,6 +163,9 @@ class MapDataItem(QgsDataItem):
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
+        zmax = tile_json_data.get("maxzoom")
+        if zmax:
+            uri = f"{uri}&zmax={zmax}"
         raster = QgsRasterLayer(uri, self._name, "wms")
 
         # change resampler to bilinear
@@ -201,6 +204,9 @@ class MapDataItem(QgsDataItem):
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
+        zmax = tile_json_data.get("maxzoom")
+        if zmax:
+            uri = f"{uri}&zmax={zmax}"
         raster_dem = QgsRasterLayer(uri, self._name, "wms")
 
         # Color ramp
@@ -291,10 +297,12 @@ class MapDataItem(QgsDataItem):
         sources = converter.get_sources_dict_from_style_json(style_json_data)
         ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
         for source_id, source_data in ordered_sources.items():
-            zxy_url = source_data["zxy_url"]
-            name = source_data["name"]
-            max_zoom = source_data["maxzoom"]
-            uri = f"type=xyz&url={zxy_url}&zmax={max_zoom}&authcfg={auth_cfg_id}"
+            zxy_url = source_data.get("zxy_url")
+            name = source_data.get("name")
+            uri = f"type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
+            zmax = source_data.get("maxzoom")
+            if zmax:
+                uri = f"{uri}&zmax={zmax}"
 
             if source_data["type"] == "vector":
                 vector = QgsVectorTileLayer(uri, name)
