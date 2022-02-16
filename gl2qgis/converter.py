@@ -19,11 +19,7 @@ import os
 from .gl2qgis import parse_layers, parse_background
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import QgsMapBoxGlStyleConversionContext
-from qgis.PyQt.QtNetwork import QNetworkRequest
-from qgis.PyQt.QtCore import QUrl
-from qgis.core import QgsNetworkAccessManager
 from .. import utils
-from .. import settings_manager
 
 
 def get_sources_dict_from_style_json(style_json_data: dict) -> dict:

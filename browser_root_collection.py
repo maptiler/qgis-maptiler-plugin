@@ -9,7 +9,6 @@ from .add_connection_dialog import AddConnectionDialog
 from .configure_dialog import ConfigureDialog
 from .settings_manager import SettingsManager
 from . import mapdatasets
-from . import utils
 
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 

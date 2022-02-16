@@ -1,10 +1,9 @@
 import json
 import urllib
-import requests
 
 
 from qgis.PyQt.QtCore import Qt, QModelIndex, QSettings
-from qgis.PyQt.QtWidgets import QDockWidget, QCompleter, QLineEdit
+from qgis.PyQt.QtWidgets import QCompleter, QLineEdit
 from qgis.core import *
 
 from .configure_dialog import ConfigureDialog

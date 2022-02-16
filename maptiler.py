@@ -23,12 +23,9 @@
 """
 
 import os.path
-import json
 import re
 
-from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, Qt, QModelIndex, QMetaObject
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QDockWidget, QCompleter, QLineEdit
+from qgis.PyQt.QtCore import QSettings, QTranslator, QCoreApplication, QMetaObject
 from qgis.core import *
 
 from .browser_root_collection import DataItemProvider
