@@ -252,9 +252,10 @@ class MapDataItem(QgsDataItem):
 
 
     def _add_vector_to_canvas(self, data_key='vector'):
-        if not self._are_credentials_valid() and data_key == "vector":
-            self._openConfigureDialog()
-            return
+        if data_key == "vector":
+            if not self._are_credentials_valid():
+                self._openConfigureDialog()
+                return
 
         attribution_text = self._get_attribution_text(data_key)
 
