@@ -749,7 +749,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
 
     label_settings = QgsPalLayerSettings()
     if text_max_width:
-        label_settings.autoWrapLength = text_max_width
+        label_settings.autoWrapLength = int(text_max_width)
 
     json_text_field = json_layout.get("text-field")
     if json_text_field:
@@ -942,7 +942,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
             format.setBackground(backgroundSettings)
 
     if text_size:
-        label_settings.priority = min(text_size / (context.pixelSizeConversionFactor() * 3), 10.0)
+        label_settings.priority = int(min(text_size / (context.pixelSizeConversionFactor() * 3), 10.0))
 
     label_settings.setFormat(format)
     label_settings.obstacleSettings().setFactor(0.1)
