@@ -142,14 +142,14 @@ class MapDataItem(QgsDataItem):
             self._openConfigureDialog()
             return
 
-        smanager = SettingsManager()
-        auth_cfg_id = smanager.get_setting('auth_cfg_id')
         tile_json_url = self._dataset[data_key]
-
         tile_json_data = utils.qgis_request_json(tile_json_url)
 
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+            smanager = SettingsManager()
+            auth_cfg_id = smanager.get_setting('auth_cfg_id')
+            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
             if ".png" in layer_zxy_url:
                 url_split = layer_zxy_url.split(".png")
                 uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
@@ -160,6 +160,8 @@ class MapDataItem(QgsDataItem):
                 url_split = layer_zxy_url.split(".webp")
                 uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
         elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
+            smanager = SettingsManager()
+            auth_cfg_id = smanager.get_setting('auth_cfg_id')
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
@@ -191,16 +193,14 @@ class MapDataItem(QgsDataItem):
             self._openConfigureDialog()
             return
 
-        smanager = SettingsManager()
-        auth_cfg_id = smanager.get_setting('auth_cfg_id')
-
         tile_json_url = self._dataset[data_key]
-
         tile_json_data = utils.qgis_request_json(tile_json_url)
-
         layer_zxy_url = tile_json_data.get("tiles")[0]
         if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+            smanager = SettingsManager()
+            auth_cfg_id = smanager.get_setting('auth_cfg_id')
             intprt = "maptilerterrain"
+            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
@@ -297,9 +297,16 @@ class MapDataItem(QgsDataItem):
         sources = converter.get_sources_dict_from_style_json(style_json_data)
         ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
         for source_id, source_data in ordered_sources.items():
-            zxy_url = source_data.get("zxy_url")
             name = source_data.get("name")
-            uri = f"type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
+            zxy_url = source_data.get("zxy_url")
+            if zxy_url.startswith("https://api.maptiler.com"):
+                smanager = SettingsManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                zxy_url = f"{zxy_url.split('?')[0]}?usage={{usage}}"
+                uri = f"type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
+            else:
+                uri = f"type=xyz&url={zxy_url}"
+
             zmax = source_data.get("maxzoom")
             if zmax:
                 uri = f"{uri}&zmax={zmax}"
@@ -314,9 +321,9 @@ class MapDataItem(QgsDataItem):
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
                 # TODO remove this after RGB tiles implementation (Outdoor)
-                if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb/{z}/{x}/{y}.png?key=" in source_data.get("zxy_url"):
+                if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb" in zxy_url:
                     uri = f"zmin=0&zmax=12&type=xyz" \
-                          f"&url={source_data.get('zxy_url').replace('terrain-rgb', 'hillshades')}" \
+                          f"&url={zxy_url.replace('terrain-rgb', 'hillshades')}" \
                           f"&authcfg={auth_cfg_id}"
                     raster = QgsRasterLayer(uri, "hillshades", "wms")
                     renderer = raster.renderer().clone()
@@ -328,11 +335,6 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
             elif source_data["type"] == "raster":
-                # Add minzoom and maxzoom for rasters
-                if source_data["minzoom"] is not None and source_data["maxzoom"] is not None:
-                    min_zoom = source_data["minzoom"]
-                    max_zoom = source_data["maxzoom"]
-                    uri = f"zmin={min_zoom}&zmax={max_zoom}&type=xyz&url={zxy_url}&authcfg={auth_cfg_id}"
                 rlayers = converter.get_source_layers_by(source_id, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
