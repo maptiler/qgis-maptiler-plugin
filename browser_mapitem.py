@@ -438,10 +438,8 @@ class MapDataItem(QgsDataItem):
     def _add_custom_to_canvas(self):
         json_url = self._dataset['custom']
 
-        if "key=" in json_url and "maptiler" in json_url:
-            ki = json_url.find("key=")+len("key=")
-            apikey = json_url[ki:].split("&")[0]
-            if not self._is_apikey_valid(apikey):
+        if "https://api.maptiler" in json_url:
+            if not self._are_credentials_valid():
                 self._openConfigureDialog()
                 return
 
