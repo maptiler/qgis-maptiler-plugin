@@ -162,6 +162,7 @@ class MapDataItem(QgsDataItem):
         elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
             smanager = SettingsManager()
             auth_cfg_id = smanager.get_setting('auth_cfg_id')
+            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
             uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
         else:
             uri = f"type=xyz&url={layer_zxy_url}"
