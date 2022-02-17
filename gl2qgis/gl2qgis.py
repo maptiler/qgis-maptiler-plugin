@@ -126,6 +126,11 @@ def parse_fill_layer(json_layer, context):
     dd_properties = QgsPropertyCollection()
     dd_raster_properties = QgsPropertyCollection()
 
+    symbol = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
+    fill_symbol = symbol.symbolLayer(0)
+    symbol.setOutputUnit(context.targetUnit())
+    fill_symbol.setOutputUnit(context.targetUnit())
+
     # Fill color
     fill_color = None
     if 'fill-color' in json_paint:
@@ -143,10 +148,9 @@ def parse_fill_layer(json_layer, context):
         elif isinstance(json_fill_color, str):
             # Use simple string color
             fill_color = parse_color(json_fill_color, context)
+            fill_symbol.setFillColor(fill_color)
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported fill-color type ({type(json_fill_color).__name__})")
-    else:
-        fill_color = QColor(0, 0, 0)
 
     # Fill outline color
     fill_outline_color = None
@@ -163,6 +167,7 @@ def parse_fill_layer(json_layer, context):
                                                        context, 1, 255, fill_outline_color))
         elif isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color, context)
+            fill_symbol.setStrokeColor(fill_outline_color)
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported fill-outline-color type ({type(json_fill_outline_color).__name__}).")
 
@@ -220,11 +225,6 @@ def parse_fill_layer(json_layer, context):
         else:
             context.pushWarning(f"{context.layerId()}: Skipping unsupported fill-translate type ({type(json_fill_translate).__name__})")
 
-    symbol = QgsSymbol.defaultSymbol(QgsWkbTypes.PolygonGeometry)
-    fill_symbol = symbol.symbolLayer(0)
-    symbol.setOutputUnit(context.targetUnit())
-    fill_symbol.setOutputUnit(context.targetUnit())
-
     if not fill_translate.isNull():
         fill_symbol.setOffset(fill_translate)
     fill_symbol.setOffsetUnit(context.targetUnit())
@@ -232,9 +232,6 @@ def parse_fill_layer(json_layer, context):
     # Fill-pattern
     json_fill_patern = json_paint.get("fill-pattern")
     if json_fill_patern:
-        fill_color = "fill_pattern"
-        fill_outline_color = "fill_pattern"
-
         # fill-pattern can be String or Object
         # String: {"fill-pattern": "dash-t"}
         # Object: {"fill-pattern":{"stops":[[11,"wetland8"],[12,"wetland16"]]}}
@@ -252,6 +249,7 @@ def parse_fill_layer(json_layer, context):
             raster_fill.setWidth(sprite_size.width())
             raster_fill.setWidthUnit(context.targetUnit())
             raster_fill.setCoordinateMode(QgsRasterFillSymbolLayer.Viewport)
+            fill_color = None
 
             if raster_opacity:
                 raster_fill.setOpacity(raster_opacity)
@@ -263,24 +261,23 @@ def parse_fill_layer(json_layer, context):
 
             raster_fill.setDataDefinedProperties(dd_raster_properties)
             symbol.appendSymbolLayer(raster_fill)
+        else:
+            fill_color = None
+            fill_outline_color = None
 
     fill_symbol.setDataDefinedProperties(dd_properties)
 
     if fill_opacity:
         symbol.setOpacity(fill_opacity)
 
-    if fill_outline_color == "fill_pattern":
-        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
-    elif fill_outline_color == "dd_props":
+    if fill_outline_color == "dd_props":
         fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.SolidLine))
     elif fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
     elif fill_outline_color is None:
         fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
 
-    if  fill_color == "fill_pattern":
-        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
-    elif  fill_color == "dd_props":
+    if  fill_color == "dd_props":
         fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.SolidPattern))
     elif fill_color:
         fill_symbol.setFillColor(fill_color)
