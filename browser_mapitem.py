@@ -74,6 +74,17 @@ class MapDataItem(QgsDataItem):
             delete_action.triggered.connect(self._delete)
             actions.append(delete_action)
 
+        # Terrain-RGB
+        elif 'raster-dem' in self._dataset:
+            add_raster_dem_action = QAction(QIcon(), 'Add Layer', parent)
+            add_raster_dem_action.triggered.connect(
+                lambda: self._add_raster_dem_to_canvas())
+            actions.append(add_raster_dem_action)
+
+            remove_action = QAction(QIcon(), 'Remove', parent)
+            remove_action.triggered.connect(self._remove)
+            actions.append(remove_action)
+
         # MapTiler map
         else:
             add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
