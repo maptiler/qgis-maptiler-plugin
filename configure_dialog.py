@@ -83,7 +83,7 @@ class ConfigureDialog(QtWidgets.QDialog):
             smanager.store_setting('prefervector', prefervector)
             self.close()
         else:
-            QMessageBox.warning(None, 'Missing token', "Token is required!")
+            self.ui.label_6.setText(f"Token is required.")
 
     def _rejected(self):
         self.close()

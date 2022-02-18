@@ -89,6 +89,13 @@
     </layout>
    </item>
    <item>
+    <widget class="QLabel" name="label_6">
+     <property name="text">
+      <string></string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
       <string>Get FREE credentials at &lt;a href=&quot;https://maptiler.link/qgiscredentials&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiscredentials&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
