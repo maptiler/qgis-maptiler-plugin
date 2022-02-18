@@ -23,16 +23,23 @@ def validate_key(apikey='') -> bool:
     return False
 
 
-def validate_credentials(auth_cfg_id='') -> bool:
+def validate_credentials() -> bool:
     testurl = 'https://api.maptiler.com/maps/basic/style.json'
-    request = QNetworkRequest(QUrl(testurl))
-    reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
-
-    if not reply_content.error():
-        return True
-    else:
-        print(f"Validation error:{reply_content.content()}")
-    return False
+    smanager = SettingsManager()
+    auth_cfg_id = smanager.get_setting('auth_cfg_id')
+    if auth_cfg_id:
+        am = QgsApplication.authManager()
+        cfg = QgsAuthMethodConfig()
+        (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
+        if res and cfg.configMap().get("token"):
+            request = QNetworkRequest(QUrl(testurl))
+            reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+            if not reply_content.error():
+                return True
+            else:
+                return False
+        else:
+            return False
 
 
 def is_qgs_vectortile_api_enable():
@@ -83,25 +90,24 @@ def load_color_ramp_from_file(fp: str) -> list:
 def _qgis_request(url: str):
     smanager = SettingsManager()
     auth_cfg_id = smanager.get_setting('auth_cfg_id')
-    request = QNetworkRequest(QUrl(url))
-    if "maptiler" in url:
+    if "https://api.maptiler.com" in url:
         if "key=" in url:
-            ki = url.find("key=") + len("key=")
-            url_key = url[ki:].split("&")[0]
-            am = QgsApplication.authManager()
-            cfg = QgsAuthMethodConfig()
-            am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
-            token = cfg.configMap().get('token')
-            token_key = token.split("_")[0]
-            if url_key == token_key:
-                reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
-            else:
-                reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
-        else:
-            reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+            url = url.split("key=")[0]
+        request = QNetworkRequest(QUrl(url))
+        reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
     else:
+        request = QNetworkRequest(QUrl(url))
         reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
-    return reply_content
+
+    if not reply_content.error():
+        return reply_content
+    else:
+        error_msg = ""
+        if reply_content.errorString():
+            error_msg = f"{reply_content.errorString()}"
+        if reply_content.content():
+            error_msg = f"{error_msg}\n{str(reply_content.content(), 'utf-8')}"
+        raise Exception(error_msg)
 
 
 def qgis_request_json(url: str) -> dict:
@@ -115,9 +121,7 @@ def qgis_request_json(url: str) -> dict:
 
 def qgis_request_data(url: str) -> bytes:
     reply_content = _qgis_request(url)
-    if not reply_content.error():
-        return reply_content.content().data()
-    return None
+    return reply_content.content().data()
 
 
 if __name__ == "__main__":
