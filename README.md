@@ -130,6 +130,8 @@ When you click on one place in the list, the map canvas will zoom to feature ext
 The plugin version 3.0 and higher uses credentials for authentication in MapTiler Cloud.
 You can get your own FREE credentials at [https://cloud.maptiler.com/account/credentials](https://cloud.maptiler.com/account/credentials/?utm_source=qgis&utm_medium=product&utm_campaign=qgis-plugin)
 
+<img src='imgs/readme_11.png'>
+
 Click on `Account...` from MapTiler plugin contextual menu to open the Account dialog window and to insert your token.
 
 <img src='imgs/readme_08.png'>
