@@ -184,7 +184,7 @@ class MapDataItem(QgsDataItem):
             proj.addMapLayer(raster, False)
             root = proj.layerTreeRoot()
             root.addLayer(raster)
-        except Exception as e:
+        except utils.MapTilerApiException as e:
             self._display_exception(e)
 
 
@@ -244,7 +244,7 @@ class MapDataItem(QgsDataItem):
             root.addLayer(raster_dem)
             dem_layer = root.findLayer(raster_dem)
             dem_layer.setExpanded(False)
-        except Exception as e:
+        except utils.MapTilerApiException as e:
             self._display_exception(e)
 
     def _add_vector_to_canvas(self, data_key='vector'):
@@ -269,7 +269,7 @@ class MapDataItem(QgsDataItem):
                 # when tiles.json for vector tile
                 tile_json_data = utils.qgis_request_json(json_url)
                 self._add_vtlayer_from_tile_json(tile_json_data, node_map, attribution_text)
-        except Exception as e:
+        except utils.MapTilerApiException as e:
             self._display_exception(e)
 
 
@@ -448,13 +448,31 @@ class MapDataItem(QgsDataItem):
                     iface.messageBar().pushWidget(widget, Qgis.Warning)
             else:
                 self._add_raster_to_canvas(data_key='custom')
-        except Exception as e:
+        except utils.MapTilerApiException as e:
             self._display_exception(e)
 
     def _display_exception(self, e):
-        print(e)
-        msg = "Access Error - Check Python Console for details"
+        print(e.message)
+        if e.content:
+            print(e.content)
+            msg = f"Access denied: {e.content}"
+            detail_msg = f"{e.message}\n{e.content}"
+        else:
+            msg = f"Access denied: Check details"
+            detail_msg = f"{e.message}"
         widget = iface.messageBar().createMessage(f"{self.name()}", msg)
+        button = QPushButton(widget)
+        button.setText("Details")
+
+        def show_warnings():
+            details_dlg = QgsMessageViewer()
+            details_dlg.setTitle("MapTiler API Access denied")
+
+            details_dlg.setMessage(detail_msg, 0)
+            details_dlg.showMessage()
+
+        button.pressed.connect(show_warnings)
+        widget.layout().addWidget(button)
         iface.messageBar().pushWidget(widget, Qgis.Warning)
 
     def _edit(self):
