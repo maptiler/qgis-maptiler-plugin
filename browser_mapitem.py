@@ -74,6 +74,17 @@ class MapDataItem(QgsDataItem):
             delete_action.triggered.connect(self._delete)
             actions.append(delete_action)
 
+        # Terrain-RGB
+        elif 'raster-dem' in self._dataset:
+            add_raster_dem_action = QAction(QIcon(), 'Add Layer', parent)
+            add_raster_dem_action.triggered.connect(
+                lambda: self._add_raster_dem_to_canvas())
+            actions.append(add_raster_dem_action)
+
+            remove_action = QAction(QIcon(), 'Remove', parent)
+            remove_action.triggered.connect(self._remove)
+            actions.append(remove_action)
+
         # MapTiler map
         else:
             add_raster_action = QAction(QIcon(), 'Add as Raster', parent)
@@ -103,25 +114,11 @@ class MapDataItem(QgsDataItem):
 
         return actions
 
-
-    def _is_apikey_valid(self, apikey):
-        # apikey validation
-        if not utils.validate_key(apikey):
-            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your API-key.')
-            return False
-
-        return True
-
-
     def _are_credentials_valid(self):
         # credentials validation
-        smanager = SettingsManager()
-        auth_cfg_id = smanager.get_setting('auth_cfg_id')
-
-        if not utils.validate_credentials(auth_cfg_id):
+        if not utils.validate_credentials():
             QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your Credentials.')
             return False
-
         return True
 
     def _is_vector_json(self, json_url: str) -> bool:
@@ -142,50 +139,53 @@ class MapDataItem(QgsDataItem):
             self._openConfigureDialog()
             return
 
-        tile_json_url = self._dataset[data_key]
-        tile_json_data = utils.qgis_request_json(tile_json_url)
+        try:
+            tile_json_url = self._dataset[data_key]
+            tile_json_data = utils.qgis_request_json(tile_json_url)
 
-        layer_zxy_url = tile_json_data.get("tiles")[0]
-        if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
-            smanager = SettingsManager()
-            auth_cfg_id = smanager.get_setting('auth_cfg_id')
-            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
-            if ".png" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".png")
-                uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
-            elif ".jpg" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".jpg")
-                uri = f"type=xyz&url={url_split[0]}@2x.jpg{url_split[1]}&authcfg={auth_cfg_id}"
-            elif ".webp" in layer_zxy_url:
-                url_split = layer_zxy_url.split(".webp")
-                uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
-        elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
-            smanager = SettingsManager()
-            auth_cfg_id = smanager.get_setting('auth_cfg_id')
-            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
-            uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
-        else:
-            uri = f"type=xyz&url={layer_zxy_url}"
-        zmax = tile_json_data.get("maxzoom")
-        if zmax:
-            uri = f"{uri}&zmax={zmax}"
-        raster = QgsRasterLayer(uri, self._name, "wms")
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+            if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
+                smanager = SettingsManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                if ".png" in layer_zxy_url:
+                    url_split = layer_zxy_url.split(".png")
+                    uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
+                elif ".jpg" in layer_zxy_url:
+                    url_split = layer_zxy_url.split(".jpg")
+                    uri = f"type=xyz&url={url_split[0]}@2x.jpg{url_split[1]}&authcfg={auth_cfg_id}"
+                elif ".webp" in layer_zxy_url:
+                    url_split = layer_zxy_url.split(".webp")
+                    uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
+            elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
+                smanager = SettingsManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
+            else:
+                uri = f"type=xyz&url={layer_zxy_url}"
+            zmax = tile_json_data.get("maxzoom")
+            if zmax:
+                uri = f"{uri}&zmax={zmax}"
+            raster = QgsRasterLayer(uri, self._name, "wms")
 
-        # change resampler to bilinear
-        qml_str = self._qml_of(raster)
-        bilinear_qml = self._change_resampler_to_bilinear(qml_str)
-        ls = QgsMapLayerStyle(bilinear_qml)
-        ls.writeToLayer(raster)
+            # change resampler to bilinear
+            qml_str = self._qml_of(raster)
+            bilinear_qml = self._change_resampler_to_bilinear(qml_str)
+            ls = QgsMapLayerStyle(bilinear_qml)
+            ls.writeToLayer(raster)
 
-        # add Copyright
-        attribution_text = tile_json_data.get("attribution")
-        raster.setAttribution(attribution_text)
+            # add Copyright
+            attribution_text = tile_json_data.get("attribution")
+            raster.setAttribution(attribution_text)
 
-        # add rlayer to project
-        proj = QgsProject().instance()
-        proj.addMapLayer(raster, False)
-        root = proj.layerTreeRoot()
-        root.addLayer(raster)
+            # add rlayer to project
+            proj = QgsProject().instance()
+            proj.addMapLayer(raster, False)
+            root = proj.layerTreeRoot()
+            root.addLayer(raster)
+        except Exception as e:
+            self._display_exception(e)
 
 
     def _add_raster_dem_to_canvas(self, data_key='raster-dem'):
@@ -194,62 +194,58 @@ class MapDataItem(QgsDataItem):
             self._openConfigureDialog()
             return
 
-        tile_json_url = self._dataset[data_key]
-        tile_json_data = utils.qgis_request_json(tile_json_url)
-        layer_zxy_url = tile_json_data.get("tiles")[0]
-        if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
-            smanager = SettingsManager()
-            auth_cfg_id = smanager.get_setting('auth_cfg_id')
-            intprt = "maptilerterrain"
-            layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
-            uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
-        else:
-            uri = f"type=xyz&url={layer_zxy_url}"
-        zmax = tile_json_data.get("maxzoom")
-        if zmax:
-            uri = f"{uri}&zmax={zmax}"
-        raster_dem = QgsRasterLayer(uri, self._name, "wms")
+        try:
+            tile_json_url = self._dataset[data_key]
+            tile_json_data = utils.qgis_request_json(tile_json_url)
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+                smanager = SettingsManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                intprt = "maptilerterrain"
+                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
+            else:
+                uri = f"type=xyz&url={layer_zxy_url}"
+            zmax = tile_json_data.get("maxzoom")
+            if zmax:
+                uri = f"{uri}&zmax={zmax}"
+            raster_dem = QgsRasterLayer(uri, self._name, "wms")
 
-        # Color ramp
-        min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
-        fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
-        fnc.setColorRampType(QgsColorRampShader.Interpolated)
-        fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
-        fnc.setColorRampItemList(color_ramp)
-        lgnd = QgsColorRampLegendNodeSettings()
-        lgnd.setUseContinuousLegend(True)
-        lgnd.setOrientation(1)
-        fnc.setLegendSettings(lgnd)
-        # Shader
-        shader = QgsRasterShader()
-        shader.setRasterShaderFunction(fnc)
+            # Color ramp
+            min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
+            fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
+            fnc.setColorRampType(QgsColorRampShader.Interpolated)
+            fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
+            fnc.setColorRampItemList(color_ramp)
+            lgnd = QgsColorRampLegendNodeSettings()
+            lgnd.setUseContinuousLegend(True)
+            lgnd.setOrientation(1)
+            fnc.setLegendSettings(lgnd)
+            # Shader
+            shader = QgsRasterShader()
+            shader.setRasterShaderFunction(fnc)
 
-        # Renderer
-        renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
-        raster_dem.setRenderer(renderer)
+            # Renderer
+            renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+            raster_dem.setRenderer(renderer)
 
-        # Resampling
-        # raster_dem.setResamplingStage(Qgis.RasterResamplingStage.Provider)
-        # raster_dem.dataProvider().setZoomedInResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
-        # raster_dem.dataProvider().setZoomedOutResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
-        # raster_dem.pipe().set(renderer)
+            resampleFilter = raster_dem.resampleFilter()
+            resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
+            resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
 
-        resampleFilter = raster_dem.resampleFilter()
-        resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
-        resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+            # add Copyright
+            attribution_text = tile_json_data.get("attribution")
+            raster_dem.setAttribution(attribution_text)
 
-        # add Copyright
-        attribution_text = tile_json_data.get("attribution")
-        raster_dem.setAttribution(attribution_text)
-
-        # add rlayer to project
-        proj = QgsProject().instance()
-        proj.addMapLayer(raster_dem, False)
-        root = proj.layerTreeRoot()
-        root.addLayer(raster_dem)
-        dem_layer = root.findLayer(raster_dem)
-        dem_layer.setExpanded(False)
-
+            # add rlayer to project
+            proj = QgsProject().instance()
+            proj.addMapLayer(raster_dem, False)
+            root = proj.layerTreeRoot()
+            root.addLayer(raster_dem)
+            dem_layer = root.findLayer(raster_dem)
+            dem_layer.setExpanded(False)
+        except Exception as e:
+            self._display_exception(e)
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if data_key == "vector":
@@ -257,26 +253,25 @@ class MapDataItem(QgsDataItem):
                 self._openConfigureDialog()
                 return
 
-        attribution_text = self._get_attribution_text(data_key)
-
-        json_url = self._dataset[data_key]
-
-        style_json_data = {}
         try:
+            attribution_text = self._get_attribution_text(data_key)
+            json_url = self._dataset[data_key]
+            style_json_data = {}
             style_json_data = converter.get_style_json(json_url)
+
+            root = QgsProject().instance().layerTreeRoot()
+            node_map = root.addGroup(self._name)
+            node_map.setExpanded(False)
+
+            if style_json_data:
+                self._add_vtlayer_from_style_json(style_json_data, node_map, attribution_text)
+            else:
+                # when tiles.json for vector tile
+                tile_json_data = utils.qgis_request_json(json_url)
+                self._add_vtlayer_from_tile_json(tile_json_data, node_map, attribution_text)
         except Exception as e:
-            print(e)
+            self._display_exception(e)
 
-        root = QgsProject().instance().layerTreeRoot()
-        node_map = root.addGroup(self._name)
-        node_map.setExpanded(False)
-
-        if style_json_data:
-            self._add_vtlayer_from_style_json(style_json_data, node_map, attribution_text)
-        else:
-            # when tiles.json for vector tile
-            tile_json_data = utils.qgis_request_json(json_url)
-            self._add_vtlayer_from_tile_json(tile_json_data, node_map, attribution_text)
 
     def _add_vtlayer_from_style_json(self,
                                      style_json_data: dict,
@@ -438,21 +433,29 @@ class MapDataItem(QgsDataItem):
     def _add_custom_to_canvas(self):
         json_url = self._dataset['custom']
 
-        if "key=" in json_url and "maptiler" in json_url:
-            ki = json_url.find("key=")+len("key=")
-            apikey = json_url[ki:].split("&")[0]
-            if not self._is_apikey_valid(apikey):
-                self._openConfigureDialog()
-                return
+        try:
+            if "https://api.maptiler.com" in json_url:
+                if not self._are_credentials_valid():
+                    self._openConfigureDialog()
+                    return
 
-        if self._is_vector_json(json_url):
-            if utils.is_qgs_vectortile_api_enable():
-                self._add_vector_to_canvas(data_key='custom')
+            if self._is_vector_json(json_url):
+                if utils.is_qgs_vectortile_api_enable():
+                    self._add_vector_to_canvas(data_key='custom')
+                else:
+                    widget = iface.messageBar().createMessage(f"'{self.name()} Layer Loading Error',"
+                                                              f"'This map\'s JSON is for Vector Tile. Vector Tile feature is not available on this QGIS version.'")
+                    iface.messageBar().pushWidget(widget, Qgis.Warning)
             else:
-                QMessageBox.warning(None, 'Layer Loading Error',
-                                    'This map\'s JSON is for Vector Tile. Vector Tile feature is not available on this QGIS version.')
-        else:
-            self._add_raster_to_canvas(data_key='custom')
+                self._add_raster_to_canvas(data_key='custom')
+        except Exception as e:
+            self._display_exception(e)
+
+    def _display_exception(self, e):
+        print(e)
+        msg = "Access Error - Check Python Console for details"
+        widget = iface.messageBar().createMessage(f"{self.name()}", msg)
+        iface.messageBar().pushWidget(widget, Qgis.Warning)
 
     def _edit(self):
         edit_dialog = EditConnectionDialog(self._name)

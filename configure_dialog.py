@@ -4,6 +4,7 @@ import os
 
 from PyQt5 import uic, QtWidgets, QtGui
 from qgis.core import Qgis, QgsAuthMethodConfig, QgsApplication
+from qgis.PyQt.QtWidgets import QMessageBox
 
 from .settings_manager import SettingsManager
 from . import utils
@@ -56,11 +57,18 @@ class ConfigureDialog(QtWidgets.QDialog):
         auth_cfg_id = smanager.get_setting('auth_cfg_id')
         token = self.ui.token_txt.text()
         cfg = QgsAuthMethodConfig('MapTilerHmacSha256')
-        if auth_cfg_id:
-            (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
-            if res:
-                saved_token = cfg.configMap().get("token")
-                if not saved_token == token:
+        if token:
+            if auth_cfg_id:
+                (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
+                if res:
+                    saved_token = cfg.configMap().get("token")
+                    if not saved_token == token:
+                        cfg.setConfigMap({'token': token})
+                        (res, cfg) = am.storeAuthenticationConfig(cfg, True)
+                        if res:
+                            smanager.store_setting('auth_cfg_id', cfg.id())
+                else:
+                    cfg.setName('qgis-maptiler-plugin')
                     cfg.setConfigMap({'token': token})
                     (res, cfg) = am.storeAuthenticationConfig(cfg, True)
                     if res:
@@ -71,17 +79,11 @@ class ConfigureDialog(QtWidgets.QDialog):
                 (res, cfg) = am.storeAuthenticationConfig(cfg, True)
                 if res:
                     smanager.store_setting('auth_cfg_id', cfg.id())
-        elif token:
-            cfg.setName('qgis-maptiler-plugin')
-            cfg.setConfigMap({'token': token})
-            (res, cfg) = am.storeAuthenticationConfig(cfg, True)
-            if res:
-                smanager.store_setting('auth_cfg_id', cfg.id())
-
-        prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
-        smanager.store_setting('prefervector', prefervector)
-
-        self.close()
+            prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
+            smanager.store_setting('prefervector', prefervector)
+            self.close()
+        else:
+            self.ui.label_6.setText(f"Token is required.")
 
     def _rejected(self):
         self.close()
