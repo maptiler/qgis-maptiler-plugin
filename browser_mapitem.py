@@ -114,16 +114,6 @@ class MapDataItem(QgsDataItem):
 
         return actions
 
-
-    def _is_apikey_valid(self, apikey):
-        # apikey validation
-        if not utils.validate_key(apikey):
-            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your API-key.')
-            return False
-
-        return True
-
-
     def _are_credentials_valid(self):
         # credentials validation
         if not utils.validate_credentials():

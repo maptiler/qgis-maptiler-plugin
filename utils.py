@@ -11,18 +11,6 @@ from .settings_manager import SettingsManager
 ssl._create_default_https_context = ssl._create_unverified_context
 
 
-def validate_key(apikey='') -> bool:
-    testurl = f'https://api.maptiler.com/maps/basic/style.json?key={apikey}'
-    request = QNetworkRequest(QUrl(testurl))
-    reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
-
-    if reply_content.error() == 0:
-        return True
-    else:
-        print(f"Validation error:{reply_content.content()}")
-    return False
-
-
 def validate_credentials() -> bool:
     testurl = 'https://api.maptiler.com/maps/basic/style.json'
     smanager = SettingsManager()
