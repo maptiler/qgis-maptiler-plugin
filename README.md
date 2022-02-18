@@ -12,8 +12,8 @@ Homepage: [https://www.maptiler.com/qgis-plugin/](https://www.maptiler.com/qgis-
     - [Requirements](#requirements)
 - [Feature & Usage](#feature--usage)
     - [Add background maps to a project](#add-background-maps-to-a-project)
-    - [Vector and raster tiles](#vector-and-raster-tiles)
     - [Load a map in Mapbox GL JSON format](#load-a-map-in-mapbox-gl-json-format)
+    - [Vector and raster tiles](#vector-and-raster-tiles)
     - [Customize quickly the look&feel of the base maps ](#customize-quickly-the-lookfeel-of-the-base-maps)
     - [Geocoding / place search](#geocoding--place-search)
     - [Access key](#access-key)
@@ -22,7 +22,7 @@ Homepage: [https://www.maptiler.com/qgis-plugin/](https://www.maptiler.com/qgis-
 
 <!-- /TOC -->
 
-## Instalation
+## Installation
 
 There are two ways to install this plugin.
 
@@ -39,9 +39,43 @@ Then MapTiler should be added to your QGIS Browser.
 
 For plugin version 2.0, you need QGIS 3.16 or higher.
 
+For plugin version 3.0, you need QGIS 3.24 or higher.
+
+### Fonts
+
+Maps from MapTiler Cloud use various fonts. You might get similar warnings in QGIS.
+
+<img src='imgs/readme_09.png'>
+
+If you want display these maps in QGIS, you need to have these fonts 
+installed on your system. QGIS will use a default font if specific font is not installed on your system. 
+
+
+List of fonts used in maps at MapTiler Cloud can be found at 
+[https://api.maptiler.com/fonts.json](https://api.maptiler.com/fonts.json).
+
+
 ---
 
 ## Feature & Usage
+
+### Add background maps to a project
+
+MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser.
+    - Basic
+    - Bright
+    - OpenStreetMap
+    - Outdoor
+    - Satellite
+    - Terrain RGB
+    - Toner
+    - Topo
+    - Voyager
+    
+More maps are available after you click on `Add a new map...` from MapTiler plugin contextual menu - on a tab `MapTiler Cloud`. You can choose from various maps provided on MapTiler cloud.
+   
+<img src='imgs/readme_06.png'>
+   
 
 ### Load a map in Mapbox GL JSON format
 
@@ -52,21 +86,6 @@ For **vector tiles** you can add either URL to style.json or TileJSON. Note that
 <img src='imgs/readme_07.png'>
 
 
-### Add background maps to a project
-
-MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser.
-    - Basic
-    - Bright
-    - Satellite
-    - Toner
-    - Topo
-    - Voyager
-    
-More maps are available after you click on `Add a new map...` from MapTiler plugin contextual menu - on a tab `MapTiler Cloud`. You can choose from various maps provided on MapTiler cloud.
-   
-<img src='imgs/readme_06.png'>
-   
-
 ### Vector and raster tiles
 
 MapTiler plugin supports loading maps via both vector and raster tiles.  You can choose from the contextual menu of the map and clicking either on `Add as Raster` or `Add as Vector`.
@@ -75,6 +94,7 @@ You can choose the default type of tiles by checking/unchecking `Use vector tile
 
 Vector tiles support requires QGIS 3.13 or higher.
 For the plugin version 2.0 and higher you need QGIS 3.16 or higher.
+For the plugin version 3.0 and higher you need QGIS 3.24 or higher.
 
 You can read about the difference between vector and raster tiles here [https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/](https://www.maptiler.com/news/2019/02/what-are-vector-tiles-and-why-you-should-care/?utm_source=github.com&utm_medium=referral&utm_campaign=qgis-plugin)
 
@@ -87,6 +107,13 @@ Switch language, select layers, and change colors to match your brand and make a
 
 “Save” this map, and add it via URL - by copy&pasting the link to “GL JSON Style” from the Cloud page of the map.
 
+### Global Digital Elevation Model (DEM)
+The plugin offers elevation model (DEM) for the entire planet.
+You can use the layer for hillshading, hypsometry, analytical applications, and even 3D terrain modeling.
+
+<img src='imgs/readme_10.gif'>
+
+
 ### Geocoding / place search
 
 MapTiler plugin also provides MapTiler toolbar for basic geocoding / place search.
@@ -98,7 +125,17 @@ When you click on one place in the list, the map canvas will zoom to feature ext
 
 <img src='imgs/readme_04.png'>  
 
-### Access key
+### Authentication
+#### Credentials (for plugin version 3.0 and higher)
+The plugin version 3.0 and higher uses credentials for authentication in MapTiler Cloud.
+You can get your own FREE credentials at [https://cloud.maptiler.com/account/credentials](https://cloud.maptiler.com/account/credentials/?utm_source=qgis&utm_medium=product&utm_campaign=qgis-plugin)
+
+Click on `Account...` from MapTiler plugin contextual menu to open the Account dialog window and to insert your token.
+
+<img src='imgs/readme_08.png'>
+
+
+#### Access key (for older versions)
 
 This plugin needs your access key to the MapTiler Cloud that is available for free.
 You can get your own FREE access key at [https://cloud.maptiler.com/account/keys](https://cloud.maptiler.com/account/keys?utm_source=github&utm_medium=product&utm_campaign=qgis-plugin)
