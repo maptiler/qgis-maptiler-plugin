@@ -31,7 +31,7 @@ class DataItemProvider(QgsDataItemProvider):
 
 class RootCollection(QgsDataCollectionItem):
     STANDARD_DATASET = mapdatasets.STANDARD_DATASET
-    LOCAL_JP_DATASET = mapdatasets.LOCAL_JP_DATASET
+    # LOCAL_JP_DATASET = mapdatasets.LOCAL_JP_DATASET
     LOCAL_NL_DATASET = mapdatasets.LOCAL_NL_DATASET
     LOCAL_UK_DATASET = mapdatasets.LOCAL_UK_DATASET
 
@@ -44,7 +44,7 @@ class RootCollection(QgsDataCollectionItem):
         children = []
 
         DATASETS = dict(**self.STANDARD_DATASET,
-                        **self.LOCAL_JP_DATASET,
+                        # **self.LOCAL_JP_DATASET,
                         **self.LOCAL_NL_DATASET,
                         **self.LOCAL_UK_DATASET,
                         )
