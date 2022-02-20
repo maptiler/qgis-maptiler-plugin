@@ -19,15 +19,14 @@ def validate_credentials() -> bool:
         am = QgsApplication.authManager()
         cfg = QgsAuthMethodConfig()
         (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
-        if res and cfg.configMap().get("token"):
-            request = QNetworkRequest(QUrl(testurl))
-            reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
-            if not reply_content.error():
-                return True
-            else:
-                return False
-        else:
-            return False
+        if res:
+            token = cfg.configMap().get("token")
+            if token and len(token) > 33 and "_" in token:
+                request = QNetworkRequest(QUrl(testurl))
+                reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+                if not reply_content.error():
+                    return True
+    return False
 
 
 def is_qgs_vectortile_api_enable():
@@ -75,6 +74,13 @@ def load_color_ramp_from_file(fp: str) -> list:
     return min_ramp_value, max_ramp_value, ramp_lst
 
 
+class MapTilerApiException(Exception):
+    def __init__(self, message, content):
+        self.message = message
+        self.content = content
+        super().__init__(self.message)
+
+
 def _qgis_request(url: str):
     smanager = SettingsManager()
     auth_cfg_id = smanager.get_setting('auth_cfg_id')
@@ -91,11 +97,12 @@ def _qgis_request(url: str):
         return reply_content
     else:
         error_msg = ""
+        error_content = ""
         if reply_content.errorString():
             error_msg = f"{reply_content.errorString()}"
         if reply_content.content():
-            error_msg = f"{error_msg}\n{str(reply_content.content(), 'utf-8')}"
-        raise Exception(error_msg)
+            error_content = f"{str(reply_content.content(), 'utf-8')}"
+        raise MapTilerApiException(error_msg, error_content)
 
 
 def qgis_request_json(url: str) -> dict:

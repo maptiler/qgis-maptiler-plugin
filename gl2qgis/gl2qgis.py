@@ -978,8 +978,6 @@ def parse_interpolate_color_by_zoom(json_fill_color, context):
         bc_hue, bc_sat, bc_light, bc_alpha = get_color_as_hsla_components(bottom_color)
         tc_hue, tc_sat, tc_light, tc_alpha = get_color_as_hsla_components(top_color)
 
-        case_str = "CASE "
-
         case_str += f"WHEN @vector_tile_zoom >= {bz} AND @vector_tile_zoom < {tz} THEN color_hsla(" \
                     f"{interpolate_expression(bz, tz, bc_hue, tc_hue, base)}, " \
                     f"{interpolate_expression(bz, tz, bc_sat, tc_sat, base)}, " \
