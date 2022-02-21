@@ -10,6 +10,15 @@ from .settings_manager import SettingsManager
 from . import utils
 
 
+def _token_format_valid(token):
+    if "_" in token:
+        parts = token.split("_")
+        if len(parts) == 2:
+            if len(parts[0]) == 32 and len(parts[1]) >= 64:
+                return True
+    return False
+
+
 class ConfigureDialog(QtWidgets.QDialog):
     def __init__(self):
         super().__init__()
@@ -52,17 +61,24 @@ class ConfigureDialog(QtWidgets.QDialog):
 
     def _accepted(self):
         # get and store UI values
-        smanager = SettingsManager()
-        am = QgsApplication.authManager()
-        auth_cfg_id = smanager.get_setting('auth_cfg_id')
         token = self.ui.token_txt.text()
-        cfg = QgsAuthMethodConfig('MapTilerHmacSha256')
         if token:
-            if auth_cfg_id:
-                (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
-                if res:
-                    saved_token = cfg.configMap().get("token")
-                    if not saved_token == token:
+            cfg = QgsAuthMethodConfig('MapTilerHmacSha256')
+            if _token_format_valid(token):
+                smanager = SettingsManager()
+                am = QgsApplication.authManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                if auth_cfg_id:
+                    (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
+                    if res:
+                        saved_token = cfg.configMap().get("token")
+                        if not saved_token == token:
+                            cfg.setConfigMap({'token': token})
+                            (res, cfg) = am.storeAuthenticationConfig(cfg, True)
+                            if res:
+                                smanager.store_setting('auth_cfg_id', cfg.id())
+                    else:
+                        cfg.setName('qgis-maptiler-plugin')
                         cfg.setConfigMap({'token': token})
                         (res, cfg) = am.storeAuthenticationConfig(cfg, True)
                         if res:
@@ -73,15 +89,11 @@ class ConfigureDialog(QtWidgets.QDialog):
                     (res, cfg) = am.storeAuthenticationConfig(cfg, True)
                     if res:
                         smanager.store_setting('auth_cfg_id', cfg.id())
+                prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
+                smanager.store_setting('prefervector', prefervector)
+                self.close()
             else:
-                cfg.setName('qgis-maptiler-plugin')
-                cfg.setConfigMap({'token': token})
-                (res, cfg) = am.storeAuthenticationConfig(cfg, True)
-                if res:
-                    smanager.store_setting('auth_cfg_id', cfg.id())
-            prefervector = str(int(self.ui.vtileCheckBox.isChecked()))
-            smanager.store_setting('prefervector', prefervector)
-            self.close()
+                self.ui.label_6.setText(f"Not a valid token format. (Use token, not API key.)")
         else:
             self.ui.label_6.setText(f"Token is required.")
 

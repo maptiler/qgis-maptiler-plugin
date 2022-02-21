@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>423</width>
+    <width>300</width>
     <height>226</height>
    </rect>
   </property>
@@ -24,7 +24,7 @@
   </property>
   <property name="maximumSize">
    <size>
-    <width>423</width>
+    <width>300</width>
     <height>226</height>
    </size>
   </property>
@@ -96,9 +96,16 @@
     </widget>
    </item>
    <item>
+    <widget class="QLabel" name="label_7">
+     <property name="text">
+      <string>Get FREE credentials at:</string>
+     </property>
+    </widget>
+   </item>
+   <item>
     <widget class="QLabel" name="label_3">
      <property name="text">
-      <string>Get FREE credentials at &lt;a href=&quot;https://maptiler.link/qgiscredentials&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://maptiler.link/qgiscredentials&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+      <string>&lt;a href=&quot;https://maptiler.link/qgiscredentials&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#419cff;&quot;&gt;https://cloud.maptiler.com/account/credentials/&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
      </property>
      <property name="textFormat">
       <enum>Qt::RichText</enum>
