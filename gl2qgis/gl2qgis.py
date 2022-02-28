@@ -1522,6 +1522,10 @@ def parse_background(bg_layer_data: dict):
         elif isinstance(json_background_color, str):
             bg_color = core_converter.parseColor(json_background_color, context)
             sym.symbolLayer(0).setColor(bg_color)
+        elif isinstance(json_background_color, list):
+            bg_color_expr = parse_value_list(json_background_color, PropertyType.Color, context, 1, 255)
+            fill_symbol = sym.symbolLayer(0)
+            fill_symbol.setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor, bg_color_expr)
         else:
             context.pushWarning(f"Background: Skipping not implemented expression for background color: "
                                 f"{json_background_color} , {type(json_background_color)}")
