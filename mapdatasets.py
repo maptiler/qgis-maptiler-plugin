@@ -73,20 +73,20 @@ STANDARD_DATASET = {
     }
 }
 
-# LOCAL_JP_DATASET = {
-#     'JP MIERUNE Streets': {
-#         'raster': r'https://api.maptiler.com/maps/jp-mierune-streets/256/tiles.json',
-#         'vector': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json'
-#     },
-#     'JP MIERUNE Dark': {
-#         'raster': r'https://api.maptiler.com/maps/jp-mierune-dark/256/tiles.json',
-#         'vector': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json'
-#     },
-#     'JP MIERUNE Gray': {
-#         'raster': r'https://api.maptiler.com/maps/jp-mierune-gray/256/tiles.json',
-#         'vector': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json'
-#     }
-# }
+LOCAL_JP_DATASET = {
+    'JP MIERUNE Streets': {
+        'raster': r'https://api.maptiler.com/maps/jp-mierune-streets/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json'
+    },
+    'JP MIERUNE Dark': {
+        'raster': r'https://api.maptiler.com/maps/jp-mierune-dark/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json'
+    },
+    'JP MIERUNE Gray': {
+        'raster': r'https://api.maptiler.com/maps/jp-mierune-gray/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json'
+    }
+}
 
 LOCAL_NL_DATASET = {
     'NL Cartiqo Dark': {
