@@ -915,30 +915,31 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 label_settings.xOffset = text_offset.x()
                 label_settings.yOffset = text_offset.y()
 
-    json_icon_image = json_layout.get("icon-image")
-    if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved):
-        sprite_size = QSize()
-        sprite_property = ""
-        sprite_size_property = ""
-        sprite = core_converter.retrieveSpriteAsBase64(json_icon_image, context, sprite_size, sprite_property,
-                                                       sprite_size_property)
-        if sprite:
-            marker_layer = QgsRasterMarkerSymbolLayer()
-            marker_layer.setPath(sprite)
-            marker_layer.setSizeUnit(context.targetUnit())
-
-            if sprite_property:
-                marker_dd_properties = QgsPropertyCollection()
-
-                marker_layer.setDataDefinedProperties(marker_dd_properties)
-
-
-            backgroundSettings = QgsTextBackgroundSettings()
-            backgroundSettings.setEnabled(True)
-            backgroundSettings.setType(QgsTextBackgroundSettings.ShapeMarkerSymbol)
-            backgroundSettings.setSizeUnit(context.targetUnit())
-            backgroundSettings.setMarkerSymbol(QgsMarkerSymbol([marker_layer]))
-            format.setBackground(backgroundSettings)
+    # should be fixed for shield
+    # json_icon_image = json_layout.get("icon-image")
+    # if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved):
+    #     sprite_size = QSize()
+    #     sprite_property = ""
+    #     sprite_size_property = ""
+    #     sprite = core_converter.retrieveSpriteAsBase64(json_icon_image, context, sprite_size, sprite_property,
+    #                                                    sprite_size_property)
+    #     if sprite:
+    #         marker_layer = QgsRasterMarkerSymbolLayer()
+    #         marker_layer.setPath(sprite)
+    #         marker_layer.setSizeUnit(context.targetUnit())
+    #
+    #         if sprite_property:
+    #             marker_dd_properties = QgsPropertyCollection()
+    #
+    #             marker_layer.setDataDefinedProperties(marker_dd_properties)
+    #
+    #
+    #         backgroundSettings = QgsTextBackgroundSettings()
+    #         backgroundSettings.setEnabled(True)
+    #         backgroundSettings.setType(QgsTextBackgroundSettings.ShapeMarkerSymbol)
+    #         backgroundSettings.setSizeUnit(context.targetUnit())
+    #         backgroundSettings.setMarkerSymbol(QgsMarkerSymbol([marker_layer]))
+    #         format.setBackground(backgroundSettings)
 
     if text_size:
         label_settings.priority = int(min(text_size / (context.pixelSizeConversionFactor() * 3), 10.0))
