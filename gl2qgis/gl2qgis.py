@@ -915,30 +915,31 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 label_settings.xOffset = text_offset.x()
                 label_settings.yOffset = text_offset.y()
 
-    json_icon_image = json_layout.get("icon-image")
-    if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved):
-        sprite_size = QSize()
-        sprite_property = ""
-        sprite_size_property = ""
-        sprite = core_converter.retrieveSpriteAsBase64(json_icon_image, context, sprite_size, sprite_property,
-                                                       sprite_size_property)
-        if sprite:
-            marker_layer = QgsRasterMarkerSymbolLayer()
-            marker_layer.setPath(sprite)
-            marker_layer.setSizeUnit(context.targetUnit())
-
-            if sprite_property:
-                marker_dd_properties = QgsPropertyCollection()
-
-                marker_layer.setDataDefinedProperties(marker_dd_properties)
-
-
-            backgroundSettings = QgsTextBackgroundSettings()
-            backgroundSettings.setEnabled(True)
-            backgroundSettings.setType(QgsTextBackgroundSettings.ShapeMarkerSymbol)
-            backgroundSettings.setSizeUnit(context.targetUnit())
-            backgroundSettings.setMarkerSymbol(QgsMarkerSymbol([marker_layer]))
-            format.setBackground(backgroundSettings)
+    # should be fixed for shield
+    # json_icon_image = json_layout.get("icon-image")
+    # if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved):
+    #     sprite_size = QSize()
+    #     sprite_property = ""
+    #     sprite_size_property = ""
+    #     sprite = core_converter.retrieveSpriteAsBase64(json_icon_image, context, sprite_size, sprite_property,
+    #                                                    sprite_size_property)
+    #     if sprite:
+    #         marker_layer = QgsRasterMarkerSymbolLayer()
+    #         marker_layer.setPath(sprite)
+    #         marker_layer.setSizeUnit(context.targetUnit())
+    #
+    #         if sprite_property:
+    #             marker_dd_properties = QgsPropertyCollection()
+    #
+    #             marker_layer.setDataDefinedProperties(marker_dd_properties)
+    #
+    #
+    #         backgroundSettings = QgsTextBackgroundSettings()
+    #         backgroundSettings.setEnabled(True)
+    #         backgroundSettings.setType(QgsTextBackgroundSettings.ShapeMarkerSymbol)
+    #         backgroundSettings.setSizeUnit(context.targetUnit())
+    #         backgroundSettings.setMarkerSymbol(QgsMarkerSymbol([marker_layer]))
+    #         format.setBackground(backgroundSettings)
 
     if text_size:
         label_settings.priority = int(min(text_size / (context.pixelSizeConversionFactor() * 3), 10.0))
@@ -1161,6 +1162,7 @@ def process_label_field(string: str):
     # Convert field name
     # {field_name} is permitted in string -- if multiple fields are present, convert them to an expression
     # but if single field is covered in {}, return it directly
+    string = string.strip()
     single_field_rx = QRegularExpression("^{([^}]+)}$")
     match = single_field_rx.match(string)
     if match.hasMatch():
@@ -1522,6 +1524,10 @@ def parse_background(bg_layer_data: dict):
         elif isinstance(json_background_color, str):
             bg_color = core_converter.parseColor(json_background_color, context)
             sym.symbolLayer(0).setColor(bg_color)
+        elif isinstance(json_background_color, list):
+            bg_color_expr = parse_value_list(json_background_color, PropertyType.Color, context, 1, 255)
+            fill_symbol = sym.symbolLayer(0)
+            fill_symbol.setDataDefinedProperty(QgsSymbolLayer.PropertyFillColor, bg_color_expr)
         else:
             context.pushWarning(f"Background: Skipping not implemented expression for background color: "
                                 f"{json_background_color} , {type(json_background_color)}")
