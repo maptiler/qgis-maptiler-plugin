@@ -1161,6 +1161,7 @@ def process_label_field(string: str):
     # Convert field name
     # {field_name} is permitted in string -- if multiple fields are present, convert them to an expression
     # but if single field is covered in {}, return it directly
+    string = string.strip()
     single_field_rx = QRegularExpression("^{([^}]+)}$")
     match = single_field_rx.match(string)
     if match.hasMatch():
