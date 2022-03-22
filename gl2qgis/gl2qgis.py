@@ -1452,6 +1452,9 @@ def parse_expression(json_expr, context):
         return f"to_string({parse_expression(json_expr[1], context)})"
     elif op == "step":
         return parse_discrete(json_expr, context)
+    elif op == "literal":
+        field_name, field_is_expression = process_label_field(json_expr[1])
+        return field_name
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
