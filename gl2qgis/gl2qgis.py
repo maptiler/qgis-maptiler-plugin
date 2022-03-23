@@ -20,6 +20,7 @@ from PyQt5.QtCore import Qt
 from qgis.PyQt.Qt import QPointF, QSize, QFont, QFontDatabase, QColor, QImage, QRegularExpression
 from qgis.core import *
 from .. import utils
+from itertools import repeat
 
 
 class PropertyType(enum.Enum):
@@ -1134,6 +1135,12 @@ def parse_discrete(json_list: list, context: QgsMapBoxGlStyleConversionContext):
     return case_str
 
 
+def parse_concat(json_list: list, context: QgsMapBoxGlStyleConversionContext):
+    concat_items = list(map(parse_expression, json_list[1:], repeat(context)))
+    concat_str = f"concat({','.join(concat_items)})"
+    return concat_str
+
+
 def parse_array_stops(stops: list, multiplier: (int, float)):
     if len(stops) < 2:
         return
@@ -1375,6 +1382,9 @@ def parse_join_style(style: str):
 
 def parse_expression(json_expr, context):
     """ Parses expression into QGIS expression string """
+    if isinstance(json_expr, str):
+        return QgsExpression.quotedValue(json_expr)
+
     op = json_expr[0]
 
     if op in ('all', "any", "none"):
@@ -1455,6 +1465,8 @@ def parse_expression(json_expr, context):
     elif op == "literal":
         field_name, field_is_expression = process_label_field(json_expr[1])
         return field_name
+    elif op == "concat":
+        return parse_concat(json_expr, context)
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
