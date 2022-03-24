@@ -3,7 +3,7 @@ import urllib
 
 
 from qgis.PyQt.QtCore import Qt, QModelIndex, QSettings
-from qgis.PyQt.QtWidgets import QCompleter, QLineEdit
+from qgis.PyQt.QtWidgets import QCompleter, QLineEdit, QMessageBox
 from qgis.core import *
 
 from .configure_dialog import ConfigureDialog
@@ -16,9 +16,8 @@ class MapTilerGeocoder:
         self._language = language
 
     def geocoding(self, searchword, center_lonlat):
-        smanager = SettingsManager()
-        auth_cfg_id = smanager.get_setting('auth_cfg_id')
-        if not utils.validate_credentials(auth_cfg_id):
+        if not utils.validate_credentials():
+            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your Credentials.')
             self._openConfigureDialog()
             return
 
