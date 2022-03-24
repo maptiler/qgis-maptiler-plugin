@@ -120,4 +120,4 @@ def qgis_request_data(url: str) -> bytes:
 
 
 if __name__ == "__main__":
-    validate_credentials('')
+    validate_credentials()
