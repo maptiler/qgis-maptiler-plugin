@@ -1261,7 +1261,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
             match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
             case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
         # EQUAL operator for single key
-        elif isinstance(when_value, str):
+        elif isinstance(when_value, (str, int, float)):
             case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
 
     if property_type == PropertyType.Color:
