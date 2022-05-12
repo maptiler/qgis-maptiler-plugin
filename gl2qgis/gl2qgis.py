@@ -1455,7 +1455,7 @@ def parse_expression(json_expr, context):
                         case_str += f"WHEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i])} "
                 elif isinstance(json_expr[i], (str, float, int)):
                     case_str += f"WHEN ({QgsExpression.createFieldEqualityExpression(attr, json_expr[i])}) "
-                case_str += f"THEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1])} "
+                case_str += f"THEN {json_expr[i+1]} "
             case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
