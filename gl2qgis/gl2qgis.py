@@ -1247,7 +1247,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
         then_value = json_list[i+1]
         if property_type == PropertyType.Color:
             color = parse_color(then_value, context)
-            then_value_str = QgsExpression.quotedString(color.name())
+            then_value_str = QgsExpression.quotedString(color.name(QColor.HexArgb))
         elif property_type == PropertyType.Numeric:
             then_value_str = str(then_value * multiplier)
         elif property_type == PropertyType.Opacity:
@@ -1266,7 +1266,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
 
     if property_type == PropertyType.Color:
         color = parse_color(json_list[-1], context)
-        else_value = QgsExpression.quotedString(color.name())
+        else_value = QgsExpression.quotedString(color.name(QColor.HexArgb))
     elif property_type == PropertyType.Numeric:
         v = json_list[-1] * multiplier
         else_value = str(v)
