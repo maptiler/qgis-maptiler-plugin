@@ -1125,10 +1125,10 @@ def parse_discrete(json_list: list, context: QgsMapBoxGlStyleConversionContext):
         # IN operator for list
         if isinstance(when_value, list):
             match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
-            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
+            case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value} "
         # EQUAL operator for single key
         elif isinstance(when_value, str):
-            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
+            case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value} "
 
     else_value = json_list[-1]
     case_str += f"ELSE {else_value} END"
@@ -1139,6 +1139,24 @@ def parse_concat(json_list: list, context: QgsMapBoxGlStyleConversionContext):
     concat_items = list(map(parse_expression, json_list[1:], repeat(context)))
     concat_str = f"concat({','.join(concat_items)})"
     return concat_str
+
+
+def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
+    case_str = "CASE "
+    for i in range(1, len(json_list) - 1, 2):
+        # WHEN value
+        when_value = json_list[i]
+        # THEN value
+        then_value = json_list[i + 1]
+        if isinstance(when_value, list):
+            when_expr = parse_expression(when_value, context)
+            case_str += f"WHEN {when_expr} THEN {then_value} "
+        # EQUAL operator for single key
+        elif isinstance(when_value, str):
+            case_str += f"WHEN {QgsExpression.quotedValue(when_value)} THEN {then_value} "
+    else_value = json_list[-1]
+    case_str += f"ELSE {else_value} END"
+    return case_str
 
 
 def parse_array_stops(stops: list, multiplier: (int, float)):
@@ -1247,7 +1265,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
         then_value = json_list[i+1]
         if property_type == PropertyType.Color:
             color = parse_color(then_value, context)
-            then_value_str = QgsExpression.quotedString(color.name())
+            then_value_str = QgsExpression.quotedString(color.name(QColor.HexArgb))
         elif property_type == PropertyType.Numeric:
             then_value_str = str(then_value * multiplier)
         elif property_type == PropertyType.Opacity:
@@ -1261,12 +1279,12 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
             match_str_lst = [QgsExpression.quotedValue(wv) for wv in when_value]
             case_str += f"WHEN {attr} IN ({','.join(match_str_lst)}) THEN {then_value_str} "
         # EQUAL operator for single key
-        elif isinstance(when_value, str):
+        elif isinstance(when_value, (str, int, float)):
             case_str += f"WHEN {attr}={QgsExpression.quotedValue(when_value)} THEN {then_value_str} "
 
     if property_type == PropertyType.Color:
         color = parse_color(json_list[-1], context)
-        else_value = QgsExpression.quotedString(color.name())
+        else_value = QgsExpression.quotedString(color.name(QColor.HexArgb))
     elif property_type == PropertyType.Numeric:
         v = json_list[-1] * multiplier
         else_value = str(v)
@@ -1405,20 +1423,20 @@ def parse_expression(json_expr, context):
         contra_json_expr = json_expr[1]
         contra_json_expr[0] = op + contra_json_expr[0]
         # ['!', ['has', 'level']] -> ['!has', 'level']
-        return parse_key(contra_json_expr)
+        return parse_key(contra_json_expr, context)
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
             op = "IS"
         elif op == "!=":
             op = "IS NOT"
-        return f"{parse_key(json_expr[1])} {op} {parse_value(json_expr[2], context)}"
+        return f"{parse_key(json_expr[1], context)} {op} {parse_value(json_expr[2], context)}"
     elif op == 'has':
-        return parse_key(json_expr[1]) + " IS NOT NULL"
+        return parse_key(json_expr[1], context) + " IS NOT NULL"
     elif op == '!has':
-        return parse_key(json_expr[1]) + " IS NULL"
+        return parse_key(json_expr[1], context) + " IS NULL"
     elif op == 'in' or op == '!in':
-        key = parse_key(json_expr[1])
+        key = parse_key(json_expr[1], context)
         lst = [parse_value(v, context) for v in json_expr[2:]]
         if None in lst:
             context.pushWarning(f"{context.layerId}: Skipping unsupported expression.")
@@ -1428,7 +1446,10 @@ def parse_expression(json_expr, context):
         else:  # not in
             return f"({key} IS NULL OR {key} NOT IN ({', '.join(lst)}))"
     elif op == 'get':
-        return f"attribute('{json_expr[1]}')"
+        if json_expr[1].startswith("name"):
+            return parse_key(json_expr[1], context)
+        else:
+            return f"attribute('{json_expr[1]}')"
     elif op == 'match':
         attr = json_expr[1][1]
 
@@ -1455,7 +1476,7 @@ def parse_expression(json_expr, context):
                         case_str += f"WHEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i])} "
                 elif isinstance(json_expr[i], (str, float, int)):
                     case_str += f"WHEN ({QgsExpression.createFieldEqualityExpression(attr, json_expr[i])}) "
-                case_str += f"THEN {QgsExpression.createFieldEqualityExpression(attr, json_expr[i+1])} "
+                case_str += f"THEN {json_expr[i+1]} "
             case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
@@ -1467,6 +1488,8 @@ def parse_expression(json_expr, context):
         return field_name
     elif op == "concat":
         return parse_concat(json_expr, context)
+    elif op == "case":
+        return parse_case(json_expr, context)
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
@@ -1484,14 +1507,14 @@ def parse_value(json_value, context):
         return None
 
 
-def parse_key(json_key):
+def parse_key(json_key, context):
     if json_key == '$type' or json_key == 'geometry-type':
         return "_geom_type"
     elif isinstance(json_key, list):
         if len(json_key) > 1:
-            return parse_key(json_key[1])
+            return parse_expression(json_key, context)
         else:
-            return parse_key(json_key[0])
+            return parse_key(json_key[0], context)
     return QgsExpression.quotedColumnRef(json_key)
 
 
