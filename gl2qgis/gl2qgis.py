@@ -1446,7 +1446,10 @@ def parse_expression(json_expr, context):
         else:  # not in
             return f"({key} IS NULL OR {key} NOT IN ({', '.join(lst)}))"
     elif op == 'get':
-        return f"attribute('{json_expr[1]}')"
+        if json_expr[1].startswith("name"):
+            return parse_key(json_expr[1], context)
+        else:
+            return f"attribute('{json_expr[1]}')"
     elif op == 'match':
         attr = json_expr[1][1]
 
