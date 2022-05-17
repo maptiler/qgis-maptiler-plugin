@@ -317,15 +317,26 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(vector, False)
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
-                # TODO remove this after RGB tiles implementation (Outdoor)
                 if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb" in zxy_url:
-                    uri = f"zmin=0&zmax=12&type=xyz" \
-                          f"&url={zxy_url.replace('terrain-rgb', 'hillshades')}" \
-                          f"&authcfg={auth_cfg_id}"
-                    raster = QgsRasterLayer(uri, "hillshades", "wms")
-                    renderer = raster.renderer().clone()
-                    renderer.setOpacity(0.2)
-                    raster.setRenderer(renderer)
+                    if utils.is_qgs_early_resampling_enabled():
+                        intprt = "maptilerterrain"
+                        uri = f"{uri}&interpretation={intprt}"
+                        raster = QgsRasterLayer(uri, name, "wms")
+                        raster.setResamplingStage(Qgis.RasterResamplingStage.Provider)
+                        raster.dataProvider().setZoomedInResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+                        raster.dataProvider().setZoomedOutResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
+                        renderer=QgsHillshadeRenderer(raster.pipe().at(0), 1, 315, 45)
+                        renderer.setOpacity(0.2)
+                        renderer.setMultiDirectional(True)
+                        raster.pipe().set(renderer)
+                    else:
+                        uri = f"zmin=0&zmax=12&type=xyz" \
+                              f"&url={zxy_url.replace('terrain-rgb', 'hillshades')}" \
+                              f"&authcfg={auth_cfg_id}"
+                        raster = QgsRasterLayer(uri, "hillshades", "wms")
+                        renderer = raster.renderer().clone()
+                        renderer.setOpacity(0.2)
+                        raster.setRenderer(renderer)
                 else:
                     raster = QgsRasterLayer(uri, name, "wms")
                     raster.setAttribution(attribution_text)
