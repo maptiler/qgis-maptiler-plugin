@@ -15,9 +15,10 @@ import json
 import requests
 import enum
 import re
+import os
 
 from PyQt5.QtCore import Qt
-from qgis.PyQt.Qt import QPointF, QSize, QFont, QFontDatabase, QColor, QImage, QRegularExpression
+from qgis.PyQt.Qt import QPointF, QSize, QSizeF, QFont, QFontDatabase, QColor, QImage, QRegularExpression
 from qgis.core import *
 from .. import utils
 from itertools import repeat
@@ -45,6 +46,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
     labeling_styles = []
     layers = style_json_data.get("layers")
     source_layers = []
+    map_id = style_json_data.get("id")
     for layer in layers:
         if "source" not in layer or layer["source"] != source_name:
             continue
@@ -80,7 +82,7 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
             elif layer_type == 'line':
                 has_renderer_style, renderer_style = parse_line_layer(json_layer, context)
             elif layer_type == 'symbol':
-                has_renderer_style, renderer_style, has_labeling_style, labeling_style = parse_symbol_layer(json_layer, context)
+                has_renderer_style, renderer_style, has_labeling_style, labeling_style = parse_symbol_layer(json_layer, map_id, context)
             elif layer_type == "fill-extrusion":
                 continue
             else:
@@ -470,7 +472,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
     return True, style
 
 
-def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContext):
+def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleConversionContext):
     has_labeling = False
     has_renderer = False
     core_converter = QgsMapBoxGlStyleConverter()
@@ -800,7 +802,7 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
     geometry_type = QgsWkbTypes.PointGeometry
     symbol_placement = json_layout.get("symbol-placement")
     text_offset = None
-    if symbol_placement == "line":
+    if symbol_placement == "line" or ("line" in str(symbol_placement)):
             label_settings.placement = QgsPalLayerSettings.Curved
             label_settings.lineSettings().setPlacementFlags(QgsLabeling.OnLine)
             geometry_type = QgsWkbTypes.LineGeometry
@@ -916,34 +918,22 @@ def parse_symbol_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionCont
                 label_settings.xOffset = text_offset.x()
                 label_settings.yOffset = text_offset.y()
 
-    # should be fixed for shield
-    # json_icon_image = json_layout.get("icon-image")
-    # if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved):
-    #     sprite_size = QSize()
-    #     sprite_property = ""
-    #     sprite_size_property = ""
-    #     sprite = core_converter.retrieveSpriteAsBase64(json_icon_image, context, sprite_size, sprite_property,
-    #                                                    sprite_size_property)
-    #     if sprite:
-    #         marker_layer = QgsRasterMarkerSymbolLayer()
-    #         marker_layer.setPath(sprite)
-    #         marker_layer.setSizeUnit(context.targetUnit())
-    #
-    #         if sprite_property:
-    #             marker_dd_properties = QgsPropertyCollection()
-    #
-    #             marker_layer.setDataDefinedProperties(marker_dd_properties)
-    #
-    #
-    #         backgroundSettings = QgsTextBackgroundSettings()
-    #         backgroundSettings.setEnabled(True)
-    #         backgroundSettings.setType(QgsTextBackgroundSettings.ShapeMarkerSymbol)
-    #         backgroundSettings.setSizeUnit(context.targetUnit())
-    #         backgroundSettings.setMarkerSymbol(QgsMarkerSymbol([marker_layer]))
-    #         format.setBackground(backgroundSettings)
-
     if text_size:
         label_settings.priority = int(min(text_size / (context.pixelSizeConversionFactor() * 3), 10.0))
+
+    # highway-shields
+    json_icon_image = json_layout.get("icon-image")
+    if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved) \
+            and json_layer.get("id").startswith("highway-shield"):
+        backgroundSettings = QgsTextBackgroundSettings()
+        backgroundSettings.setEnabled(True)
+        backgroundSettings.setType(QgsTextBackgroundSettings.ShapeSVG)
+        dd_label_properties.setProperty(QgsPalLayerSettings.ShapeSVGFile, parse_svg_path(json_icon_image, map_id))
+        backgroundSettings.setSizeType(0)  # buffer
+        backgroundSettings.setSizeUnit(context.targetUnit())
+        backgroundSettings.setSize(QSizeF(1, 1))
+        format.setBackground(backgroundSettings)
+        label_settings.priority = 0
 
     label_settings.setFormat(format)
     label_settings.obstacleSettings().setFactor(0.1)
@@ -1542,6 +1532,25 @@ def parse_field_name_dict(json_obj, context):
         processed_v, is_expression =  process_label_field(v)
         case_str += f"WHEN @vector_tile_zoom > {z} THEN {processed_v} END"
         return case_str
+
+
+def parse_svg_path(json_icon_image, map_id):
+    ICONS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)).strip("gl2qgis"), "data/icons/")
+    if map_id == "openstreetmap":
+        return QgsProperty.fromExpression(f"'{ICONS_PATH}{json_icon_image}.svg'")
+    if map_id == "bright":
+        ICONS_PATH = f"{ICONS_PATH}bright/"
+    image_parts = re.split('{|}', json_icon_image)
+    concat_expr = f"concat('{ICONS_PATH}', "
+    for p in image_parts:
+        if p:
+            if not p.startswith("_") and not p.endswith("_"):
+                p=f"attribute('{p}')"
+                concat_expr = f"{concat_expr}{p}, "
+            else:
+                concat_expr = f"{concat_expr}'{p}', "
+    concat_expr = f"{concat_expr}'.svg')"
+    return QgsProperty.fromExpression(concat_expr)
 
 
 def parse_background(bg_layer_data: dict):
