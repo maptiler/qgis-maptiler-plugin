@@ -7,13 +7,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   viewBox="0 0 14.4 14.4"
+   viewBox="0 0 20 14.4"
    version="1.1"
-   id="svg4986"
+   id="svg5037"
    height="14.4"
-   width="14.4"
+   width="20"
    inkscape:version="0.91 r13725"
-   sodipodi:docname="motorway_1.svg">
+   sodipodi:docname="motorway_2.svg">
   <sodipodi:namedview
      pagecolor="#ffffff"
      bordercolor="#666666"
@@ -25,23 +25,23 @@
      inkscape:pageshadow="2"
      inkscape:window-width="1920"
      inkscape:window-height="1015"
-     id="namedview4275"
+     id="namedview4187"
      showgrid="false"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:zoom="13.111111"
-     inkscape:cx="6.2084748"
-     inkscape:cy="7.2000061"
+     inkscape:zoom="16.184889"
+     inkscape:cx="2.5976418"
+     inkscape:cy="10.101254"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg4986" />
+     inkscape:current-layer="svg5037" />
   <defs
-     id="defs4988" />
+     id="defs5039" />
   <metadata
-     id="metadata4991">
+     id="metadata5042">
     <rdf:RDF>
       <cc:Work
          rdf:about="">
@@ -53,29 +53,30 @@
     </rdf:RDF>
   </metadata>
   <g
-     transform="matrix(0.8,0,0,0.8,-42.799988,-722.28975)"
+     transform="matrix(0.8,0,0,0.8,-43.999988,-737.08962)"
      id="layer1">
     <g
-       id="generic-md-1"
+       id="generic-md-2"
        transform="translate(-180,480)">
       <rect
-         rx="2.4000025"
+         transform="translate(0,-1.5169706e-4)"
+         rx="2.3809547"
          ry="2.4000025"
-         y="422.86218"
-         x="233.49998"
+         style="color:#3a3836;display:inline;overflow:visible;visibility:visible;fill:#3a3836;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.1952287;marker:none;enable-background:accumulate"
+         id="rect3449"
+         width="25"
          height="18"
-         width="18"
-         id="rect3443"
-         style="color:#3a3836;display:inline;overflow:visible;visibility:visible;fill:#3a3836;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.20000005;marker:none;enable-background:accumulate" />
+         x="234.99998"
+         y="441.36218" />
       <rect
-         rx="1.2307723"
-         ry="1.2307742"
-         style="color:#3a3836;display:inline;overflow:visible;visibility:visible;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.23077071;marker:none;enable-background:accumulate"
-         id="rect3445"
-         width="16.000006"
-         height="16.000031"
-         x="234.49998"
-         y="423.86218" />
+         rx="1.210529"
+         ry="1.2307718"
+         y="442.36218"
+         x="235.99998"
+         height="16"
+         width="23"
+         id="rect3451"
+         style="color:#3a3836;display:inline;overflow:visible;visibility:visible;fill:#ffffff;fill-opacity:1;fill-rule:evenodd;stroke:none;stroke-width:1.22060561;marker:none;enable-background:accumulate" />
     </g>
   </g>
 </svg>
