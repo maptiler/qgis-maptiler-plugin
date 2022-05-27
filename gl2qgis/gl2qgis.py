@@ -732,12 +732,11 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         f = format.font()
         f.setLetterSpacing(QFont.AbsoluteSpacing, text_letter_spacing)
         format.setFont(f)
-    if buffer_size:
+    if buffer_size and buffer_color and buffer_color.alpha() > 0:
         format.buffer().setEnabled(True)
         format.buffer().setSize(buffer_size)
         format.buffer().setSizeUnit(context.targetUnit())
-        if buffer_color:
-            format.buffer().setColor(buffer_color)
+        format.buffer().setColor(buffer_color)
         if halo_blur_size:
             stack = QgsEffectStack()
             blur = QgsBlurEffect()
