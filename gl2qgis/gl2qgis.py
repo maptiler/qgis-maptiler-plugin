@@ -1083,7 +1083,7 @@ def parse_stops(base: (int, float), stops: list, multiplier: (int, float), conte
     if isinstance(fv, list):
         fv = parse_expression(fv, context)
     case_str += f"WHEN @vector_tile_zoom <= {fz} " \
-                f"THEN {fv * multiplier} "
+                f"THEN {fv} * {multiplier} "
     for i in range(len(stops)-1):
         bz = stops[i][0]
         bv = stops[i][1]
