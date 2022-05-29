@@ -1444,6 +1444,8 @@ def parse_expression(json_expr, context):
     elif op == 'get':
         if json_expr[1].startswith("name"):
             return parse_key(json_expr[1], context)
+        elif json_expr[1] == "class":
+            return parse_key(json_expr[1], context)
         else:
             return f"attribute('{json_expr[1]}')"
     elif op == 'match':
