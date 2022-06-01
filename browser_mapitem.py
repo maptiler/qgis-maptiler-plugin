@@ -350,8 +350,10 @@ class MapDataItem(QgsDataItem):
                     renderer = raster.renderer()
                     styled_renderer, styled_resampler = converter.get_raster_renderer_resampler(
                         renderer, rlayer_json)
-                    raster.setRenderer(styled_renderer)
-                    if styled_resampler == "bilinear":
+                    # raster.setRenderer(styled_renderer)
+                    if styled_renderer is not None:
+                        raster.setRenderer(styled_renderer)
+                    if styled_resampler == "bilinear" or styled_renderer is None:
                         # change resampler to bilinear
                         qml_str = self._qml_of(raster)
                         bilinear_qml = self._change_resampler_to_bilinear(
