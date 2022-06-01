@@ -121,7 +121,7 @@ def get_source_layers_by(source_name: str, style_json_data: dict):
 def get_raster_renderer_resampler(renderer, layer_json: dict):
     paint = layer_json.get("paint")
     if paint is None:
-        return renderer
+        return None, None
 
     #not fully converted:only opacity, resampling
     gl_style = {
