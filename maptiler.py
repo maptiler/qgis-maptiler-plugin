@@ -213,6 +213,7 @@ class MapTiler:
             attribution = re.sub(
                 '<a.*?>|</a>', '', attribution).replace('&copy;', '©').replace('©', '!!!©')
             parsed_attributions = attribution.split('!!!')
+            parsed_attributions = list(map(str.strip, parsed_attributions))
             for attr in parsed_attributions:
                 if attr == '':
                     continue
