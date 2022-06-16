@@ -132,19 +132,40 @@ class MapTiler:
         # self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
         # self.iface.layerTreeView().currentLayerChanged.connect(self._write_copyright_entries)
         self.proj.layersAdded.connect(self._write_copyright_entries)
-        self.proj.layersRemoved.connect(self._write_copyright_entries)
+        self.proj.layersWillBeRemoved.connect(self._write_copyright_entries)
 
     def _deactivate_copyrights(self):
         # self.iface.layerTreeView().clicked.disconnect(self._write_copyright_entries)
         # self.iface.layerTreeView().currentLayerChanged.disconnect(self._write_copyright_entries)
         self.proj.layersAdded.disconnect(self._write_copyright_entries)
-        self.proj.layersRemoved.disconnect(self._write_copyright_entries)
+        self.proj.layersWillBeRemoved.disconnect(self._write_copyright_entries)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
+    def _was_added_via_plugin(self, lyr):
+        """
+        Estimates whether layer was added via MapTiler plugin:
+        1. Layer is an instance of QgsVectorTileLayer
+        2. Layer's source contains 'api.maptiler'
+        """
+
+        if isinstance(lyr, list):
+            lyr = lyr[0]
+        # Adding layers
+        if isinstance(lyr, QgsVectorTileLayer) or (isinstance(lyr, QgsMapLayer) and "api.maptiler" in lyr.source()):
+            return True
+        # Removing layers
+        elif isinstance(lyr, str):
+            layers = self.proj.mapLayers()
+            if lyr in layers.keys():
+                return self._was_added_via_plugin(layers.get(lyr))
+        return False
+
     def _write_copyright_entries(self, param):
+        if not self._was_added_via_plugin(param):
+            return
         adding_layers = []
         if isinstance(param, QgsMapLayer):
             adding_layers.append(param)
