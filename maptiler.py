@@ -73,7 +73,6 @@ class MapTiler:
         self.pluginIsActive = False
 
         #copyright variables
-        self._is_copyright_written_by_plugin = False
         self._previous_copyrights_text = ""
         self._previous_copyrights = []
         self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
@@ -166,7 +165,6 @@ class MapTiler:
         copyrights_to_trim = parsed_copyrights + self._previous_copyrights
         trimed_copyrights_text = self._trim_copyrights_to_default(copyrights_to_trim)
         if not trimed_copyrights_text == "":
-            print(trimed_copyrights_text)
             self._default_copyright = trimed_copyrights_text
             self._default_copyright_is_visible = True
 
