@@ -224,8 +224,7 @@ class MapTiler:
             # when invalid layer is in Browser
             if not isinstance(l.layer(), QgsMapLayer):
                 continue
-            if l.isVisible():
-                target_layers.append(l.layer())
+            target_layers.append(l.layer())
 
         for l in target_layers:
             attribution = l.attribution()
