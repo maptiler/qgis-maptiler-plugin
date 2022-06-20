@@ -73,12 +73,11 @@ class MapTiler:
         self.pluginIsActive = False
 
         #copyright variables
-        self._is_copyright_written_by_plugin = False
-        self._previous_copyrights_text = ""
         self._previous_copyrights = []
         self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == "true"
         self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
+        self.proj.cleared.connect(self._on_project_closed)
 
     # noinspection PyMethodMayBeStatic
 
@@ -128,24 +127,51 @@ class MapTiler:
             
         self._default_copyright = copyright_label_in_the_project
         self._default_copyright_is_visible = copyright_enabled_in_the_project
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
+
+    def _on_project_closed(self):
+        self._default_copyright = ""
+        self._default_copyright_is_visible = False
 
     def _activate_copyrights(self):
-        self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
-        self.iface.layerTreeView().currentLayerChanged.connect(self._write_copyright_entries)
+        # self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
+        # self.iface.layerTreeView().currentLayerChanged.connect(self._write_copyright_entries)
         self.proj.layersAdded.connect(self._write_copyright_entries)
-        self.proj.layersRemoved.connect(self._write_copyright_entries)
+        self.proj.layersWillBeRemoved.connect(self._write_copyright_entries)
 
     def _deactivate_copyrights(self):
-        self.iface.layerTreeView().clicked.disconnect(self._write_copyright_entries)
-        self.iface.layerTreeView().currentLayerChanged.disconnect(self._write_copyright_entries)
+        # self.iface.layerTreeView().clicked.disconnect(self._write_copyright_entries)
+        # self.iface.layerTreeView().currentLayerChanged.disconnect(self._write_copyright_entries)
         self.proj.layersAdded.disconnect(self._write_copyright_entries)
-        self.proj.layersRemoved.disconnect(self._write_copyright_entries)
+        self.proj.layersWillBeRemoved.disconnect(self._write_copyright_entries)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
         QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
         QMetaObject.invokeMethod(self.iface.mainWindow(), "projectReadDecorationItems")
         self.iface.mapCanvas().refresh()
 
+    def _was_added_via_plugin(self, lyr):
+        """
+        Estimates whether layer was added via MapTiler plugin:
+        1. Layer is an instance of QgsVectorTileLayer
+        2. Layer's source contains 'api.maptiler'
+        """
+
+        if isinstance(lyr, list):
+            lyr = lyr[0]
+        # Adding layers
+        if isinstance(lyr, QgsVectorTileLayer) or (isinstance(lyr, QgsMapLayer) and "api.maptiler" in lyr.source()):
+            return True
+        # Removing layers
+        elif isinstance(lyr, str):
+            layers = self.proj.mapLayers()
+            if lyr in layers.keys():
+                return self._was_added_via_plugin(layers.get(lyr))
+        return False
+
     def _write_copyright_entries(self, param):
+        if not self._was_added_via_plugin(param):
+            return
         adding_layers = []
         if isinstance(param, QgsMapLayer):
             adding_layers.append(param)
@@ -166,7 +192,6 @@ class MapTiler:
         copyrights_to_trim = parsed_copyrights + self._previous_copyrights
         trimed_copyrights_text = self._trim_copyrights_to_default(copyrights_to_trim)
         if not trimed_copyrights_text == "":
-            print(trimed_copyrights_text)
             self._default_copyright = trimed_copyrights_text
             self._default_copyright_is_visible = True
 
@@ -205,14 +230,14 @@ class MapTiler:
             # when invalid layer is in Browser
             if not isinstance(l.layer(), QgsMapLayer):
                 continue
-            if l.isVisible():
-                target_layers.append(l.layer())
+            target_layers.append(l.layer())
 
         for l in target_layers:
             attribution = l.attribution()
             attribution = re.sub(
                 '<a.*?>|</a>', '', attribution).replace('&copy;', '©').replace('©', '!!!©')
             parsed_attributions = attribution.split('!!!')
+            parsed_attributions = list(map(str.strip, parsed_attributions))
             for attr in parsed_attributions:
                 if attr == '':
                     continue
