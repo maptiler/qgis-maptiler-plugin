@@ -73,11 +73,11 @@ class MapTiler:
         self.pluginIsActive = False
 
         #copyright variables
-        self._previous_copyrights_text = ""
         self._previous_copyrights = []
         self._default_copyright = QgsProject.instance().readEntry("CopyrightLabel", "/Label")[0]
         self._default_copyright_is_visible = QgsProject.instance().readEntry("CopyrightLabel", "/Enabled")[0] == "true"
         self.proj.readProjectWithContext.connect(lambda a0, context:self._on_custom_project_loaded(a0, context))
+        self.proj.cleared.connect(self._on_project_closed)
 
     # noinspection PyMethodMayBeStatic
 
@@ -127,6 +127,12 @@ class MapTiler:
             
         self._default_copyright = copyright_label_in_the_project
         self._default_copyright_is_visible = copyright_enabled_in_the_project
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
+
+    def _on_project_closed(self):
+        self._default_copyright = ""
+        self._default_copyright_is_visible = False
 
     def _activate_copyrights(self):
         # self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
