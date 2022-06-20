@@ -9,6 +9,14 @@ STANDARD_DATASET = {
         'vector': r'https://api.maptiler.com/maps/bright/style.json',
         'customize_url': r'https://maptiler.link/qgisbright'
     },
+    'Cadastre': {
+        'raster': r'https://api.maptiler.com/maps/cadastre/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/cadastre/style.json'
+    },
+    'Cadastre Satellite': {
+        'raster': r'https://api.maptiler.com/maps/cadastre-satellite/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/cadastre-satellite/style.json'
+    },
     'Dark Matter': {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json'
