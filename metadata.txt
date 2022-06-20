@@ -6,7 +6,7 @@
 name=MapTiler
 qgisMinimumVersion=3.24
 description=Street and satellite base maps with vector tiles
-version=3.0.3
+version=3.1
 author=MapTiler
 email=info@maptiler.com
 
@@ -33,7 +33,7 @@ hasProcessingProvider=no
 # changelog=
 
 # Tags are comma separated with spaces allowed
-tags=maptiler, open, map, maps, tiles, openmaptiles, osm, openstreetmap, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemaps, quickmapservices, vector-tiles, geojson, reader, xyz, print, ordnance survey, zoomstack, kadaster, cartiqo, gsi, japan, outdoor, carto, dem, digital, elevation, model
+tags=maptiler, open, map, maps, tiles, openmaptiles, osm, openstreetmap, raster, vector, wmts, tilejson, mapbox, gl, style, styles, geocoding, basemaps, quickmapservices, vector-tiles, geojson, reader, xyz, print, ordnance survey, zoomstack, kadaster, cartiqo, gsi, japan, outdoor, carto, dem, digital, elevation, model, cadastre, cadastral, hillshade, terrain
 
 homepage=https://maptiler.link/qgisplugin
 category=Web
