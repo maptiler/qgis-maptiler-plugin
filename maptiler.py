@@ -133,6 +133,8 @@ class MapTiler:
     def _on_project_closed(self):
         self._default_copyright = ""
         self._default_copyright_is_visible = False
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Label", self._default_copyright)
+        QgsProject.instance().writeEntry("CopyrightLabel", "/Enabled", self._default_copyright_is_visible)
 
     def _activate_copyrights(self):
         # self.iface.layerTreeView().clicked.connect(self._write_copyright_entries)
