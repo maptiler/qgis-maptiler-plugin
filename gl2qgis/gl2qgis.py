@@ -22,6 +22,7 @@ from qgis.PyQt.Qt import QPointF, QSize, QSizeF, QFont, QFontDatabase, QColor, Q
 from qgis.core import *
 from .. import utils
 from itertools import repeat
+from pathlib import Path
 
 
 class PropertyType(enum.Enum):
@@ -1543,22 +1544,27 @@ def parse_field_name_dict(json_obj, context):
 
 
 def parse_svg_path(json_icon_image, map_id):
-    ICONS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)).strip("gl2qgis"), "data/icons/")
+    print(json_icon_image)
+    ICONS_PATH = f'{Path(__file__).parent.parent.joinpath("data", "icons")}{os.sep}'
     if map_id == "openstreetmap":
-        return QgsProperty.fromExpression(f"'{ICONS_PATH}{json_icon_image}.svg'")
+        return QgsProperty.fromExpression(f"""'{ICONS_PATH}{json_icon_image}.svg'""")
     if map_id == "bright":
-        ICONS_PATH = f"{ICONS_PATH}bright/"
-    image_parts = re.split('{|}', json_icon_image)
-    concat_expr = f"concat('{ICONS_PATH}', "
-    for p in image_parts:
-        if p:
-            if not p.startswith("_") and not p.endswith("_"):
-                p=f"attribute('{p}')"
-                concat_expr = f"{concat_expr}{p}, "
-            else:
-                concat_expr = f"{concat_expr}'{p}', "
-    concat_expr = f"{concat_expr}'.svg')"
-    return QgsProperty.fromExpression(concat_expr)
+        ICONS_PATH = f"{ICONS_PATH}bright{os.sep}"
+    if isinstance(json_icon_image, str):
+        image_parts = re.split('{|}', json_icon_image)
+        concat_expr = f"concat('{ICONS_PATH}', "
+        for p in image_parts:
+            if p:
+                if not p.startswith("_") and not p.endswith("_"):
+                    p=f"attribute('{p}')"
+                    concat_expr = f"{concat_expr}{p}, "
+                else:
+                    concat_expr = f"{concat_expr}'{p}', "
+        concat_expr = f"{concat_expr}'.svg')"
+        return QgsProperty.fromExpression(concat_expr)
+    elif isinstance(json_icon_image, list):
+        print("todo for bright")
+
 
 
 def parse_background(bg_layer_data: dict):
