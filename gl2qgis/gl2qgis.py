@@ -928,7 +928,8 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         backgroundSettings = QgsTextBackgroundSettings()
         backgroundSettings.setEnabled(True)
         backgroundSettings.setType(QgsTextBackgroundSettings.ShapeSVG)
-        dd_label_properties.setProperty(QgsPalLayerSettings.ShapeSVGFile, parse_svg_path(json_icon_image, map_id))
+        dd_label_properties.setProperty(QgsPalLayerSettings.ShapeSVGFile,
+                                        parse_svg_path(json_icon_image, map_id, context))
         backgroundSettings.setSizeType(0)  # buffer
         backgroundSettings.setSizeUnit(context.targetUnit())
         backgroundSettings.setSize(QSizeF(1, 1))
@@ -1543,8 +1544,7 @@ def parse_field_name_dict(json_obj, context):
         return case_str
 
 
-def parse_svg_path(json_icon_image, map_id):
-    print(json_icon_image)
+def parse_svg_path(json_icon_image, map_id, context):
     ICONS_PATH = f'{Path(__file__).parent.parent.joinpath("data", "icons")}{os.sep}'
     if map_id == "openstreetmap":
         return QgsProperty.fromExpression(f"""'{ICONS_PATH}{json_icon_image}.svg'""")
@@ -1563,8 +1563,14 @@ def parse_svg_path(json_icon_image, map_id):
         concat_expr = f"{concat_expr}'.svg')"
         return QgsProperty.fromExpression(concat_expr)
     elif isinstance(json_icon_image, list):
-        print("todo for bright")
-
+        if json_icon_image[0] == 'concat':
+            json_icon_image.insert(1, ICONS_PATH)
+            json_icon_image.append(".svg")
+            concat_expr = parse_concat(json_icon_image, context)
+            return QgsProperty.fromExpression(concat_expr)
+    else:
+        context.pushWarning(f"{context.layerId}: Cannot parse svg icon path.")
+        return
 
 
 def parse_background(bg_layer_data: dict):
