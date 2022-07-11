@@ -1545,14 +1545,14 @@ def parse_field_name_dict(json_obj, context):
 
 
 def parse_svg_path(json_icon_image, map_id, context):
-    ICONS_PATH = f'{Path(__file__).parent.parent.joinpath("data", "icons")}{os.sep}'
+    ICONS_PATH = Path(os.path.dirname(os.path.realpath(__file__)).strip("gl2qgis"), "data", "icons").as_posix()
     if map_id == "openstreetmap":
-        return QgsProperty.fromExpression(f"""'{ICONS_PATH}{json_icon_image}.svg'""")
+        return QgsProperty.fromExpression(f"""'{ICONS_PATH}/{json_icon_image}.svg'""")
     if map_id == "bright":
-        ICONS_PATH = f"{ICONS_PATH}bright{os.sep}"
+        ICONS_PATH = f"{ICONS_PATH}/bright/"
     if isinstance(json_icon_image, str):
         image_parts = re.split('{|}', json_icon_image)
-        concat_expr = f"concat('{ICONS_PATH}', "
+        concat_expr = f"concat('{ICONS_PATH}/', "
         for p in image_parts:
             if p:
                 if not p.startswith("_") and not p.endswith("_"):
@@ -1564,7 +1564,7 @@ def parse_svg_path(json_icon_image, map_id, context):
         return QgsProperty.fromExpression(concat_expr)
     elif isinstance(json_icon_image, list):
         if json_icon_image[0] == 'concat':
-            json_icon_image.insert(1, ICONS_PATH)
+            json_icon_image.insert(1, f"{ICONS_PATH}/")
             json_icon_image.append(".svg")
             concat_expr = parse_concat(json_icon_image, context)
             return QgsProperty.fromExpression(concat_expr)
