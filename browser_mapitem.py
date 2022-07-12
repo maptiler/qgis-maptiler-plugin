@@ -373,6 +373,8 @@ class MapDataItem(QgsDataItem):
                 # Removed known warnings
                 if "Could not retrieve sprite ''" in candidate or "Could not retrieve sprite ' '" in candidate:
                     continue
+                if candidate.startswith("highway-shield") and "method concat" in candidate:
+                    continue
                 warnings.append(candidate)
             # Print warnings during conversion
             if bool(warnings):
