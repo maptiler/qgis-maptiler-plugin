@@ -371,7 +371,7 @@ class MapDataItem(QgsDataItem):
             candidate_warnings = list(set(candidate_warnings))
             for candidate in candidate_warnings:
                 # Removed known warnings
-                if "Could not retrieve sprite ''" in candidate or "Could not retrieve sprite ' '" in candidate:
+                if "sprite ''" in candidate or "sprite ' '" in candidate:
                     continue
                 if candidate.startswith("highway-shield") and "method concat" in candidate:
                     continue
