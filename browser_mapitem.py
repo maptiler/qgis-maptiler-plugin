@@ -21,7 +21,8 @@ from . import utils
 IMGS_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "imgs")
 DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
-COLOR_RAMP_PATH = os.path.join(DATA_PATH, "mt-terrain-color-ramp.txt")
+TERRAIN_COLOR_RAMP_PATH = os.path.join(DATA_PATH, "terrain-color-ramp.txt")
+OCEAN_COLOR_RAMP_PATH = os.path.join(DATA_PATH, "ocean-color-ramp.txt")
 SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
@@ -198,7 +199,7 @@ class MapDataItem(QgsDataItem):
             tile_json_url = self._dataset[data_key]
             tile_json_data = utils.qgis_request_json(tile_json_url)
             layer_zxy_url = tile_json_data.get("tiles")[0]
-            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb") or layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
                 smanager = SettingsManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
                 intprt = "maptilerterrain"
@@ -212,10 +213,13 @@ class MapDataItem(QgsDataItem):
             raster_dem = QgsRasterLayer(uri, self._name, "wms")
 
             # Color ramp
-            min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(COLOR_RAMP_PATH)
+            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+                min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(TERRAIN_COLOR_RAMP_PATH)
+            elif layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
+                min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
             fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
             fnc.setColorRampType(QgsColorRampShader.Interpolated)
-            fnc.setClassificationMode(QgsColorRampShader.EqualInterval)
+            fnc.setClassificationMode(QgsColorRampShader.Continuous)
             fnc.setColorRampItemList(color_ramp)
             lgnd = QgsColorRampLegendNodeSettings()
             lgnd.setUseContinuousLegend(True)
