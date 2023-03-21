@@ -297,7 +297,7 @@ class MapDataItem(QgsDataItem):
                 shader.setRasterShaderFunction(fnc)
 
                 # Renderer
-                renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+                renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), raster_dem.type(), shader)
                 raster_dem.setRenderer(renderer)
 
                 resampleFilter = raster_dem.resampleFilter()
