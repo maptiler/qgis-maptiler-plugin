@@ -64,6 +64,7 @@ A list of fonts used in maps at MapTiler Cloud can be found at
 MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser.
     - Basic
     - Bright
+    - Ocean RGB
     - OpenStreetMap
     - Outdoor
     - Satellite

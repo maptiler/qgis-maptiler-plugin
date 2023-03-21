@@ -10,8 +10,8 @@ class SettingsManager:
 
     def __init__(self):
         self._settings = {
-            'selectedmaps': ['Basic', 'Bright', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets', 'Terrain RGB',
-                             'Toner', 'Topo', 'Voyager'],
+            'selectedmaps': ['Basic', 'Bright', 'Ocean RGB', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets',
+                             'Terrain RGB', 'Toner', 'Topo', 'Voyager'],
             'prefervector': '1',
             'custommaps': {},
             'auth_cfg_id': ''
