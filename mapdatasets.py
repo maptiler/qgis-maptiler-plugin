@@ -55,6 +55,12 @@ STANDARD_DATASET = {
         'vector': r'https://api.maptiler.com/maps/streets/style.json',
         'customize_url': r'https://maptiler.link/qgisstreets'
     },
+    'Terrain': {
+        'terrain-group': [
+            r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json',
+            r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
+        ]
+    },
     'Terrain RGB': {
         'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json'
     },

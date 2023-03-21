@@ -53,6 +53,8 @@ class MapDataItem(QgsDataItem):
             self._add_vector_to_canvas()
         elif 'raster-dem' in self._dataset:
             self._add_raster_dem_to_canvas()
+        elif 'terrain-group' in self._dataset:
+            self._add_terrain_group_to_canvas()
         else:
             self._add_raster_to_canvas()
         return True
@@ -250,6 +252,69 @@ class MapDataItem(QgsDataItem):
             dem_layer.setExpanded(False)
         except utils.MapTilerApiException as e:
             self._display_exception(e)
+
+
+    def _add_terrain_group_to_canvas(self, data_key='terrain-group'):
+        """add raster layer from tiles.json"""
+        if not self._are_credentials_valid() and data_key == 'terrain-group':
+            self._openConfigureDialog()
+            return
+
+        try:
+            root = QgsProject().instance().layerTreeRoot()
+            node_map = root.addGroup(self._name)
+            node_map.setExpanded(True)
+
+            sources = converter.get_sources_dict_from_terrain_group(self._dataset[data_key])
+            for source_name, source_data in sources.items():
+                layer_zxy_url = source_data.get('zxy_url')
+                smanager = SettingsManager()
+                auth_cfg_id = smanager.get_setting('auth_cfg_id')
+                intprt = "maptilerterrain"
+                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
+                zmax = source_data.get("maxzoom")
+                if zmax:
+                    uri = f"{uri}&zmax={zmax}"
+                raster_dem = QgsRasterLayer(uri, source_name, "wms")
+
+                # Color ramp
+                if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
+                    min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(
+                        TERRAIN_COLOR_RAMP_PATH)
+                elif layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
+                    min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
+                fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
+                fnc.setColorRampType(QgsColorRampShader.Interpolated)
+                fnc.setClassificationMode(QgsColorRampShader.Continuous)
+                fnc.setColorRampItemList(color_ramp)
+                lgnd = QgsColorRampLegendNodeSettings()
+                lgnd.setUseContinuousLegend(True)
+                lgnd.setOrientation(1)
+                fnc.setLegendSettings(lgnd)
+                # Shader
+                shader = QgsRasterShader()
+                shader.setRasterShaderFunction(fnc)
+
+                # Renderer
+                renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+                raster_dem.setRenderer(renderer)
+
+                resampleFilter = raster_dem.resampleFilter()
+                resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
+                resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+
+                # add Copyright
+                attribution_text = source_data.get("attribution")
+                raster_dem.setAttribution(attribution_text)
+                QgsProject.instance().addMapLayer(raster_dem, False)
+                node_map.insertLayer(-1, raster_dem)
+                layerNode = node_map.findLayer(raster_dem.id())
+                layerNode.setExpanded(False)
+
+        except utils.MapTilerApiException as e:
+            self._display_exception(e)
+
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if data_key == "vector":

@@ -82,6 +82,35 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
     return source_zxy_dict
 
 
+def get_sources_dict_from_terrain_group(group_sources: list) -> dict:
+    source_zxy_dict = {}
+    for tile_json_url in group_sources:
+        layer_zxy_url = ""
+        min_zoom = None
+        max_zoom = None
+        attribution = None
+
+        tile_json_data = utils.qgis_request_json(tile_json_url)
+        if "tiles" in tile_json_data:
+            layer_zxy_url = tile_json_data.get("tiles")[0]
+        if "minzoom" in tile_json_data:
+            min_zoom = tile_json_data.get("minzoom")
+        if "maxzoom" in tile_json_data:
+            max_zoom = tile_json_data.get("maxzoom")
+        if "attribution" in tile_json_data:
+            attribution = tile_json_data.get("attribution")
+        if "name" in tile_json_data:
+            source_name = tile_json_data.get("name")
+
+        source_zxy_dict[source_name] = {
+            "name": source_name, "zxy_url": layer_zxy_url,
+            "type": 'raster-dem', "attribution": attribution,
+            "maxzoom": max_zoom, "minzoom": min_zoom
+        }
+
+    return source_zxy_dict
+
+
 def get_style_json(style_json_url: str) -> dict:
     url_endpoint = style_json_url.split("?")[0]
     if url_endpoint.endswith(".json"):
