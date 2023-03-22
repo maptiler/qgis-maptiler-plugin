@@ -67,7 +67,7 @@ MapTiler plugin provides several preset maps. Some of them are visible from QGIS
     - OpenStreetMap
     - Outdoor
     - Satellite
-    - Terrain RGB
+    - Terrain
     - Toner
     - Topo
     - Voyager

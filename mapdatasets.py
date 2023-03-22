@@ -21,6 +21,9 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json'
     },
+    'Ocean RGB': {
+        'raster-dem': r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
+    },
     'OpenStreetMap': {
         'raster': r'https://api.maptiler.com/maps/openstreetmap/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/openstreetmap/style.json'
@@ -51,6 +54,12 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/streets/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/streets/style.json',
         'customize_url': r'https://maptiler.link/qgisstreets'
+    },
+    'Terrain': {
+        'terrain-group': [
+            r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json',
+            r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
+        ]
     },
     'Terrain RGB': {
         'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json'
