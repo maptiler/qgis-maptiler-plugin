@@ -132,7 +132,7 @@ def get_bg_renderer(style_json_data: dict):
     layers = style_json_data.get("layers")
     renderer = None
     for layer in layers:
-        if layer["id"] == "background":
+        if str(layer["id"]).lower() == "background" or layer["type"] == 'background':
             renderer = parse_background(layer)
     return renderer
 
