@@ -386,7 +386,7 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(vector, False)
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
-                if source_data.get("name") == "Terrain RGB" and "https://api.maptiler.com/tiles/terrain-rgb" in zxy_url:
+                if "Terrain RGB" in source_data.get("name")  and "https://api.maptiler.com/tiles/terrain-rgb" in zxy_url:
                     if utils.is_qgs_early_resampling_enabled():
                         intprt = "maptilerterrain"
                         uri = f"{uri}&interpretation={intprt}"
