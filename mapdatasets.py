@@ -57,12 +57,12 @@ STANDARD_DATASET = {
     },
     'Terrain': {
         'terrain-group': [
-            r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json',
+            r'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json',
             r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
         ]
     },
     'Terrain RGB': {
-        'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb/tiles.json'
+        'raster-dem': r'https://api.maptiler.com/tiles/terrain-rgb-v2/tiles.json'
     },
     'Toner': {
         'raster': r'https://api.maptiler.com/maps/toner/256/tiles.json',
