@@ -10,7 +10,7 @@ class SettingsManager:
 
     def __init__(self):
         self._settings = {
-            'selectedmaps': ['Basic', 'Bright', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets',
+            'selectedmaps': ['Basic', 'Bright', 'Dataviz', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets',
                              'Terrain', 'Toner', 'Topo', 'Voyager'],
             'prefervector': '1',
             'custommaps': {},

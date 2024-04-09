@@ -21,6 +21,18 @@ STANDARD_DATASET = {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/darkmatter/style.json'
     },
+    'Dataviz': {
+        'raster': r'https://api.maptiler.com/maps/dataviz/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/dataviz/style.json'
+    },
+    'Dataviz Dark': {
+        'raster': r'https://api.maptiler.com/maps/dataviz-dark/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/dataviz-dark/style.json'
+    },
+    'Dataviz Light': {
+        'raster': r'https://api.maptiler.com/maps/dataviz-light/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/dataviz-light/style.json'
+    },
     'Ocean RGB': {
         'raster-dem': r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
     },
