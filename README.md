@@ -8,15 +8,20 @@ Homepage: [https://www.maptiler.com/qgis-plugin/](https://www.maptiler.com/qgis-
 
 <!-- TOC -->
 
-- [Instalation](#instalation)
+- [Installation](#installation)
     - [Requirements](#requirements)
+    - [Fonts](#fonts)
 - [Feature & Usage](#feature--usage)
     - [Add background maps to a project](#add-background-maps-to-a-project)
     - [Load a map in Mapbox GL JSON format](#load-a-map-in-mapbox-gl-json-format)
     - [Vector and raster tiles](#vector-and-raster-tiles)
-    - [Customize quickly the look&feel of the base maps ](#customize-quickly-the-lookfeel-of-the-base-maps)
-    - [Geocoding / place search](#geocoding--place-search)
-    - [Access key](#access-key)
+    - [Customize quickly the look&feel of the base maps](#customize-quickly-the-lookfeel-of-the-base-maps)
+    - [Global Digital Elevation Model (DEM)](#global-dem)
+    - [Geocoding / place search](#geocoding-place-search)
+    - [Authentication](#authentication)
+      - [Credentials](#credentials)
+      - [Access key](#access-key)
+- [Credits](#credits)
 - [For developer](#for-developer)
 
 
@@ -35,7 +40,7 @@ Then MapTiler should be added to your QGIS Browser.
 
 <img src='imgs/readme_01.png'>
 
-## Requirements
+### Requirements
 
 For plugin version 2.0, you need QGIS 3.16 or higher.
 
