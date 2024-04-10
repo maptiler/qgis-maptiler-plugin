@@ -15,12 +15,12 @@ Homepage: [https://www.maptiler.com/qgis-plugin/](https://www.maptiler.com/qgis-
     - [Add background maps to a project](#add-background-maps-to-a-project)
     - [Load a map in Mapbox GL JSON format](#load-a-map-in-mapbox-gl-json-format)
     - [Vector and raster tiles](#vector-and-raster-tiles)
-    - [Customize quickly the look&feel of the base maps](#customize-quickly-the-lookfeel-of-the-base-maps)
-    - [Global Digital Elevation Model (DEM)](#global-dem)
-    - [Geocoding / place search](#geocoding-place-search)
+    - [Customize quickly the look&feel of the base maps](#customize-the-lookfeel-of-the-base-maps-quickly)
+    - [Global Digital Elevation Model (DEM)](#global-digital-elevation-model-dem)
+    - [Geocoding / place search](#geocoding--place-search)
     - [Authentication](#authentication)
-      - [Credentials](#credentials)
-      - [Access key](#access-key)
+      - [Credentials](#credentials-for-plugin-version-30-and-higher)
+      - [Access key](#access-key-for-older-versions)
 - [Credits](#credits)
 - [For developer](#for-developer)
 
@@ -108,7 +108,11 @@ You can read about the difference between vector and raster tiles here [https://
 
 There is a possibility to simply adjust the default base maps in [Customize tool](https://www.maptiler.com/cloud/customize/?utm_source=github.com&utm_medium=referral&utm_campaign=qgis-plugin) - via a context menu on right-click in QGIS.
 
+<img src='imgs/readme_12.png'>  
+
 Switch language, select layers, and change colors to match your brand and make a perfect map.
+
+<img src='imgs/readme_13.gif'>
 
 “Save” this map, and add it via URL - by copy&pasting the link to “GL JSON Style” from the Cloud page of the map.
 
