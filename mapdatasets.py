@@ -11,34 +11,41 @@ STANDARD_DATASET = {
     },
     'Cadastre': {
         'raster': r'https://api.maptiler.com/maps/cadastre/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/cadastre/style.json'
+        'vector': r'https://api.maptiler.com/maps/cadastre/style.json',
+        'customize_url': r'https://maptiler.link/qgiscadastre'
     },
     'Cadastre Satellite': {
         'raster': r'https://api.maptiler.com/maps/cadastre-satellite/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/cadastre-satellite/style.json'
+        'vector': r'https://api.maptiler.com/maps/cadastre-satellite/style.json',
+        'customize_url': r'https://maptiler.link/qgiscadsatellite'
     },
     'Dark Matter': {
         'raster': r'https://api.maptiler.com/maps/darkmatter/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/darkmatter/style.json'
+        'vector': r'https://api.maptiler.com/maps/darkmatter/style.json',
+        'customize_url': r'https://maptiler.link/qgisdarkmatter'
     },
     'Dataviz': {
         'raster': r'https://api.maptiler.com/maps/dataviz/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/dataviz/style.json'
+        'vector': r'https://api.maptiler.com/maps/dataviz/style.json',
+        'customize_url': r'https://maptiler.link/qgisdataviz'
     },
     'Dataviz Dark': {
         'raster': r'https://api.maptiler.com/maps/dataviz-dark/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/dataviz-dark/style.json'
+        'vector': r'https://api.maptiler.com/maps/dataviz-dark/style.json',
+        'customize_url': r'https://maptiler.link/qgisdatavizdark'
     },
     'Dataviz Light': {
         'raster': r'https://api.maptiler.com/maps/dataviz-light/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/dataviz-light/style.json'
+        'vector': r'https://api.maptiler.com/maps/dataviz-light/style.json',
+        'customize_url': r'https://maptiler.link/qgisdatavizlight'
     },
     'Ocean RGB': {
         'raster-dem': r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
     },
     'OpenStreetMap': {
         'raster': r'https://api.maptiler.com/maps/openstreetmap/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/openstreetmap/style.json'
+        'vector': r'https://api.maptiler.com/maps/openstreetmap/style.json',
+        'customize_url': r'https://maptiler.link/qgisosm'
     },
     'Outdoor': {
         'raster': r'https://api.maptiler.com/maps/outdoor/256/tiles.json',
@@ -48,11 +55,12 @@ STANDARD_DATASET = {
     'Pastel': {
         'raster': r'https://api.maptiler.com/maps/pastel/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/pastel/style.json',
-        'customize_url': r'https://maptiler.link/qgis-pastel'
+        'customize_url': r'https://maptiler.link/qgispastel'
     },
     'Positron': {
         'raster': r'https://api.maptiler.com/maps/positron/256/tiles.json',
         'vector': r'https://api.maptiler.com/maps/positron/style.json',
+        'customize_url': r'https://maptiler.link/qgispositron'
     },
     'Satellite': {
         'raster': r'https://api.maptiler.com/tiles/satellite-v2/tiles.json'
@@ -98,37 +106,44 @@ STANDARD_DATASET = {
     },
     'Winter': {
         'raster': r'https://api.maptiler.com/maps/winter/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/winter/style.json'
+        'vector': r'https://api.maptiler.com/maps/winter/style.json',
+        'customize_url': r'https://maptiler.link/qgiswinter'
     }
 }
 
 LOCAL_JP_DATASET = {
     'JP MIERUNE Streets': {
         'raster': r'https://api.maptiler.com/maps/jp-mierune-streets/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json'
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-streets/style.json',
+        'customize_url': r'https://maptiler.link/qgisjpstreets'
     },
     'JP MIERUNE Dark': {
         'raster': r'https://api.maptiler.com/maps/jp-mierune-dark/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json'
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-dark/style.json',
+        'customize_url': r'https://maptiler.link/qgisjpdark'
     },
     'JP MIERUNE Gray': {
         'raster': r'https://api.maptiler.com/maps/jp-mierune-gray/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json'
+        'vector': r'https://api.maptiler.com/maps/jp-mierune-gray/style.json',
+        'customize_url': r'https://maptiler.link/qgisjpgray'
     }
 }
 
 LOCAL_NL_DATASET = {
     'NL Cartiqo Dark': {
         'raster': r'https://api.maptiler.com/maps/nl-cartiqo-dark/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-dark/style.json'
+        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-dark/style.json',
+        'customize_url': r'https://maptiler.link/qgisnldark'
     },
     'NL Cartiqo Light': {
         'raster': r'https://api.maptiler.com/maps/nl-cartiqo-light/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-light/style.json'
+        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-light/style.json',
+        'customize_url': r'https://maptiler.link/qgisnllight'
     },
     'NL Cartiqo Topo': {
         'raster': r'https://api.maptiler.com/maps/nl-cartiqo-topo/256/tiles.json',
-        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-topo/style.json'
+        'vector': r'https://api.maptiler.com/maps/nl-cartiqo-topo/style.json',
+        'customize_url': r'https://maptiler.link/qgisnltopo'
     }
 }
 
