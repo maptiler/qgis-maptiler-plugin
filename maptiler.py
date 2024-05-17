@@ -52,7 +52,7 @@ class MapTiler:
         self.plugin_dir = os.path.dirname(__file__)
 
         # initialize locale
-        locale = QSettings().value('locale/userLocale')[0:2]
+        locale = (locale[0:2] if (locale := QSettings().value('locale/userLocale')) else 'en')
         locale_path = os.path.join(
             self.plugin_dir,
             'i18n',
