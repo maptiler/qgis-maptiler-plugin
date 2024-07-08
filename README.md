@@ -134,6 +134,15 @@ The map canvas will zoom to feature extent when you click on one place in the li
 
 <img src='imgs/readme_04.png'>  
 
+### Exporting/printing
+
+You can export maps into high dpi PDFs, PNG or other formats. Benefit from high-detailed vector maps and 
+QGIS Print Layout Editor. Add common elements of a map layout, such as legend, title, scale, inset map or north arrow.
+
+Please, be aware that printing/exporting map of large areas with high detail might cause big spikes in Cloud export
+requests and might exceed limits.
+
+
 ### Authentication
 #### Credentials (for plugin version 3.0 and higher)
 The plugin version 3.0 and higher uses credentials for authentication in MapTiler Cloud.
