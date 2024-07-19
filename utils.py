@@ -43,6 +43,12 @@ def is_qgs_early_resampling_enabled():
     return minor_ver >= 25
 
 
+def is_qgs_38_or_higher():
+    qgis_version_str = str(Qgis.QGIS_VERSION_INT)
+    minor_ver = int(qgis_version_str[1:3])
+    return minor_ver >= 38
+
+
 def is_in_darkmode(threshold=383):
     """detect the Qt in Darkmode or not 
 
