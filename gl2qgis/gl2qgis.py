@@ -168,7 +168,7 @@ def parse_fill_layer(json_layer, context):
             fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_outline_color, PropertyType.Color,
-                                                       context, 1, 255, fill_outline_color))
+                                                       context, 1, 255))
         elif isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color, context)
             fill_symbol.setStrokeColor(fill_outline_color)
@@ -193,10 +193,12 @@ def parse_fill_layer(json_layer, context):
             fill_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_interpolate_opacity_by_zoom(json_fill_opacity,
-                                                                        fill_color.alpha() if fill_color else 255))
+                                                                        fill_color.alpha()
+                                                                        if isinstance(fill_color, QColor) else 255))
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_interpolate_opacity_by_zoom(json_fill_opacity,
-                                                                        fill_outline_color.alpha() if fill_outline_color else 255))
+                                                                        fill_outline_color.alpha()
+                                                                        if isinstance(fill_outline_color, QColor) else 255))
             dd_raster_properties.setProperty(QgsSymbolLayer.PropertyOpacity,
                                              parse_interpolate_by_zoom(json_fill_opacity, context, 100))
         elif isinstance(json_fill_opacity, list) and dd_properties.isActive(QgsSymbolLayer.PropertyFillColor):
@@ -206,10 +208,11 @@ def parse_fill_layer(json_layer, context):
             fill_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_fill_opacity, PropertyType.Opacity, context, 1,
-                                                       fill_color.alpha() if fill_color else 255))
+                                                       fill_color.alpha() if isinstance(fill_color, QColor) else 255))
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_opacity, PropertyType.Opacity, context, 1,
-                                                       fill_outline_color.alpha() if fill_outline_color else 255))
+                                                       fill_outline_color.alpha()
+                                                       if isinstance(fill_outline_color, QColor) else 255))
             dd_raster_properties.setProperty(QgsSymbolLayer.PropertyOpacity,
                                              parse_value_list(json_fill_opacity, PropertyType.Numeric, context, 100, 255))
         else:
@@ -386,7 +389,8 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         elif isinstance(json_line_opacity, dict):
             line_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
-                                      parse_interpolate_opacity_by_zoom(json_line_opacity, line_color.alpha() if line_color else 255))
+                                      parse_interpolate_opacity_by_zoom(json_line_opacity, line_color.alpha()
+                                      if isinstance(line_color, QColor) else 255))
         elif isinstance(json_line_opacity, list) and dd_properties.isActive(QgsSymbolLayer.PropertyStrokeColor):
             # opacity already defined in stroke color
             line_opacity = None
@@ -394,7 +398,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             line_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_line_opacity, PropertyType.Opacity, context, 1,
-                                                       line_color.alpha() if line_color else 255))
+                                                       line_color.alpha() if isinstance(line_color, QColor) else 255))
         else:
             line_opacity = None
             context.pushWarning(
