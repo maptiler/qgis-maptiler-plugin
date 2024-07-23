@@ -802,10 +802,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         label_settings.isExpression = True
 
     # Placement
-    if utils.is_qgs_38_or_higher():
-        label_settings.placement = Qgis.LabelPlacement.OverPoint
-    else:
-        label_settings.placement = QgsPalLayerSettings.OverPoint
+    label_settings.placement = Qgis.LabelPlacement.OverPoint
     geometry_type = QgsWkbTypes.PointGeometry
     symbol_placement = json_layout.get("symbol-placement")
     text_offset = None
