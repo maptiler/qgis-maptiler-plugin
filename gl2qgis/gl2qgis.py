@@ -807,16 +807,16 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
     symbol_placement = json_layout.get("symbol-placement")
     text_offset = None
     if symbol_placement == "line" or ("line" in str(symbol_placement)):
-            label_settings.placement = QgsPalLayerSettings.Curved
+            label_settings.placement = Qgis.LabelPlacement.Curved
             label_settings.lineSettings().setPlacementFlags(QgsLabeling.OnLine)
             geometry_type = QgsWkbTypes.LineGeometry
 
             text_rotation_alignment = json_layout.get("text-rotation-alignment")
             if text_rotation_alignment:
                 if text_rotation_alignment == "viewport":
-                    label_settings.placement = QgsPalLayerSettings.Horizontal
+                    label_settings.placement = Qgis.LabelPlacement.Horizontal
 
-            if label_settings.placement == QgsPalLayerSettings.Curved:
+            if label_settings.placement == Qgis.LabelPlacement.Curved:
                 json_text_offset = json_layout.get("text-offset")
                 text_offset_property = None
                 if json_text_offset:
@@ -872,7 +872,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
     else:
         label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
 
-    if label_settings.placement == QgsPalLayerSettings.OverPoint:
+    if label_settings.placement == Qgis.LabelPlacement.OverPoint:
         # Default
         text_anchor = "center"
         json_text_anchor = json_layout.get("text-anchor")
@@ -927,7 +927,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
 
     # highway-shields
     json_icon_image = json_layout.get("icon-image")
-    if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved) \
+    if json_icon_image and label_settings.placement in (Qgis.LabelPlacement.Horizontal, Qgis.LabelPlacement.Curved) \
             and json_layer.get("id").startswith("highway-shield"):
         backgroundSettings = QgsTextBackgroundSettings()
         backgroundSettings.setEnabled(True)
