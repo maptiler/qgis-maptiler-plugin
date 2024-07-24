@@ -168,7 +168,7 @@ def parse_fill_layer(json_layer, context):
             fill_outline_color = "dd_props"
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_outline_color, PropertyType.Color,
-                                                       context, 1, 255, fill_outline_color))
+                                                       context, 1, 255))
         elif isinstance(json_fill_outline_color, str):
             fill_outline_color = parse_color(json_fill_outline_color, context)
             fill_symbol.setStrokeColor(fill_outline_color)
@@ -193,10 +193,12 @@ def parse_fill_layer(json_layer, context):
             fill_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_interpolate_opacity_by_zoom(json_fill_opacity,
-                                                                        fill_color.alpha() if fill_color else 255))
+                                                                        fill_color.alpha()
+                                                                        if isinstance(fill_color, QColor) else 255))
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_interpolate_opacity_by_zoom(json_fill_opacity,
-                                                                        fill_outline_color.alpha() if fill_outline_color else 255))
+                                                                        fill_outline_color.alpha()
+                                                                        if isinstance(fill_outline_color, QColor) else 255))
             dd_raster_properties.setProperty(QgsSymbolLayer.PropertyOpacity,
                                              parse_interpolate_by_zoom(json_fill_opacity, context, 100))
         elif isinstance(json_fill_opacity, list) and dd_properties.isActive(QgsSymbolLayer.PropertyFillColor):
@@ -206,10 +208,11 @@ def parse_fill_layer(json_layer, context):
             fill_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_fill_opacity, PropertyType.Opacity, context, 1,
-                                                       fill_color.alpha() if fill_color else 255))
+                                                       fill_color.alpha() if isinstance(fill_color, QColor) else 255))
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
                                       parse_value_list(json_fill_opacity, PropertyType.Opacity, context, 1,
-                                                       fill_outline_color.alpha() if fill_outline_color else 255))
+                                                       fill_outline_color.alpha()
+                                                       if isinstance(fill_outline_color, QColor) else 255))
             dd_raster_properties.setProperty(QgsSymbolLayer.PropertyOpacity,
                                              parse_value_list(json_fill_opacity, PropertyType.Numeric, context, 100, 255))
         else:
@@ -386,7 +389,8 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
         elif isinstance(json_line_opacity, dict):
             line_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyStrokeColor,
-                                      parse_interpolate_opacity_by_zoom(json_line_opacity, line_color.alpha() if line_color else 255))
+                                      parse_interpolate_opacity_by_zoom(json_line_opacity, line_color.alpha()
+                                      if isinstance(line_color, QColor) else 255))
         elif isinstance(json_line_opacity, list) and dd_properties.isActive(QgsSymbolLayer.PropertyStrokeColor):
             # opacity already defined in stroke color
             line_opacity = None
@@ -394,7 +398,7 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
             line_opacity = None
             dd_properties.setProperty(QgsSymbolLayer.PropertyFillColor,
                                       parse_value_list(json_line_opacity, PropertyType.Opacity, context, 1,
-                                                       line_color.alpha() if line_color else 255))
+                                                       line_color.alpha() if isinstance(line_color, QColor) else 255))
         else:
             line_opacity = None
             context.pushWarning(
@@ -798,21 +802,21 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         label_settings.isExpression = True
 
     # Placement
-    label_settings.placement = QgsPalLayerSettings.OverPoint
+    label_settings.placement = Qgis.LabelPlacement.OverPoint
     geometry_type = QgsWkbTypes.PointGeometry
     symbol_placement = json_layout.get("symbol-placement")
     text_offset = None
     if symbol_placement == "line" or ("line" in str(symbol_placement)):
-            label_settings.placement = QgsPalLayerSettings.Curved
+            label_settings.placement = Qgis.LabelPlacement.Curved
             label_settings.lineSettings().setPlacementFlags(QgsLabeling.OnLine)
             geometry_type = QgsWkbTypes.LineGeometry
 
             text_rotation_alignment = json_layout.get("text-rotation-alignment")
             if text_rotation_alignment:
                 if text_rotation_alignment == "viewport":
-                    label_settings.placement = QgsPalLayerSettings.Horizontal
+                    label_settings.placement = Qgis.LabelPlacement.Horizontal
 
-            if label_settings.placement == QgsPalLayerSettings.Curved:
+            if label_settings.placement == Qgis.LabelPlacement.Curved:
                 json_text_offset = json_layout.get("text-offset")
                 text_offset_property = None
                 if json_text_offset:
@@ -868,7 +872,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
     else:
         label_settings.multilineAlign = QgsPalLayerSettings.MultiCenter
 
-    if label_settings.placement == QgsPalLayerSettings.OverPoint:
+    if label_settings.placement == Qgis.LabelPlacement.OverPoint:
         # Default
         text_anchor = "center"
         json_text_anchor = json_layout.get("text-anchor")
@@ -923,7 +927,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
 
     # highway-shields
     json_icon_image = json_layout.get("icon-image")
-    if json_icon_image and label_settings.placement in (QgsPalLayerSettings.Horizontal, QgsPalLayerSettings.Curved) \
+    if json_icon_image and label_settings.placement in (Qgis.LabelPlacement.Horizontal, Qgis.LabelPlacement.Curved) \
             and json_layer.get("id").startswith("highway-shield"):
         backgroundSettings = QgsTextBackgroundSettings()
         backgroundSettings.setEnabled(True)
