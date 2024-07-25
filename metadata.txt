@@ -20,7 +20,7 @@ about=- Beautiful base maps using OpenStreetMap data powered by vector tiles - s
 
   - Import your own Mapbox GL JSON style or TileJSON from any URL - even hosted on your own server.
 
-  - Print the maps using vector PDF.
+  - Print the maps using vector PDF. (It might cause spikes in Cloud export requests.)
 
 tracker=https://github.com/maptiler/qgis-maptiler-plugin/issues
 repository=https://github.com/maptiler/qgis-maptiler-plugin
