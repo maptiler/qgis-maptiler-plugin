@@ -138,9 +138,10 @@ class MapDataItem(QgsDataItem):
 
     def _add_raster_to_canvas(self, data_key='raster'):
         """add raster layer from tiles.json"""
-        if not self._are_credentials_valid() and data_key == 'raster':
-            self._openConfigureDialog()
-            return
+        if not data_key=='custom':
+            if not self._are_credentials_valid():
+                self._openConfigureDialog()
+                return
 
         try:
             tile_json_url = self._dataset[data_key]
