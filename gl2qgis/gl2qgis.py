@@ -62,6 +62,9 @@ def parse_layers(source_name: str, style_json_data: dict, context: QgsMapBoxGlSt
         layer_name = json_layer.get('source-layer')
         min_zoom = int(json_layer['minzoom']) if 'minzoom' in json_layer else -1
         max_zoom = int(json_layer['maxzoom']) if 'maxzoom' in json_layer else -1
+        # Fix missing buildings after z14 in Streets
+        if style_json_data.get('id') == 'streets' and style_id.lower() == 'building' :
+            max_zoom = -1
 
         enabled = True
         json_layout = json_layer.get("layout")
