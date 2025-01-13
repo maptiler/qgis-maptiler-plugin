@@ -247,7 +247,7 @@ def parse_fill_layer(json_layer, context):
         sprite_size = QSize()
         sprite_property = ""
         sprite_size_property = ""
-        sprite = core_converter.retrieveSpriteAsBase64(json_fill_patern, context, sprite_size, sprite_property, sprite_size_property)
+        sprite = core_converter.retrieveSpriteAsBase64(json_fill_patern, context)
 
         if sprite:
             # when fill-pattern exists, set and insert QgsRasterFillSymbolLayer
