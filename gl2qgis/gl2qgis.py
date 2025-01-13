@@ -1161,6 +1161,12 @@ def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
     return case_str
 
 
+def parse_coalesce(json_list: list, context: QgsMapBoxGlStyleConversionContext):
+    coalesce_items = list(map(parse_expression, json_list[1:], repeat(context)))
+    coalesce_str = f"COALESCE({','.join(coalesce_items)})"
+    return coalesce_str
+
+
 def parse_array_stops(stops: list, multiplier: (int, float)):
     if len(stops) < 2:
         return
@@ -1494,6 +1500,8 @@ def parse_expression(json_expr, context):
         return parse_concat(json_expr, context)
     elif op == "case":
         return parse_case(json_expr, context)
+    elif op == "coalesce":
+        return parse_coalesce(json_expr, context)
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
