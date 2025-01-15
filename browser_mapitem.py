@@ -570,7 +570,7 @@ class MapDataItem(QgsDataItem):
 
     def _edit(self):
         edit_dialog = EditConnectionDialog(self._name)
-        edit_dialog.exec_()
+        edit_dialog.exec()
         # to reload item's info, once delete item
         self._parent.deleteChildItem(self)
         self._parent.refreshConnections()
@@ -595,7 +595,7 @@ class MapDataItem(QgsDataItem):
 
     def _openConfigureDialog(self):
         configure_dialog = ConfigureDialog()
-        configure_dialog.exec_()
+        configure_dialog.exec()
         self.refreshConnections()
 
     def _qml_of(self, layer: QgsMapLayer):

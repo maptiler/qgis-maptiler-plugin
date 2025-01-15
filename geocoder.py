@@ -35,7 +35,7 @@ class MapTilerGeocoder:
 
     def _openConfigureDialog(self):
         configure_dialog = ConfigureDialog()
-        configure_dialog.exec_()
+        configure_dialog.exec()
 
 
 class MapTilerGeocoderToolbar:
@@ -48,10 +48,10 @@ class MapTilerGeocoderToolbar:
 
         # init QCompleter
         self.completer = QCompleter([])
-        self.completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.completer.setMaxVisibleItems(30)
-        self.completer.setModelSorting(QCompleter.UnsortedModel)
-        self.completer.setCompletionMode(QCompleter.UnfilteredPopupCompletion)
+        self.completer.setModelSorting(QCompleter.ModelSorting.UnsortedModel)
+        self.completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
         self.completer.activated[QModelIndex].connect(self.on_result_clicked)
 
         # init LineEdit of searchword

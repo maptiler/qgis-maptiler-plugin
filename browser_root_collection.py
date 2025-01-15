@@ -82,10 +82,10 @@ class RootCollection(QgsDataCollectionItem):
 
     def _open_add_dialog(self):
         add_dialog = AddConnectionDialog()
-        add_dialog.exec_()
+        add_dialog.exec()
         self.refreshConnections()
 
     def _open_configure_dialog(self):
         configure_dialog = ConfigureDialog()
-        configure_dialog.exec_()
+        configure_dialog.exec()
         self.refreshConnections()

@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QSettings
+from qgis.PyQt.QtCore import QSettings
 
 # QSettings holds variables as list or dict or str.
 # if int or bool value is set, they are converted to str in the Class.
