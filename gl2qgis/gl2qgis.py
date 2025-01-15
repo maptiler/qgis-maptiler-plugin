@@ -17,7 +17,7 @@ import enum
 import re
 import os
 
-from PyQt5.QtCore import Qt
+from qgis.PyQt.QtCore import Qt
 from qgis.PyQt.Qt import QPointF, QSize, QSizeF, QFont, QFontDatabase, QColor, QImage, QRegularExpression
 from qgis.core import *
 from .. import utils
@@ -278,18 +278,18 @@ def parse_fill_layer(json_layer, context):
         symbol.setOpacity(fill_opacity)
 
     if fill_outline_color == "dd_props":
-        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.SolidLine))
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.PenStyle.SolidLine))
     elif fill_outline_color:
         fill_symbol.setStrokeColor(fill_outline_color)
     elif fill_outline_color is None:
-        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.NoPen))
+        fill_symbol.setStrokeStyle(Qt.PenStyle(Qt.PenStyle.NoPen))
 
     if  fill_color == "dd_props":
-        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.SolidPattern))
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.BrushStyle.SolidPattern))
     elif fill_color:
         fill_symbol.setFillColor(fill_color)
     elif fill_color is None:
-        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.NoBrush))
+        fill_symbol.setBrushStyle(Qt.BrushStyle(Qt.BrushStyle.NoBrush))
 
 
     style = QgsVectorTileBasicRendererStyle()
@@ -442,8 +442,8 @@ def parse_line_layer(json_layer: dict, context: QgsMapBoxGlStyleConversionContex
                                 f" ({type(json_dasharray).__name__}).")
 
     # Layout
-    pen_cap_style = Qt.FlatCap
-    pen_join_style = Qt.MiterJoin
+    pen_cap_style = Qt.PenCapStyle.FlatCap
+    pen_join_style = Qt.PenJoinStyle.MiterJoin
 
     json_layout = json_layer.get("layout")
     if json_layout:
@@ -735,7 +735,7 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         format.setFont(text_font)
     if text_letter_spacing:
         f = format.font()
-        f.setLetterSpacing(QFont.AbsoluteSpacing, text_letter_spacing)
+        f.setLetterSpacing(QFont.SpacingType.AbsoluteSpacing, text_letter_spacing)
         format.setFont(f)
     if buffer_size and buffer_color and buffer_color.alpha() > 0:
         format.buffer().setEnabled(True)
@@ -1273,7 +1273,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
         then_value = json_list[i+1]
         if property_type == PropertyType.Color:
             color = parse_color(then_value, context)
-            then_value_str = QgsExpression.quotedString(color.name(QColor.HexArgb))
+            then_value_str = QgsExpression.quotedString(color.name(QColor.NameFormat.HexArgb))
         elif property_type == PropertyType.Numeric:
             then_value_str = str(then_value * multiplier)
         elif property_type == PropertyType.Opacity:
@@ -1292,7 +1292,7 @@ def parse_match_list(json_list: list, property_type: PropertyType, context: QgsM
 
     if property_type == PropertyType.Color:
         color = parse_color(json_list[-1], context)
-        else_value = QgsExpression.quotedString(color.name(QColor.HexArgb))
+        else_value = QgsExpression.quotedString(color.name(QColor.NameFormat.HexArgb))
     elif property_type == PropertyType.Numeric:
         v = json_list[-1] * multiplier
         else_value = str(v)
@@ -1388,22 +1388,22 @@ def interpolate_expression(zoom_min: float, zoom_max: float, value_min: float, v
 
 def parse_cap_style(style: str):
     if style == "round":
-        return Qt.RoundCap
+        return Qt.PenCapStyle.RoundCap
     elif style == "square":
-        return Qt.SquareCap
+        return Qt.PenCapStyle.SquareCap
     else:
         # default
-        return Qt.FlatCap
+        return Qt.PenCapStyle.FlatCap
 
 
 def parse_join_style(style: str):
     if style == "bevel":
-        return Qt.BevelJoin
+        return Qt.PenJoinStyle.BevelJoin
     elif style == "round":
-        return Qt.RoundJoin
+        return Qt.PenJoinStyle.RoundJoin
     else:
         # default
-        return Qt.MiterJoin
+        return Qt.PenJoinStyle.MiterJoin
 
 
 def parse_expression(json_expr, context):
