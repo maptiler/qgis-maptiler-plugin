@@ -247,7 +247,11 @@ def parse_fill_layer(json_layer, context):
         sprite_size = QSize()
         sprite_property = ""
         sprite_size_property = ""
-        sprite = core_converter.retrieveSpriteAsBase64(json_fill_patern, context)
+        if int(Qgis.QGIS_VERSION_INT) >= 34000:
+            sprite = core_converter.retrieveSpriteAsBase64(json_fill_patern, context)
+        else:
+            sprite = core_converter.retrieveSpriteAsBase64(json_fill_patern, context, sprite_size, sprite_property,
+                                                           sprite_size_property)
 
         if sprite:
             # when fill-pattern exists, set and insert QgsRasterFillSymbolLayer
