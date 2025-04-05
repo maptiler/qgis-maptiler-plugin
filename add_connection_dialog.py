@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from PyQt5 import uic, QtWidgets, QtCore
+from qgis.PyQt import uic, QtWidgets, QtCore
 import os
 
 from .settings_manager import SettingsManager

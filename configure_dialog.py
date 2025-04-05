@@ -2,7 +2,7 @@
 
 import os
 
-from PyQt5 import uic, QtWidgets, QtGui
+from qgis.PyQt import uic, QtWidgets, QtGui
 from qgis.core import Qgis, QgsAuthMethodConfig, QgsApplication
 from qgis.PyQt.QtWidgets import QMessageBox
 

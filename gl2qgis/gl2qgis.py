@@ -17,8 +17,8 @@ import enum
 import re
 import os
 
-from qgis.PyQt.QtCore import Qt
-from qgis.PyQt.Qt import QPointF, QSize, QSizeF, QFont, QFontDatabase, QColor, QImage, QRegularExpression
+from qgis.PyQt.QtCore import Qt, QPointF, QSize, QSizeF, QRegularExpression
+from qgis.PyQt.QtGui import QFont, QFontDatabase, QColor, QImage
 from qgis.core import *
 from .. import utils
 from itertools import repeat

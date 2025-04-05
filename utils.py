@@ -1,7 +1,7 @@
 from qgis.PyQt.QtWidgets import QMessageBox
 from qgis.core import Qgis, QgsColorRampShader, QgsNetworkAccessManager, QgsApplication, QgsAuthMethodConfig
-from qgis.PyQt.Qt import QColor
-from qgis.PyQt.QtNetwork import QNetworkRequest
+from qgis.PyQt.QtGui import QColor
+from qgis.PyQt.QtNetwork import QNetworkRequest, QNetworkReply
 from qgis.PyQt.QtCore import QUrl
 
 import ssl
@@ -24,7 +24,7 @@ def validate_credentials() -> bool:
             if token and len(token) > 33 and "_" in token:
                 request = QNetworkRequest(QUrl(testurl))
                 reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
-                if not reply_content.error():
+                if reply_content.error() == QNetworkReply.NetworkError.NoError:
                     return True
     return False
 
