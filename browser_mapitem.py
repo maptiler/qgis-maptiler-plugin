@@ -516,7 +516,9 @@ class MapDataItem(QgsDataItem):
                         tiles_json_url = source_data.get("url")
                         if tiles_json_url is not None:
                             tiles_json_data = utils.qgis_request_json(tiles_json_url)
-                            src_attr_set.add(tiles_json_data.get("attribution"))
+                            attribution = tiles_json_data.get("attribution")
+                            if attribution is not None:
+                                src_attr_set.add(attribution)
                     attribution_text = "".join(src_attr_set)
             else:
                 attribution_text = custom_json_data.get("attribution", "")
