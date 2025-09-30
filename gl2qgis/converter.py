@@ -171,7 +171,7 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
             continue
 
         if key == "opacity":
-            parsed_opacity = 1.0
+            parsed_opacity = 0.3
             if not isinstance(value, (str, float, int)):
                 
                 if isinstance(value, (dict)):
@@ -182,8 +182,7 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
                     parsed_opacity = (minzoom_opacity + maxzoom_opacity) / 2
                 else:
                     #list
-                    parsed_opacity = 1.0
-                    print(f"Could not parse raster opacity {value}, setting 1.0.")
+                    print(f"Could not parse raster opacity {value}, setting {parsed_opacity}.")
             else:
                 parsed_opacity = float(value)
             styled_renderer.setOpacity(parsed_opacity)

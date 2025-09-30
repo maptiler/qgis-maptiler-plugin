@@ -1469,11 +1469,13 @@ def parse_expression(json_expr, context):
 
         if len(json_expr) == 5 and isinstance(json_expr[3], bool) and isinstance(json_expr[4], bool):
             if isinstance(json_expr[2], list):
+                operator = "IN" if json_expr[3] == True  else "NOT IN"
                 lst = map(QgsExpression.quotedValue, json_expr[2])
                 if len(json_expr[2]) > 1:
-                    return f"{attr} IS NULL OR {QgsExpression.quotedColumnRef(attr)} IN ({', '.join(lst)})"
+                    return f"{attr} IS NULL OR {QgsExpression.quotedColumnRef(attr)} {operator} ({', '.join(lst)})"
                 else:
-                    return QgsExpression.createFieldEqualityExpression(attr, json_expr[2][0])
+                    operator = "=" if json_expr[3] == True else "!="
+                    return f"{QgsExpression.quotedColumnRef(attr)} {operator} '{json_expr[2][0]}'"
             elif isinstance(json_expr[2], (str, float, int)):
                 return QgsExpression.createFieldEqualityExpression(attr, json_expr[2])
             else:
@@ -1506,6 +1508,8 @@ def parse_expression(json_expr, context):
         return parse_case(json_expr, context)
     elif op == "coalesce":
         return parse_coalesce(json_expr, context)
+    elif op == "to-number":
+        return f"to_real({parse_expression(json_expr[1], context)})"
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
@@ -1531,6 +1535,8 @@ def parse_key(json_key, context):
             return parse_expression(json_key, context)
         else:
             return parse_key(json_key[0], context)
+    elif isinstance(json_key, int):
+        return json_key
     return QgsExpression.quotedColumnRef(json_key)
 
 
