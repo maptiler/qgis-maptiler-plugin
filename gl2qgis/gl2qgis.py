@@ -1506,6 +1506,8 @@ def parse_expression(json_expr, context):
         return parse_case(json_expr, context)
     elif op == "coalesce":
         return parse_coalesce(json_expr, context)
+    elif op == "to-number":
+        return f"to_real({parse_expression(json_expr[1], context)})"
     else:
         context.pushWarning(f"{context.layerId()}: Skipping unsupported expression.")
         return
@@ -1531,6 +1533,8 @@ def parse_key(json_key, context):
             return parse_expression(json_key, context)
         else:
             return parse_key(json_key[0], context)
+    elif isinstance(json_key, int):
+        return json_key
     return QgsExpression.quotedColumnRef(json_key)
 
 
