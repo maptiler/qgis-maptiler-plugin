@@ -39,6 +39,18 @@ STANDARD_DATASET = {
         'vector': r'https://api.maptiler.com/maps/dataviz-light/style.json',
         'customize_url': r'https://maptiler.link/qgisdatavizlight'
     },
+    'Landscape': {
+        'raster': r'https://api.maptiler.com/maps/landscape/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/landscape/style.json'
+    },
+    'Landscape Dark': {
+        'raster': r'https://api.maptiler.com/maps/landscape-dark/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/landscape-dark/style.json'
+    },
+    'Landscape Vivid': {
+        'raster': r'https://api.maptiler.com/maps/landscape-vivid/256/tiles.json',
+        'vector': r'https://api.maptiler.com/maps/landscape-vivid/style.json'
+    },
     'Ocean RGB': {
         'raster-dem': r'https://api.maptiler.com/tiles/ocean-rgb/tiles.json'
     },
