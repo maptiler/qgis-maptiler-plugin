@@ -7,6 +7,8 @@ from qgis.PyQt.QtCore import QUrl
 import ssl
 import json
 
+from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
+
 from .settings_manager import SettingsManager
 ssl._create_default_https_context = ssl._create_unverified_context
 
@@ -89,34 +91,56 @@ class MapTilerApiException(Exception):
 def _qgis_request(url: str):
     smanager = SettingsManager()
     auth_cfg_id = smanager.get_setting('auth_cfg_id')
-    if "https://api.maptiler.com" in url:
-        if "key=" in url:
-            url = url.split("key=")[0]
-        request = QNetworkRequest(QUrl(url))
-        reply_content = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+    parsed = urlsplit(url)
+    if "maptiler.com" in parsed.netloc:
+        # remove only the 'key' query parameter (keep other query items)
+        query_items = [(k, v) for k, v in parse_qsl(parsed.query) if k.lower() != 'key']
+        new_query = urlencode(query_items, doseq=True)
+        clean_url = urlunsplit((parsed.scheme, parsed.netloc, parsed.path, new_query, parsed.fragment))
+        request = QNetworkRequest(QUrl(clean_url))
+        if auth_cfg_id:
+            reply = QgsNetworkAccessManager.instance().blockingGet(request, auth_cfg_id)
+        else:
+            reply = QgsNetworkAccessManager.instance().blockingGet(request)
     else:
         request = QNetworkRequest(QUrl(url))
-        reply_content = QgsNetworkAccessManager.instance().blockingGet(request)
+        reply = QgsNetworkAccessManager.instance().blockingGet(request)
 
-    if not reply_content.error():
-        return reply_content
-    else:
-        error_msg = ""
-        error_content = ""
-        if reply_content.errorString():
-            error_msg = f"{reply_content.errorString()}"
-        if reply_content.content():
-            error_content = f"{str(reply_content.content(), 'utf-8')}"
-        raise MapTilerApiException(error_msg, error_content)
+    # Treat as success if HTTP status is 2xx, or there's non-empty content,
+    # even if Qt sets a non-fatal error flag (observed in Qt6 builds).
+    try:
+        status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        status_int = int(status) if status is not None else None
+        if status_int and 200 <= status_int < 300:
+            return reply
+    except Exception:
+        pass
+
+    if not reply.error():
+        return reply
+
+    # fallback: accept reply if it has content (helps when Qt6 marks error but returns valid JSON)
+    raw = reply.content()
+    content_bytes = raw.data() if hasattr(raw, "data") else raw
+    if content_bytes:
+        return reply
+
+    # real error — raise with details
+    err = reply.errorString() or ""
+    content_text = content_bytes.decode("utf-8", errors="replace") if content_bytes else ""
+    raise MapTilerApiException(err, content_text)
 
 
 def qgis_request_json(url: str) -> dict:
-    reply_content = _qgis_request(url)
-    if not reply_content.error():
-        json_data = json.loads(reply_content.content().data().decode())
-        return json_data
-    else:
-        return None
+    reply = _qgis_request(url)
+    # attempt to decode JSON; if it fails raise MapTilerApiException with body
+    raw = reply.content()
+    data = raw.data() if hasattr(raw, "data") else raw
+    try:
+        return json.loads(data.decode("utf-8"))
+    except Exception as e:
+        content_text = data.decode("utf-8", errors="replace") if data else ""
+        raise MapTilerApiException(f"Invalid JSON response: {e}", content_text)
 
 
 def qgis_request_data(url: str) -> bytes:
