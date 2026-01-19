@@ -67,7 +67,17 @@ A list of fonts used in maps at MapTiler can be found at
 
 ### Add background maps to a project
 
-MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser. - Basic - Bright - OpenStreetMap - Outdoor - Satellite - Terrain - Toner - Topo - Voyager
+MapTiler plugin provides several preset maps. Some of them are visible from QGIS Browser.
+
+- Basic
+- Bright
+- OpenStreetMap
+- Outdoor
+- Satellite
+- Terrain
+- Toner
+- Topo
+- Voyager
 
 More maps are available after you click on `Add a new map...` from MapTiler plugin contextual menu - on a tab `MapTiler Cloud`. You can choose from various maps available on MapTiler.
 
