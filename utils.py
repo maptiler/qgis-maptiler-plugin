@@ -34,15 +34,11 @@ def validate_credentials() -> bool:
 def is_qgs_vectortile_api_enable():
     # judge vtile is available or not
     # e.g. QGIS3.10.4 -> 31004
-    qgis_version_str = str(Qgis.QGIS_VERSION_INT)
-    minor_ver = int(qgis_version_str[1:3])
-    return minor_ver >= 13
+    return Qgis.QGIS_VERSION_INT >= 31300
 
 
 def is_qgs_early_resampling_enabled():
-    qgis_version_str = str(Qgis.QGIS_VERSION_INT)
-    minor_ver = int(qgis_version_str[1:3])
-    return minor_ver >= 25
+    return Qgis.QGIS_VERSION_INT >= 32500
 
 
 def is_in_darkmode(threshold=383):
