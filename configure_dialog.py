@@ -39,14 +39,8 @@ class ConfigureDialog(QtWidgets.QDialog):
             token = cfg.configMap().get("token")
             self.ui.token_txt.setText(token)
 
-        # e.g. QGIS3.10.4 -> 31004
-        qgis_version_str = str(Qgis.QGIS_VERSION_INT)
-        #major_ver = int(qgis_version_str[0])
-        minor_ver = int(qgis_version_str[1:3])
-        #micro_ver = int(qgis_version_str[3:])
-
         # Checkbox are available only when on QGIS version having feature of Vectortile
-        if minor_ver > 12:
+        if Qgis.QGIS_VERSION_INT >= 31300:
             self.ui.vtileCheckBox.setEnabled(True)
             prefervector = bool(int(smanager.get_setting('prefervector')))
             self.ui.vtileCheckBox.setChecked(prefervector)
