@@ -464,9 +464,10 @@ class MapDataItem(QgsDataItem):
                         html_text += f"<li>{cw}</li>"
                     html_text += "</ul>"
                     try:
-                        warnings_dlg.setMessage(html_text, Qgis.StringFormat.Html) # Qt6 (QGIS4)
+                        fmt = Qgis.StringFormat.Html # Qt6 (QGIS4)
                     except AttributeError:
-                        warnings_dlg.setMessage(html_text, 1) # backward-compatible
+                        fmt = 1 # backward-compatible
+                    warnings_dlg.setMessage(html_text, fmt)
                     warnings_dlg.showMessage()
 
                 button.pressed.connect(show_warnings)
