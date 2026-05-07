@@ -25,8 +25,11 @@ class AddConnectionDialog(QtWidgets.QDialog):
 
     def _init_list(self):
         # support multiple selection
-        self.ui.listWidget.setSelectionMode(
-            QtWidgets.QAbstractItemView.ExtendedSelection)
+        try:
+            mode = QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection # Qt6 (QGIS4)
+        except AttributeError:
+            mode = QtWidgets.QAbstractItemView.ExtendedSelection # backward-compatible
+        self.ui.listWidget.setSelectionMode(mode)
 
         DATASETS = dict(**self.STANDARD_DATASET,
                         **self.LOCAL_JP_DATASET,
