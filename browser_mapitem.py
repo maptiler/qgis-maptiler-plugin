@@ -291,7 +291,11 @@ class MapDataItem(QgsDataItem):
                 fnc.setColorRampItemList(color_ramp)
                 lgnd = QgsColorRampLegendNodeSettings()
                 lgnd.setUseContinuousLegend(True)
-                lgnd.setOrientation(1)
+                try:
+                    orientation = Qt.Orientation.Vertical # Qt6 (QGIS4)
+                except AttributeError:
+                    orientation = 1 # backward-compatible
+                lgnd.setOrientation(orientation)
                 fnc.setLegendSettings(lgnd)
                 # Shader
                 shader = QgsRasterShader()

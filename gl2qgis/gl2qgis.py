@@ -938,7 +938,11 @@ def parse_symbol_layer(json_layer: dict, map_id: str, context: QgsMapBoxGlStyleC
         backgroundSettings.setType(QgsTextBackgroundSettings.ShapeSVG)
         dd_label_properties.setProperty(QgsPalLayerSettings.ShapeSVGFile,
                                         parse_svg_path(json_icon_image, map_id, context))
-        backgroundSettings.setSizeType(0)  # buffer
+        try:
+            sz_type = QgsTextBackgroundSettings.SizeType.SizeBuffer # Qt6 (QGIS4)
+        except AttributeError:
+            sz_type = 0 # backward-compatible
+        backgroundSettings.setSizeType(sz_type)  # buffer
         backgroundSettings.setSizeUnit(context.targetUnit())
         backgroundSettings.setSize(QSizeF(1, 1))
         format.setBackground(backgroundSettings)
