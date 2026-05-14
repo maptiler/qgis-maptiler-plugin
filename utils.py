@@ -105,7 +105,11 @@ def _qgis_request(url: str):
     # Treat as success if HTTP status is 2xx, or there's non-empty content,
     # even if Qt sets a non-fatal error flag (observed in Qt6 builds).
     try:
-        status = reply.attribute(QNetworkRequest.HttpStatusCodeAttribute)
+        try:
+            attr = QNetworkRequest.Attribute.HttpStatusCodeAttribute # Qt6
+        except AttributeError:
+            attr = QNetworkRequest.HttpStatusCodeAttribute # Qt5
+        status = reply.attribute(attr)
         status_int = int(status) if status is not None else None
         if status_int and 200 <= status_int < 300:
             return reply
