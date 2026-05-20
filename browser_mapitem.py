@@ -3,13 +3,17 @@ import json
 import requests
 import webbrowser
 
-from qgis.core import *
+from qgis.core import QgsDataItem, QgsRasterLayer, QgsMapLayerStyle, \
+    QgsColorRampShader, QgsColorRampLegendNodeSettings, QgsRasterShader, \
+    QgsSingleBandPseudoColorRenderer, QgsBilinearRasterResampler, \
+    QgsProject, QgsMapLayer, QgsVectorTileLayer, QgsVectorLayer, \
+    QgsMapBoxGlStyleConversionContext, QgsUnitTypes, QgsHillshadeRenderer, \
+    Qgis, QgsRasterDataProvider, QgsLayerTreeGroup
 from qgis.PyQt.QtGui import QIcon, QAction
 from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
 from qgis.gui import QgsMessageViewer
 from qgis.utils import iface
-from qgis.PyQt.QtNetwork import QNetworkRequest
-from qgis.PyQt.QtCore import QUrl, Qt
+from qgis.PyQt.QtCore import Qt
 
 from .gl2qgis import converter
 
@@ -23,7 +27,8 @@ DATA_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "data")
 BG_VECTOR_PATH = os.path.join(DATA_PATH, "background.geojson")
 TERRAIN_COLOR_RAMP_PATH = os.path.join(DATA_PATH, "terrain-color-ramp.txt")
 OCEAN_COLOR_RAMP_PATH = os.path.join(DATA_PATH, "ocean-color-ramp.txt")
-SPRITES_PATH = os.path.join(os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
+SPRITES_PATH = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)), "gl2qgis", "sprites")
 
 
 class MapDataItem(QgsDataItem):
@@ -49,7 +54,8 @@ class MapDataItem(QgsDataItem):
 
         if 'custom' in self._dataset:
             self._add_custom_to_canvas()
-        elif utils.is_qgs_vectortile_api_enable() and prefervector and 'vector' in self._dataset:
+        elif utils.is_qgs_vectortile_api_enable() and prefervector and \
+                'vector' in self._dataset:
             self._add_vector_to_canvas()
         elif 'raster-dem' in self._dataset:
             self._add_raster_dem_to_canvas()
@@ -111,8 +117,10 @@ class MapDataItem(QgsDataItem):
                 separator.setSeparator(True)
                 actions.append(separator)
 
-                open_customize_url_action = QAction(QIcon(), 'Customize in Cloud ↗', parent)
-                open_customize_url_action.triggered.connect(self._open_customize_url)
+                open_customize_url_action = QAction(
+                    QIcon(), 'Customize in Cloud ↗', parent)
+                open_customize_url_action.triggered.connect(
+                    self._open_customize_url)
                 actions.append(open_customize_url_action)
 
         return actions
@@ -120,7 +128,9 @@ class MapDataItem(QgsDataItem):
     def _are_credentials_valid(self):
         # credentials validation
         if not utils.validate_credentials():
-            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your Credentials.')
+            QMessageBox.warning(None, 'Access Error',
+                                '\nAccess error occurred. \n'
+                                'Please Confirm your Credentials.')
             return False
         return True
 
@@ -132,13 +142,13 @@ class MapDataItem(QgsDataItem):
                 return True
         # tiles.json
         else:
-            json_data = json.loads(requests.get(json_url).text)
+            json_data = json.loads(requests.get(json_url, timeout=10).text)
             data_format = json_data['format']
             return data_format == 'pbf'
 
     def _add_raster_to_canvas(self, data_key='raster'):
         """add raster layer from tiles.json"""
-        if not data_key=='custom':
+        if not data_key == 'custom':
             if not self._are_credentials_valid():
                 self._openConfigureDialog()
                 return
@@ -151,20 +161,25 @@ class MapDataItem(QgsDataItem):
             if layer_zxy_url.startswith("https://api.maptiler.com/maps"):
                 smanager = SettingsManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
-                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                layer_zxy_url = (
+                    f"{layer_zxy_url.split('?')[0]}?usage={{usage}}")
                 if ".png" in layer_zxy_url:
                     url_split = layer_zxy_url.split(".png")
-                    uri = f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}&authcfg={auth_cfg_id}"
+                    uri = (f"type=xyz&url={url_split[0]}@2x.png{url_split[1]}"
+                           f"&authcfg={auth_cfg_id}")
                 elif ".jpg" in layer_zxy_url:
                     url_split = layer_zxy_url.split(".jpg")
-                    uri = f"type=xyz&url={url_split[0]}@2x.jpg{url_split[1]}&authcfg={auth_cfg_id}"
+                    uri = (f"type=xyz&url={url_split[0]}@2x.jpg{url_split[1]}"
+                           f"&authcfg={auth_cfg_id}")
                 elif ".webp" in layer_zxy_url:
                     url_split = layer_zxy_url.split(".webp")
-                    uri = f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}&authcfg={auth_cfg_id}"
+                    uri = (f"type=xyz&url={url_split[0]}@2x.webp{url_split[1]}"
+                           f"&authcfg={auth_cfg_id}")
             elif layer_zxy_url.startswith("https://api.maptiler.com/tiles"):
                 smanager = SettingsManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
-                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
+                layer_zxy_url = (
+                    f"{layer_zxy_url.split('?')[0]}?usage={{usage}}")
                 uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
             else:
                 uri = f"type=xyz&url={layer_zxy_url}"
@@ -191,7 +206,6 @@ class MapDataItem(QgsDataItem):
         except utils.MapTilerApiException as e:
             self._display_exception(e)
 
-
     def _add_raster_dem_to_canvas(self, data_key='raster-dem'):
         """add raster layer from tiles.json"""
         if not self._are_credentials_valid() and data_key == 'raster-dem':
@@ -202,12 +216,17 @@ class MapDataItem(QgsDataItem):
             tile_json_url = self._dataset[data_key]
             tile_json_data = utils.qgis_request_json(tile_json_url)
             layer_zxy_url = tile_json_data.get("tiles")[0]
-            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb") or layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
+            if layer_zxy_url.startswith(
+                    "https://api.maptiler.com/tiles/terrain-rgb") or \
+                    layer_zxy_url.startswith(
+                        "https://api.maptiler.com/tiles/ocean-rgb"):
                 smanager = SettingsManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
                 intprt = "maptilerterrain"
-                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
-                uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
+                layer_zxy_url = (
+                    f"{layer_zxy_url.split('?')[0]}?usage={{usage}}")
+                uri = (f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
+                       f"&interpretation={intprt}")
             else:
                 uri = f"type=xyz&url={layer_zxy_url}"
             zmax = tile_json_data.get("maxzoom")
@@ -216,10 +235,14 @@ class MapDataItem(QgsDataItem):
             raster_dem = QgsRasterLayer(uri, self._name, "wms")
 
             # Color ramp
-            if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
-                min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(TERRAIN_COLOR_RAMP_PATH)
-            elif layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
-                min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
+            if layer_zxy_url.startswith(
+                    "https://api.maptiler.com/tiles/terrain-rgb"):
+                min_ramp_value, max_ramp_value, color_ramp = \
+                    utils.load_color_ramp_from_file(TERRAIN_COLOR_RAMP_PATH)
+            elif layer_zxy_url.startswith(
+                    "https://api.maptiler.com/tiles/ocean-rgb"):
+                min_ramp_value, max_ramp_value, color_ramp = \
+                    utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
             fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
             fnc.setColorRampType(QgsColorRampShader.Interpolated)
             fnc.setClassificationMode(QgsColorRampShader.Continuous)
@@ -227,9 +250,9 @@ class MapDataItem(QgsDataItem):
             lgnd = QgsColorRampLegendNodeSettings()
             lgnd.setUseContinuousLegend(True)
             try:
-                orientation = Qt.Orientation.Horizontal # Qt6 (QGIS4)
+                orientation = Qt.Orientation.Horizontal  # Qt6 (QGIS4)
             except AttributeError:
-                orientation = 1 # backward-compatible
+                orientation = 1  # backward-compatible
             lgnd.setOrientation(orientation)
             fnc.setLegendSettings(lgnd)
             # Shader
@@ -237,7 +260,8 @@ class MapDataItem(QgsDataItem):
             shader.setRasterShaderFunction(fnc)
 
             # Renderer
-            renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), 1, shader)
+            renderer = QgsSingleBandPseudoColorRenderer(
+                raster_dem.dataProvider(), 1, shader)
             raster_dem.setRenderer(renderer)
 
             resampleFilter = raster_dem.resampleFilter()
@@ -258,7 +282,6 @@ class MapDataItem(QgsDataItem):
         except utils.MapTilerApiException as e:
             self._display_exception(e)
 
-
     def _add_terrain_group_to_canvas(self, data_key='terrain-group'):
         """add raster layer from tiles.json"""
         if not self._are_credentials_valid() and data_key == 'terrain-group':
@@ -270,25 +293,32 @@ class MapDataItem(QgsDataItem):
             node_map = root.addGroup(self._name)
             node_map.setExpanded(True)
 
-            sources = converter.get_sources_dict_from_terrain_group(self._dataset[data_key])
+            sources = converter.get_sources_dict_from_terrain_group(
+                self._dataset[data_key])
             for source_name, source_data in sources.items():
                 layer_zxy_url = source_data.get('zxy_url')
                 smanager = SettingsManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
                 intprt = "maptilerterrain"
-                layer_zxy_url = f"{layer_zxy_url.split('?')[0]}?usage={{usage}}"
-                uri = f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}&interpretation={intprt}"
+                layer_zxy_url = (
+                    f"{layer_zxy_url.split('?')[0]}?usage={{usage}}")
+                uri = (f"type=xyz&url={layer_zxy_url}&authcfg={auth_cfg_id}"
+                       f"&interpretation={intprt}")
                 zmax = source_data.get("maxzoom")
                 if zmax:
                     uri = f"{uri}&zmax={zmax}"
                 raster_dem = QgsRasterLayer(uri, source_name, "wms")
 
                 # Color ramp
-                if layer_zxy_url.startswith("https://api.maptiler.com/tiles/terrain-rgb"):
-                    min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(
-                        TERRAIN_COLOR_RAMP_PATH)
-                elif layer_zxy_url.startswith("https://api.maptiler.com/tiles/ocean-rgb"):
-                    min_ramp_value, max_ramp_value, color_ramp = utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
+                if layer_zxy_url.startswith(
+                        "https://api.maptiler.com/tiles/terrain-rgb"):
+                    min_ramp_value, max_ramp_value, color_ramp = \
+                        utils.load_color_ramp_from_file(
+                            TERRAIN_COLOR_RAMP_PATH)
+                elif layer_zxy_url.startswith(
+                        "https://api.maptiler.com/tiles/ocean-rgb"):
+                    min_ramp_value, max_ramp_value, color_ramp = \
+                        utils.load_color_ramp_from_file(OCEAN_COLOR_RAMP_PATH)
                 fnc = QgsColorRampShader(min_ramp_value, max_ramp_value)
                 fnc.setColorRampType(QgsColorRampShader.Interpolated)
                 fnc.setClassificationMode(QgsColorRampShader.Continuous)
@@ -296,9 +326,9 @@ class MapDataItem(QgsDataItem):
                 lgnd = QgsColorRampLegendNodeSettings()
                 lgnd.setUseContinuousLegend(True)
                 try:
-                    orientation = Qt.Orientation.Horizontal # Qt6 (QGIS4)
+                    orientation = Qt.Orientation.Horizontal  # Qt6 (QGIS4)
                 except AttributeError:
-                    orientation = 1 # backward-compatible
+                    orientation = 1  # backward-compatible
                 lgnd.setOrientation(orientation)
                 fnc.setLegendSettings(lgnd)
                 # Shader
@@ -306,12 +336,15 @@ class MapDataItem(QgsDataItem):
                 shader.setRasterShaderFunction(fnc)
 
                 # Renderer
-                renderer = QgsSingleBandPseudoColorRenderer(raster_dem.dataProvider(), raster_dem.type(), shader)
+                renderer = QgsSingleBandPseudoColorRenderer(
+                    raster_dem.dataProvider(), raster_dem.type(), shader)
                 raster_dem.setRenderer(renderer)
 
                 resampleFilter = raster_dem.resampleFilter()
-                resampleFilter.setZoomedInResampler(QgsBilinearRasterResampler())
-                resampleFilter.setZoomedOutResampler(QgsBilinearRasterResampler())
+                resampleFilter.setZoomedInResampler(
+                    QgsBilinearRasterResampler())
+                resampleFilter.setZoomedOutResampler(
+                    QgsBilinearRasterResampler())
 
                 # add Copyright
                 attribution_text = source_data.get("attribution")
@@ -323,7 +356,6 @@ class MapDataItem(QgsDataItem):
 
         except utils.MapTilerApiException as e:
             self._display_exception(e)
-
 
     def _add_vector_to_canvas(self, data_key='vector'):
         if data_key == "vector":
@@ -342,23 +374,25 @@ class MapDataItem(QgsDataItem):
             node_map.setExpanded(False)
 
             if style_json_data:
-                self._add_vtlayer_from_style_json(style_json_data, node_map, attribution_text)
+                self._add_vtlayer_from_style_json(
+                    style_json_data, node_map, attribution_text)
             else:
                 # when tiles.json for vector tile
                 tile_json_data = utils.qgis_request_json(json_url)
-                self._add_vtlayer_from_tile_json(tile_json_data, node_map, attribution_text)
+                self._add_vtlayer_from_tile_json(
+                    tile_json_data, node_map, attribution_text)
         except utils.MapTilerApiException as e:
             self._display_exception(e)
-
 
     def _add_vtlayer_from_style_json(self,
                                      style_json_data: dict,
                                      target_node: QgsLayerTreeGroup,
                                      attribution_text: str):
         proj = QgsProject().instance()
-        smanager =  SettingsManager()
+        smanager = SettingsManager()
         os.makedirs(SPRITES_PATH, exist_ok=True)
-        converter.write_sprite_imgs_from_style_json(style_json_data, SPRITES_PATH)
+        converter.write_sprite_imgs_from_style_json(
+            style_json_data, SPRITES_PATH)
         auth_cfg_id = smanager.get_setting('auth_cfg_id')
 
         # Context
@@ -370,7 +404,9 @@ class MapDataItem(QgsDataItem):
 
         # Add other layers from sources
         sources = converter.get_sources_dict_from_style_json(style_json_data)
-        ordered_sources = {k: v for k, v in sorted(sources.items(), key=lambda item: item[1]["order"])}
+        ordered_sources = {
+            k: v for k, v in sorted(
+                sources.items(), key=lambda item: item[1]["order"])}
         for source_id, source_data in ordered_sources.items():
             name = source_data.get("name")
             zxy_url = source_data.get("zxy_url")
@@ -388,28 +424,37 @@ class MapDataItem(QgsDataItem):
 
             if source_data["type"] == "vector":
                 vector = QgsVectorTileLayer(uri, name)
-                renderer, labeling, candidate_warnings = converter.convert(source_id, style_json_data, context)
+                renderer, labeling, candidate_warnings = converter.convert(
+                    source_id, style_json_data, context)
                 vector.setLabeling(labeling)
                 vector.setRenderer(renderer)
                 vector.setAttribution(attribution_text)
                 proj.addMapLayer(vector, False)
                 target_node.insertLayer(source_data["order"], vector)
             elif source_data["type"] == "raster-dem":
-                if "Terrain RGB" in source_data.get("name")  and "https://api.maptiler.com/tiles/terrain-rgb" in zxy_url:
+                if "Terrain RGB" in source_data.get("name") and \
+                        "https://api.maptiler.com/tiles/terrain-rgb" in \
+                        zxy_url:
                     if utils.is_qgs_early_resampling_enabled():
                         intprt = "maptilerterrain"
                         uri = f"{uri}&interpretation={intprt}"
                         raster = QgsRasterLayer(uri, name, "wms")
-                        raster.setResamplingStage(Qgis.RasterResamplingStage.Provider)
-                        raster.dataProvider().setZoomedInResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
-                        raster.dataProvider().setZoomedOutResamplingMethod(QgsRasterDataProvider.ResamplingMethod.Cubic)
-                        renderer=QgsHillshadeRenderer(raster.pipe().at(0), 1, 315, 45)
+                        raster.setResamplingStage(
+                            Qgis.RasterResamplingStage.Provider)
+                        raster.dataProvider().setZoomedInResamplingMethod(
+                            QgsRasterDataProvider.ResamplingMethod.Cubic)
+                        raster.dataProvider().setZoomedOutResamplingMethod(
+                            QgsRasterDataProvider.ResamplingMethod.Cubic)
+                        renderer = QgsHillshadeRenderer(
+                            raster.pipe().at(0), 1, 315, 45)
                         renderer.setOpacity(0.2)
                         renderer.setMultiDirectional(True)
                         raster.pipe().set(renderer)
                     else:
+                        url_replace = zxy_url.replace(
+                            'terrain-rgb', 'hillshades')
                         uri = f"zmin=0&zmax=12&type=xyz" \
-                              f"&url={zxy_url.replace('terrain-rgb', 'hillshades')}" \
+                              f"&url={url_replace}" \
                               f"&authcfg={auth_cfg_id}"
                         raster = QgsRasterLayer(uri, "hillshades", "wms")
                         renderer = raster.renderer().clone()
@@ -421,17 +466,20 @@ class MapDataItem(QgsDataItem):
                 proj.addMapLayer(raster, False)
                 target_node.insertLayer(source_data["order"], raster)
             elif source_data["type"] == "raster":
-                rlayers = converter.get_source_layers_by(source_id, style_json_data)
+                rlayers = converter.get_source_layers_by(
+                    source_id, style_json_data)
                 for rlayer_json in rlayers:
                     layer_id = rlayer_json.get("id", "NO_NAME")
                     raster = QgsRasterLayer(uri, layer_id, "wms")
                     renderer = raster.renderer()
-                    styled_renderer, styled_resampler = converter.get_raster_renderer_resampler(
-                        renderer, rlayer_json)
+                    styled_renderer, styled_resampler = \
+                        converter.get_raster_renderer_resampler(
+                            renderer, rlayer_json)
                     # raster.setRenderer(styled_renderer)
                     if styled_renderer is not None:
                         raster.setRenderer(styled_renderer)
-                    if styled_resampler == "bilinear" or styled_renderer is None:
+                    if styled_resampler == "bilinear" or \
+                            styled_renderer is None:
                         # change resampler to bilinear
                         qml_str = self._qml_of(raster)
                         bilinear_qml = self._change_resampler_to_bilinear(
@@ -451,30 +499,34 @@ class MapDataItem(QgsDataItem):
                 # Removed known warnings
                 if "sprite ''" in candidate or "sprite ' '" in candidate:
                     continue
-                if candidate.startswith("highway-shield") and "method concat" in candidate:
+                if candidate.startswith(
+                        "highway-shield") and "method concat" in candidate:
                     continue
                 warnings.append(candidate)
             # Print warnings during conversion
             if bool(warnings):
-                widget = iface.messageBar().createMessage("Vector tiles:",
-                                                          f"Style {style_json_data.get('name')} "
-                                                          f"could not be completely converted")
+                widget = iface.messageBar().createMessage(
+                    "Vector tiles:",
+                    f"Style {style_json_data.get('name')} "
+                    f"could not be completely converted")
                 button = QPushButton(widget)
                 button.setText("Details")
 
                 def show_warnings():
                     warnings_dlg = QgsMessageViewer()
                     warnings_dlg.setTitle("Vector Tiles")
-                    html_text = "<p>The following warnings were generated while converting the vector tile style:</p><ul>"
+                    html_text = ("<p>The following warnings were generated "
+                                 "while converting the vector tile "
+                                 "style:</p><ul>")
                     for cw in warnings:
                         # Skip known issues
 
                         html_text += f"<li>{cw}</li>"
                     html_text += "</ul>"
                     try:
-                        fmt = Qgis.StringFormat.Html # Qt6 (QGIS4)
+                        fmt = Qgis.StringFormat.Html  # Qt6 (QGIS4)
                     except AttributeError:
-                        fmt = 1 # backward-compatible
+                        fmt = 1  # backward-compatible
                     warnings_dlg.setMessage(html_text, fmt)
                     warnings_dlg.showMessage()
 
@@ -527,7 +579,8 @@ class MapDataItem(QgsDataItem):
                     for source_name, source_data in sources.items():
                         tiles_json_url = source_data.get("url")
                         if tiles_json_url is not None:
-                            tiles_json_data = utils.qgis_request_json(tiles_json_url)
+                            tiles_json_data = utils.qgis_request_json(
+                                tiles_json_url)
                             attribution = tiles_json_data.get("attribution")
                             if attribution is not None:
                                 src_attr_set.add(attribution)
@@ -550,8 +603,10 @@ class MapDataItem(QgsDataItem):
                 if utils.is_qgs_vectortile_api_enable():
                     self._add_vector_to_canvas(data_key='custom')
                 else:
-                    widget = iface.messageBar().createMessage(f"'{self.name()} Layer Loading Error',"
-                                                              f"'This map\'s JSON is for Vector Tile. Vector Tile feature is not available on this QGIS version.'")
+                    msg = ("'This map's JSON is for Vector Tile. Vector Tile "
+                           "feature is not available on this QGIS version.'")
+                    widget = iface.messageBar().createMessage(
+                        f"'{self.name()} Layer Loading Error',", msg)
                     iface.messageBar().pushWidget(widget, Qgis.Warning)
             else:
                 self._add_raster_to_canvas(data_key='custom')
@@ -565,7 +620,7 @@ class MapDataItem(QgsDataItem):
             msg = f"Access denied: {e.content}"
             detail_msg = f"{e.message}\n{e.content}"
         else:
-            msg = f"Access denied: Check details"
+            msg = "Access denied: Check details"
             detail_msg = f"{e.message}"
         widget = iface.messageBar().createMessage(f"{self.name()}", msg)
         button = QPushButton(widget)
@@ -619,7 +674,8 @@ class MapDataItem(QgsDataItem):
 
     def _change_resampler_to_bilinear(self, qml_str):
         default_resampler_xmltext = '<rasterresampler'
-        bilinear_resampler_xmltext = '<rasterresampler zoomedInResampler="bilinear"'
+        bilinear_resampler_xmltext = (
+            '<rasterresampler zoomedInResampler="bilinear"')
         replaced = qml_str.replace(
             default_resampler_xmltext, bilinear_resampler_xmltext)
         return replaced

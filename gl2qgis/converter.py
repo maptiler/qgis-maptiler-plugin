@@ -59,7 +59,8 @@ def get_sources_dict_from_style_json(style_json_data: dict) -> dict:
             if "maxzoom" in tile_json_data:
                 max_zoom = tile_json_data.get("maxzoom")
             if "name" in tile_json_data:
-                if not tile_json_data.get("name") or tile_json_data.get("name").isspace():
+                if not tile_json_data.get("name") or tile_json_data.get(
+                        "name").isspace():
                     source_name = source_id
                 else:
                     source_name = tile_json_data.get("name")
@@ -123,8 +124,10 @@ def get_style_json(style_json_url: str) -> dict:
         raise Exception(f"Invalid url: {style_json_url}")
 
 
-def convert(source_name: str, style_json_data: dict, context: QgsMapBoxGlStyleConversionContext):
-    renderer, labeling, warnings = parse_layers(source_name, style_json_data, context)
+def convert(source_name: str, style_json_data: dict,
+            context: QgsMapBoxGlStyleConversionContext):
+    renderer, labeling, warnings = parse_layers(
+        source_name, style_json_data, context)
     return renderer, labeling, warnings
 
 
@@ -132,7 +135,8 @@ def get_bg_renderer(style_json_data: dict):
     layers = style_json_data.get("layers")
     renderer = None
     for layer in layers:
-        if str(layer["id"]).lower() == "background" or layer["type"] == 'background':
+        if str(layer["id"]).lower() == "background" or \
+                layer["type"] == 'background':
             renderer = parse_background(layer)
     return renderer
 
@@ -152,7 +156,7 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
     if paint is None:
         return None, None
 
-    #not fully converted:only opacity, resampling
+    # not fully converted:only opacity, resampling
     gl_style = {
         "brightness_max": paint.get("raster-brightness-max"),
         "brightness_min": paint.get("raster-brightness-min"),
@@ -173,16 +177,16 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
         if key == "opacity":
             parsed_opacity = 0.3
             if not isinstance(value, (str, float, int)):
-                
                 if isinstance(value, (dict)):
-                    #e.g. {'stops': [[1, 0.2], [13, 0.1], [16, 0]]}
+                    # e.g. {'stops': [[1, 0.2], [13, 0.1], [16, 0]]}
                     stops = value.get("stops")
                     minzoom_opacity = stops[0][1]
                     maxzoom_opacity = stops[-1][1]
                     parsed_opacity = (minzoom_opacity + maxzoom_opacity) / 2
                 else:
-                    #list
-                    print(f"Could not parse raster opacity {value}, setting {parsed_opacity}.")
+                    # list
+                    print(f"Could not parse raster opacity {value}, "
+                          f"setting {parsed_opacity}.")
             else:
                 parsed_opacity = float(value)
             styled_renderer.setOpacity(parsed_opacity)
@@ -199,8 +203,10 @@ def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
         return {}
     try:
         from PIL import Image
-        sprite_json_dict = json.loads(requests.get(sprite_url + '.json').text)
-        sprite_img = Image.open(io.BytesIO(requests.get(sprite_url + '.png').content))
+        sprite_json_dict = json.loads(
+            requests.get(sprite_url + '.json', timeout=10).text)
+        sprite_img = Image.open(
+            io.BytesIO(requests.get(sprite_url + '.png', timeout=10).content))
         sprite_imgs_dict = {}
 
         for key, value in sprite_json_dict.items():
@@ -214,8 +220,11 @@ def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
         for key, value in sprite_imgs_dict.items():
             value.save(os.path.join(output_path, key + ".png"))
     except ImportError:
-        import_error_message = "You do not have PIL/Pillow library installed on your system. "\
-                "Sprites will not be supported.\n"\
-                "MacOS users: To install Pillow library, run following code in terminal:\n"\
-                "/Applications/QGIS.app/Contents/MacOS/bin/pip3 install pillow -U"
-        QMessageBox.warning(None, 'Missing PIL/Pillow library', import_error_message)
+        import_error_message = (
+            "You do not have PIL/Pillow library installed on your system. "
+            "Sprites will not be supported.\n"
+            "MacOS users: To install Pillow library, run following code "
+            "in terminal:\n"
+            "/Applications/QGIS.app/Contents/MacOS/bin/pip3 install pillow -U")
+        QMessageBox.warning(None, 'Missing PIL/Pillow library',
+                            import_error_message)

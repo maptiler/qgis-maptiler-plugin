@@ -4,7 +4,6 @@ import os
 
 from qgis.PyQt import uic, QtWidgets, QtGui
 from qgis.core import Qgis, QgsAuthMethodConfig, QgsApplication
-from qgis.PyQt.QtWidgets import QMessageBox
 
 from .settings_manager import SettingsManager
 from . import utils
@@ -39,7 +38,8 @@ class ConfigureDialog(QtWidgets.QDialog):
             token = cfg.configMap().get("token")
             self.ui.token_txt.setText(token)
 
-        # Checkbox are available only when on QGIS version having feature of Vectortile
+        # Checkbox are available only when on QGIS version having feature
+        # of Vectortile
         if Qgis.QGIS_VERSION_INT >= 31300:
             self.ui.vtileCheckBox.setEnabled(True)
             prefervector = bool(int(smanager.get_setting('prefervector')))
@@ -47,9 +47,9 @@ class ConfigureDialog(QtWidgets.QDialog):
 
         # when OS in darkmode change icon to darkmode one
         if utils.is_in_darkmode():
-            darkmode_icon_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),
-                                              "imgs",
-                                              "logo_maptiler_dark.svg")
+            darkmode_icon_path = os.path.join(
+                os.path.dirname(os.path.realpath(__file__)),
+                "imgs", "logo_maptiler_dark.svg")
             pixmap = QtGui.QPixmap(darkmode_icon_path)
             self.ui.label_2.setPixmap(pixmap)
 
@@ -63,12 +63,14 @@ class ConfigureDialog(QtWidgets.QDialog):
                 am = QgsApplication.authManager()
                 auth_cfg_id = smanager.get_setting('auth_cfg_id')
                 if auth_cfg_id:
-                    (res, cfg) = am.loadAuthenticationConfig(auth_cfg_id, cfg, True)
+                    (res, cfg) = am.loadAuthenticationConfig(
+                        auth_cfg_id, cfg, True)
                     if res:
                         saved_token = cfg.configMap().get("token")
                         if not saved_token == token:
                             cfg.setConfigMap({'token': token})
-                            (res, cfg) = am.storeAuthenticationConfig(cfg, True)
+                            (res, cfg) = am.storeAuthenticationConfig(
+                                cfg, True)
                             if res:
                                 smanager.store_setting('auth_cfg_id', cfg.id())
                     else:
@@ -87,9 +89,10 @@ class ConfigureDialog(QtWidgets.QDialog):
                 smanager.store_setting('prefervector', prefervector)
                 self.close()
             else:
-                self.ui.label_6.setText(f"Not a valid token format. (Use token, not API key.)")
+                self.ui.label_6.setText(
+                    "Not a valid token format. (Use token, not API key.)")
         else:
-            self.ui.label_6.setText(f"Token is required.")
+            self.ui.label_6.setText("Token is required.")
 
     def _rejected(self):
         self.close()
