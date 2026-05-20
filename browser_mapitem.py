@@ -4,12 +4,12 @@ import requests
 import webbrowser
 
 from qgis.core import *
-from qgis.PyQt.QtGui import QIcon
-from qgis.PyQt.QtWidgets import QAction, QMessageBox, QPushButton
+from qgis.PyQt.QtGui import QIcon, QAction
+from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
 from qgis.gui import QgsMessageViewer
 from qgis.utils import iface
 from qgis.PyQt.QtNetwork import QNetworkRequest
-from qgis.PyQt.QtCore import QUrl
+from qgis.PyQt.QtCore import QUrl, Qt
 
 from .gl2qgis import converter
 
@@ -226,7 +226,11 @@ class MapDataItem(QgsDataItem):
             fnc.setColorRampItemList(color_ramp)
             lgnd = QgsColorRampLegendNodeSettings()
             lgnd.setUseContinuousLegend(True)
-            lgnd.setOrientation(1)
+            try:
+                orientation = Qt.Orientation.Horizontal # Qt6 (QGIS4)
+            except AttributeError:
+                orientation = 1 # backward-compatible
+            lgnd.setOrientation(orientation)
             fnc.setLegendSettings(lgnd)
             # Shader
             shader = QgsRasterShader()
@@ -291,7 +295,11 @@ class MapDataItem(QgsDataItem):
                 fnc.setColorRampItemList(color_ramp)
                 lgnd = QgsColorRampLegendNodeSettings()
                 lgnd.setUseContinuousLegend(True)
-                lgnd.setOrientation(1)
+                try:
+                    orientation = Qt.Orientation.Horizontal # Qt6 (QGIS4)
+                except AttributeError:
+                    orientation = 1 # backward-compatible
+                lgnd.setOrientation(orientation)
                 fnc.setLegendSettings(lgnd)
                 # Shader
                 shader = QgsRasterShader()
