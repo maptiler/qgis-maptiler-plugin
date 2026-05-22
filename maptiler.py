@@ -134,7 +134,7 @@ class MapTiler:
             if copyright_nodes.at(i).nodeName() == "Enabled":
                 if copyright_nodes.at(i).toElement().text() == "true":
                     copyright_enabled_in_the_project = True
-            self._default_copyright = copyright_label_in_the_project
+        self._default_copyright = copyright_label_in_the_project
         self._default_copyright_is_visible = copyright_enabled_in_the_project
         QgsProject.instance().writeEntry(
             "CopyrightLabel", "/Label", self._default_copyright)

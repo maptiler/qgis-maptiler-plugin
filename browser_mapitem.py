@@ -606,7 +606,7 @@ class MapDataItem(QgsDataItem):
                     msg = ("'This map's JSON is for Vector Tile. Vector Tile "
                            "feature is not available on this QGIS version.'")
                     widget = iface.messageBar().createMessage(
-                        f"'{self.name()} Layer Loading Error',", msg)
+                        f"'{self.name()} Layer Loading Error'", msg)
                     iface.messageBar().pushWidget(widget, Qgis.Warning)
             else:
                 self._add_raster_to_canvas(data_key='custom')
