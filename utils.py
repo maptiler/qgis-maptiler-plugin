@@ -75,8 +75,10 @@ def load_color_ramp_from_file(fp: str) -> list:
     with open(fp, 'r') as f:
         lines = f.readlines()[2:]  # get rid of header
     ramp_items = [
-        [float(line.rstrip("\n").split(',')[0])] +
-        list(map(int, line.rstrip("\n").split(',')[1:5])) for line in lines]
+        [float(line.rstrip("\n").split(',')[0])]
+        + list(map(int, line.rstrip("\n").split(',')[1:5]))
+        for line in lines
+    ]
     ramp_lst = [
         QgsColorRampShader.ColorRampItem(
             ramp_item[0], QColor(
@@ -128,7 +130,7 @@ def _qgis_request(url: str):
         if status_int and 200 <= status_int < 300:
             return reply
     except Exception:
-        pass
+        pass  # nosec B110
 
     if not reply.error():
         return reply

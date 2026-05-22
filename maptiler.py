@@ -178,9 +178,10 @@ class MapTiler:
         if isinstance(lyr, list):
             lyr = lyr[0]
         # Adding layers
-        if isinstance(lyr, QgsVectorTileLayer) or \
-                (isinstance(lyr, QgsMapLayer) and
-                 "api.maptiler" in lyr.source()):
+        if isinstance(lyr, QgsVectorTileLayer) or (
+            isinstance(lyr, QgsMapLayer)
+            and "api.maptiler" in lyr.source()
+        ):
             return True
         # Removing layers
         elif isinstance(lyr, str):

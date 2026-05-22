@@ -7,7 +7,7 @@ name=MapTiler
 qgisMinimumVersion=3.24
 qgisMaximumVersion=4.99
 description=Street and satellite base maps with vector tiles
-version=3.6.2
+version=3.6.3
 author=MapTiler
 email=info@maptiler.com
 
