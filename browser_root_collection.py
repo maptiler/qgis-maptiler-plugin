@@ -1,7 +1,8 @@
 import os
 from qgis.PyQt import sip
 from qgis.PyQt.QtGui import QIcon, QAction
-from qgis.core import *
+from qgis.core import QgsDataItemProvider, QgsDataProvider, \
+    QgsDataCollectionItem
 
 from .browser_mapitem import MapDataItem
 from .add_connection_dialog import AddConnectionDialog
@@ -51,7 +52,7 @@ class RootCollection(QgsDataCollectionItem):
         selectedmaps = smanager.get_setting('selectedmaps')
 
         for key in DATASETS:
-            if not key in selectedmaps:
+            if key not in selectedmaps:
                 continue
             md_item = MapDataItem(self, key, DATASETS[key])
             sip.transferto(md_item, self)

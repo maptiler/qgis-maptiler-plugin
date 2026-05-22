@@ -2,7 +2,8 @@ from qgis.PyQt.QtCore import QSettings
 
 # QSettings holds variables as list or dict or str.
 # if int or bool value is set, they are converted to str in the Class.
-# In particular, isVectorEnabled is treated as bool by cast str '0' or '1' to int(bool).
+# In particular, isVectorEnabled is treated as bool by cast str '0' or '1'
+# to int(bool).
 
 
 class SettingsManager:
@@ -10,8 +11,10 @@ class SettingsManager:
 
     def __init__(self):
         self._settings = {
-            'selectedmaps': ['Basic', 'Bright', 'Dataviz', 'Outdoor', 'OpenStreetMap', 'Satellite', 'Streets',
-                             'Terrain', 'Toner', 'Topo', 'Voyager'],
+            'selectedmaps': [
+                'Basic', 'Bright', 'Dataviz', 'Outdoor', 'OpenStreetMap',
+                'Satellite', 'Streets', 'Terrain', 'Toner', 'Topo', 'Voyager'
+            ],
             'prefervector': '1',
             'custommaps': {},
             'auth_cfg_id': ''

@@ -4,10 +4,10 @@ import urllib
 
 from qgis.PyQt.QtCore import Qt, QModelIndex, QSettings
 from qgis.PyQt.QtWidgets import QCompleter, QLineEdit, QMessageBox
-from qgis.core import *
+from qgis.core import QgsProject, QgsPoint, QgsCoordinateReferenceSystem, \
+    QgsCoordinateTransform, QgsRectangle, QgsVectorLayer
 
 from .configure_dialog import ConfigureDialog
-from .settings_manager import SettingsManager
 from . import utils
 
 
@@ -17,7 +17,9 @@ class MapTilerGeocoder:
 
     def geocoding(self, searchword, center_lonlat):
         if not utils.validate_credentials():
-            QMessageBox.warning(None, 'Access Error', '\nAccess error occurred. \nPlease Confirm your Credentials.')
+            QMessageBox.warning(None, 'Access Error',
+                                '\nAccess error occurred. \n'
+                                'Please Confirm your Credentials.')
             self._openConfigureDialog()
             return
 
@@ -51,7 +53,8 @@ class MapTilerGeocoderToolbar:
         self.completer.setCaseSensitivity(Qt.CaseSensitivity.CaseInsensitive)
         self.completer.setMaxVisibleItems(30)
         self.completer.setModelSorting(QCompleter.ModelSorting.UnsortedModel)
-        self.completer.setCompletionMode(QCompleter.CompletionMode.UnfilteredPopupCompletion)
+        self.completer.setCompletionMode(
+            QCompleter.CompletionMode.UnfilteredPopupCompletion)
         self.completer.activated[QModelIndex].connect(self.on_result_clicked)
 
         # init LineEdit of searchword
@@ -112,7 +115,7 @@ class MapTilerGeocoderToolbar:
             user_locale = QSettings().value('locale/userLocale')
             if user_locale:
                 locale = user_locale[0:2]
-        
+
         geocoder = MapTilerGeocoder(locale)
         geojson_dict = geocoder.geocoding(searchword, center_lonlat)
         return geojson_dict
@@ -161,7 +164,8 @@ class MapTilerGeocoderToolbar:
         extent_righttop.transform(transform)
 
         # make rectangle same to new extent by transformed 2points
-        extent_rect = QgsRectangle(extent_leftbottom.x(), extent_leftbottom.y(),
-                                   extent_righttop.x(), extent_righttop.y())
+        extent_rect = QgsRectangle(
+            extent_leftbottom.x(), extent_leftbottom.y(),
+            extent_righttop.x(), extent_righttop.y())
 
         self.iface.mapCanvas().zoomToFeatureExtent(extent_rect)

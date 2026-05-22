@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-from qgis.PyQt import uic, QtWidgets, QtCore
+from qgis.PyQt import uic, QtWidgets
 import os
 
 from .settings_manager import SettingsManager
@@ -26,9 +26,10 @@ class AddConnectionDialog(QtWidgets.QDialog):
     def _init_list(self):
         # support multiple selection
         try:
-            mode = QtWidgets.QAbstractItemView.SelectionMode.ExtendedSelection # Qt6 (QGIS4)
+            enum = QtWidgets.QAbstractItemView.SelectionMode
+            mode = enum.ExtendedSelection  # Qt6
         except AttributeError:
-            mode = QtWidgets.QAbstractItemView.ExtendedSelection # backward-compatible
+            mode = QtWidgets.QAbstractItemView.ExtendedSelection  # compat
         self.ui.listWidget.setSelectionMode(mode)
 
         DATASETS = dict(**self.STANDARD_DATASET,
@@ -104,8 +105,9 @@ class AddConnectionDialog(QtWidgets.QDialog):
         custommaps = smanager.get_setting('custommaps')
         if name in custommaps:
             is_existing_name = True
-            error_message += str('"' + name + '"' +
-                                 ' already exists, please input other name.\n')
+            error_message += str(
+                '"' + name + '"'
+                + ' already exists, please input other name.\n')
 
         if is_empty_name or is_empty_url or is_existing_name:
             QtWidgets.QMessageBox.warning(None, 'Error', error_message)
