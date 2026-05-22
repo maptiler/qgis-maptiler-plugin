@@ -62,8 +62,10 @@ class EditConnectionDialog(QtWidgets.QDialog):
         custommaps = smanager.get_setting('custommaps')
         if not name == self._current_name and name in custommaps:
             is_existing_name = True
-            error_message += str('"' + name + '"' +
-                                 ' already exists, please input other name.\n')
+            error_message += (
+                f'"{name}" already exists, '
+                'please input other name.\n'
+            )
 
         if is_empty_name or is_empty_url or is_existing_name:
             QtWidgets.QMessageBox.warning(None, 'Error', error_message)
