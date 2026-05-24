@@ -74,11 +74,11 @@ def is_in_darkmode(threshold=383):
 def load_color_ramp_from_file(fp: str) -> list:
     with open(fp, 'r') as f:
         lines = f.readlines()[2:]  # get rid of header
-    ramp_items = [
-        [float(line.rstrip("\n").split(',')[0])]
-        + list(map(int, line.rstrip("\n").split(',')[1:5]))
-        for line in lines
-    ]
+    ramp_items = []
+    for line in lines:
+        parts = line.rstrip("\n").split(',')
+        item = [float(parts[0])] + [int(p) for p in parts[1:5]]
+        ramp_items.append(item)
     ramp_lst = [
         QgsColorRampShader.ColorRampItem(
             ramp_item[0], QColor(
