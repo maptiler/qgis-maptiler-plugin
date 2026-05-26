@@ -1,6 +1,7 @@
 import os
 from qgis.PyQt import sip
-from qgis.PyQt.QtGui import QIcon, QAction
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QAction
 from qgis.core import QgsDataItemProvider, QgsDataProvider, \
     QgsDataCollectionItem
 
