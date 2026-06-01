@@ -9,8 +9,8 @@ from qgis.core import QgsDataItem, QgsRasterLayer, QgsMapLayerStyle, \
     QgsProject, QgsMapLayer, QgsVectorTileLayer, QgsVectorLayer, \
     QgsMapBoxGlStyleConversionContext, QgsUnitTypes, QgsHillshadeRenderer, \
     Qgis, QgsRasterDataProvider, QgsLayerTreeGroup
-from qgis.PyQt.QtGui import QIcon, QAction
-from qgis.PyQt.QtWidgets import QMessageBox, QPushButton
+from qgis.PyQt.QtGui import QIcon
+from qgis.PyQt.QtWidgets import QMessageBox, QPushButton, QAction
 from qgis.gui import QgsMessageViewer
 from qgis.utils import iface
 from qgis.PyQt.QtCore import Qt
