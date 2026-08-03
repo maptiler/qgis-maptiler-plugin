@@ -1931,8 +1931,11 @@ def parse_expression(json_expr, context):
     elif op == "step":
         return parse_discrete(json_expr, context)
     elif op == "literal":
-        field_name, field_is_expression = process_label_field(json_expr[1])
-        return field_name
+        if isinstance(json_expr[1], list):
+            return ", ".join([parse_value(v, context) for v in json_expr[1]])
+        else:
+            field_name, field_is_expression = process_label_field(str(json_expr[1]))
+            return field_name
     elif op == "concat":
         return parse_concat(json_expr, context)
     elif op == "case":
