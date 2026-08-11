@@ -220,10 +220,16 @@ def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
 
         sprite_imgs_dict = {}
         for s_id, s_url in sprite_urls:
-            sprite_json_dict = json.loads(
-                requests.get(s_url + '.json', timeout=10).text)
-            sprite_img = Image.open(
-                io.BytesIO(requests.get(s_url + '.png', timeout=10).content))
+            try:
+                sprite_json_dict = json.loads(
+                    requests.get(s_url + '.json', timeout=10).text)
+                sprite_png_content = requests.get(
+                    s_url + '.png', timeout=10).content
+                sprite_img = Image.open(io.BytesIO(sprite_png_content))
+            except (requests.exceptions.RequestException,
+                    json.JSONDecodeError) as e:
+                print(f"Failed to fetch or parse sprite {s_url}: {e}")
+                continue
 
             for key, value in sprite_json_dict.items():
                 left = int(value["x"])
@@ -231,8 +237,9 @@ def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
                 right = left + int(value["width"])
                 bottom = top + int(value["height"])
                 cropped = sprite_img.crop((left, top, right, bottom))
-                sprite_imgs_dict[key] = cropped
-                if s_id and s_id != "default":
+                if not s_id or s_id == "default":
+                    sprite_imgs_dict[key] = cropped
+                else:
                     sprite_imgs_dict[f"{s_id}_{key}"] = cropped
 
         for key, value in sprite_imgs_dict.items():

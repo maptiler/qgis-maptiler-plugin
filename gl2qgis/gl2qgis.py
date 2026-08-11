@@ -1932,7 +1932,10 @@ def parse_expression(json_expr, context):
         return parse_discrete(json_expr, context)
     elif op == "literal":
         if isinstance(json_expr[1], list):
-            return ", ".join([parse_value(v, context) for v in json_expr[1]])
+            lst = [parse_value(v, context) for v in json_expr[1]]
+            if None in lst:
+                return None
+            return ", ".join(lst)
         else:
             field_name, field_is_expression = process_label_field(str(json_expr[1]))
             return field_name
@@ -2109,14 +2112,18 @@ def get_sprites_from_style_json(style_json_data: dict):
     ids = []
 
     for s_id, s_url in sprite_urls:
-        s_json = utils.qgis_request_json(f"{s_url}@2x.json")
-        img_data = utils.qgis_request_data(f"{s_url}@2x.png")
-        img = QImage()
-        img.loadFromData(img_data)
-        if s_json and not img.isNull():
-            json_dicts.append(s_json)
-            images.append(img)
-            ids.append(s_id)
+        try:
+            s_json = utils.qgis_request_json(f"{s_url}@2x.json")
+            img_data = utils.qgis_request_data(f"{s_url}@2x.png")
+            img = QImage()
+            img.loadFromData(img_data)
+            if s_json and not img.isNull():
+                json_dicts.append(s_json)
+                images.append(img)
+                ids.append(s_id)
+        except Exception as e:
+            print(f"Failed to fetch or parse sprite {s_url}: {e}")
+            continue
 
     if not images:
         return None, None
@@ -2138,8 +2145,9 @@ def get_sprites_from_style_json(style_json_data: dict):
         for key, val in s_json.items():
             val_copy = dict(val)
             val_copy["y"] += y_offset
-            combined_json_dict[key] = val_copy
-            if s_id and s_id != "default":
+            if not s_id or s_id == "default":
+                combined_json_dict[key] = val_copy
+            else:
                 combined_json_dict[f"{s_id}:{key}"] = val_copy
         y_offset += img.height()
 
