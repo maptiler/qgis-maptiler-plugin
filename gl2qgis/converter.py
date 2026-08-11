@@ -227,7 +227,7 @@ def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
                     s_url + '.png', timeout=10).content
                 sprite_img = Image.open(io.BytesIO(sprite_png_content))
             except (requests.exceptions.RequestException,
-                    json.JSONDecodeError) as e:
+                    json.JSONDecodeError, OSError) as e:
                 print(f"Failed to fetch or parse sprite {s_url}: {e}")
                 continue
 

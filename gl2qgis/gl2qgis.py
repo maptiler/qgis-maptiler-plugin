@@ -1517,7 +1517,11 @@ def parse_discrete(json_list: list,
 
 
 def parse_concat(json_list: list, context: QgsMapBoxGlStyleConversionContext):
-    concat_items = list(map(parse_expression, json_list[1:], repeat(context)))
+    concat_items = [parse_expression(v, context) for v in json_list[1:]]
+    if None in concat_items:
+        context.pushWarning(
+            f"{context.layerId()}: Skipping unsupported concat expression.")
+        return None
     concat_str = f"concat({','.join(concat_items)})"
     return concat_str
 
@@ -1531,6 +1535,10 @@ def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
         then_value = json_list[i + 1]
         if isinstance(when_value, list):
             when_expr = parse_expression(when_value, context)
+            if when_expr is None:
+                context.pushWarning(
+                    f"{context.layerId()}: Skipping unsupported case statement condition.")
+                return None
             case_str += f"WHEN {when_expr} THEN {then_value} "
         # EQUAL operator for single key
         elif isinstance(when_value, str):
@@ -1542,8 +1550,12 @@ def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
 
 def parse_coalesce(json_list: list,
                    context: QgsMapBoxGlStyleConversionContext):
-    coalesce_items = list(map(parse_expression, json_list[1:],
-                              repeat(context)))
+    coalesce_items = [parse_expression(v, context) for v in json_list[1:]]
+    coalesce_items = [v for v in coalesce_items if v is not None]
+    if not coalesce_items:
+        context.pushWarning(
+            f"{context.layerId()}: Skipping empty or unsupported coalesce expression.")
+        return None
     coalesce_str = f"COALESCE({','.join(coalesce_items)})"
     return coalesce_str
 
@@ -1847,8 +1859,8 @@ def parse_expression(json_expr, context):
         lst = [parse_value(v, context) for v in json_expr[1:]]
         if None in lst:
             context.pushWarning(
-                f"{context.layerId}: Skipping unsupported expression.")
-            return
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         if op == "none":
             operator_string = ") AND NOT ("
             return f"NOT ({operator_string.join(lst)})"
@@ -1864,23 +1876,39 @@ def parse_expression(json_expr, context):
         # ['!', ['has', 'level']] -> ['!has', 'level']
         return parse_key(contra_json_expr, context)
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
+        key = parse_key(json_expr[1], context)
+        val = parse_value(json_expr[2], context)
+        if key is None or val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
             op = "IS"
         elif op == "!=":
             op = "IS NOT"
-        return f"{parse_key(json_expr[1], context)} {op} {parse_value(json_expr[2], context)}"
+        return f"{key} {op} {val}"
     elif op == "has":
-        return parse_key(json_expr[1], context) + " IS NOT NULL"
+        key = parse_key(json_expr[1], context)
+        if key is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return key + " IS NOT NULL"
     elif op == "!has":
-        return parse_key(json_expr[1], context) + " IS NULL"
+        key = parse_key(json_expr[1], context)
+        if key is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return key + " IS NULL"
     elif op == "in" or op == "!in":
         key = parse_key(json_expr[1], context)
         lst = [parse_value(v, context) for v in json_expr[2:]]
-        if None in lst:
+        if key is None or None in lst:
             context.pushWarning(
-                f"{context.layerId}: Skipping unsupported expression.")
-            return
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         if op == "in":
             return f"{key} IN ({', '.join(lst)})"
         else:  # not in
@@ -1910,8 +1938,8 @@ def parse_expression(json_expr, context):
                     attr, json_expr[2])
             else:
                 context.pushWarning(
-                    f"{context.layerId}: Skipping unsupported expression.")
-                return
+                    f"{context.layerId()}: Skipping unsupported expression.")
+                return None
         else:
             case_str = "CASE "
             for i in range(2, len(json_expr) - 2, 2):
@@ -1927,7 +1955,12 @@ def parse_expression(json_expr, context):
             case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
-        return f"to_string({parse_expression(json_expr[1], context)})"
+        val = parse_expression(json_expr[1], context)
+        if val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return f"to_string({val})"
     elif op == "step":
         return parse_discrete(json_expr, context)
     elif op == "literal":
@@ -1946,11 +1979,16 @@ def parse_expression(json_expr, context):
     elif op == "coalesce":
         return parse_coalesce(json_expr, context)
     elif op == "to-number":
-        return f"to_real({parse_expression(json_expr[1], context)})"
+        val = parse_expression(json_expr[1], context)
+        if val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return f"to_real({val})"
     else:
         context.pushWarning(
             f"{context.layerId()}: Skipping unsupported expression.")
-        return
+        return None
 
 
 def parse_value(json_value, context):
