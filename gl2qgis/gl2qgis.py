@@ -1517,7 +1517,11 @@ def parse_discrete(json_list: list,
 
 
 def parse_concat(json_list: list, context: QgsMapBoxGlStyleConversionContext):
-    concat_items = list(map(parse_expression, json_list[1:], repeat(context)))
+    concat_items = [parse_expression(v, context) for v in json_list[1:]]
+    if None in concat_items:
+        context.pushWarning(
+            f"{context.layerId()}: Skipping unsupported concat expression.")
+        return None
     concat_str = f"concat({','.join(concat_items)})"
     return concat_str
 
@@ -1531,6 +1535,10 @@ def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
         then_value = json_list[i + 1]
         if isinstance(when_value, list):
             when_expr = parse_expression(when_value, context)
+            if when_expr is None:
+                context.pushWarning(
+                    f"{context.layerId()}: Skipping unsupported case statement condition.")
+                return None
             case_str += f"WHEN {when_expr} THEN {then_value} "
         # EQUAL operator for single key
         elif isinstance(when_value, str):
@@ -1542,8 +1550,12 @@ def parse_case(json_list: list, context: QgsMapBoxGlStyleConversionContext):
 
 def parse_coalesce(json_list: list,
                    context: QgsMapBoxGlStyleConversionContext):
-    coalesce_items = list(map(parse_expression, json_list[1:],
-                              repeat(context)))
+    coalesce_items = [parse_expression(v, context) for v in json_list[1:]]
+    coalesce_items = [v for v in coalesce_items if v is not None]
+    if not coalesce_items:
+        context.pushWarning(
+            f"{context.layerId()}: Skipping empty or unsupported coalesce expression.")
+        return None
     coalesce_str = f"COALESCE({','.join(coalesce_items)})"
     return coalesce_str
 
@@ -1847,8 +1859,8 @@ def parse_expression(json_expr, context):
         lst = [parse_value(v, context) for v in json_expr[1:]]
         if None in lst:
             context.pushWarning(
-                f"{context.layerId}: Skipping unsupported expression.")
-            return
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         if op == "none":
             operator_string = ") AND NOT ("
             return f"NOT ({operator_string.join(lst)})"
@@ -1864,23 +1876,39 @@ def parse_expression(json_expr, context):
         # ['!', ['has', 'level']] -> ['!has', 'level']
         return parse_key(contra_json_expr, context)
     elif op in ("==", "!=", ">=", ">", "<=", "<"):
+        key = parse_key(json_expr[1], context)
+        val = parse_value(json_expr[2], context)
+        if key is None or val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         # use IS and NOT IS instead of = and != because they can deal with NULL values
         if op == "==":
             op = "IS"
         elif op == "!=":
             op = "IS NOT"
-        return f"{parse_key(json_expr[1], context)} {op} {parse_value(json_expr[2], context)}"
+        return f"{key} {op} {val}"
     elif op == "has":
-        return parse_key(json_expr[1], context) + " IS NOT NULL"
+        key = parse_key(json_expr[1], context)
+        if key is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return key + " IS NOT NULL"
     elif op == "!has":
-        return parse_key(json_expr[1], context) + " IS NULL"
+        key = parse_key(json_expr[1], context)
+        if key is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return key + " IS NULL"
     elif op == "in" or op == "!in":
         key = parse_key(json_expr[1], context)
         lst = [parse_value(v, context) for v in json_expr[2:]]
-        if None in lst:
+        if key is None or None in lst:
             context.pushWarning(
-                f"{context.layerId}: Skipping unsupported expression.")
-            return
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
         if op == "in":
             return f"{key} IN ({', '.join(lst)})"
         else:  # not in
@@ -1910,8 +1938,8 @@ def parse_expression(json_expr, context):
                     attr, json_expr[2])
             else:
                 context.pushWarning(
-                    f"{context.layerId}: Skipping unsupported expression.")
-                return
+                    f"{context.layerId()}: Skipping unsupported expression.")
+                return None
         else:
             case_str = "CASE "
             for i in range(2, len(json_expr) - 2, 2):
@@ -1927,12 +1955,23 @@ def parse_expression(json_expr, context):
             case_str += f"ELSE {QgsExpression.quotedValue(json_expr[-1])} END"
             return case_str
     elif op == "to-string":
-        return f"to_string({parse_expression(json_expr[1], context)})"
+        val = parse_expression(json_expr[1], context)
+        if val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return f"to_string({val})"
     elif op == "step":
         return parse_discrete(json_expr, context)
     elif op == "literal":
-        field_name, field_is_expression = process_label_field(json_expr[1])
-        return field_name
+        if isinstance(json_expr[1], list):
+            lst = [parse_value(v, context) for v in json_expr[1]]
+            if None in lst:
+                return None
+            return ", ".join(lst)
+        else:
+            field_name, field_is_expression = process_label_field(str(json_expr[1]))
+            return field_name
     elif op == "concat":
         return parse_concat(json_expr, context)
     elif op == "case":
@@ -1940,11 +1979,16 @@ def parse_expression(json_expr, context):
     elif op == "coalesce":
         return parse_coalesce(json_expr, context)
     elif op == "to-number":
-        return f"to_real({parse_expression(json_expr[1], context)})"
+        val = parse_expression(json_expr[1], context)
+        if val is None:
+            context.pushWarning(
+                f"{context.layerId()}: Skipping unsupported expression.")
+            return None
+        return f"to_real({val})"
     else:
         context.pushWarning(
             f"{context.layerId()}: Skipping unsupported expression.")
-        return
+        return None
 
 
 def parse_value(json_value, context):
@@ -2080,12 +2124,70 @@ def parse_background(bg_layer_data: dict):
 
 
 def get_sprites_from_style_json(style_json_data: dict):
-    sprite_url = style_json_data.get("sprite")
-    if sprite_url is None:
+    from qgis.PyQt.QtGui import QPainter, QImage
+    from qgis.PyQt.QtCore import Qt
+
+    sprite = style_json_data.get("sprite")
+    if not sprite:
         return None, None
 
-    # sprite_json_dict = json.loads(requests.get(sprite_url + '@2x.json').text)
-    sprite_json_dict = utils.qgis_request_json(f"{sprite_url}@2x.json")
-    sprite_img = QImage()
-    sprite_img.loadFromData(utils.qgis_request_data(f"{sprite_url}@2x.png"))
-    return sprite_json_dict, sprite_img
+    sprite_urls = []
+    if isinstance(sprite, str):
+        sprite_urls = [(None, sprite)]
+    elif isinstance(sprite, list):
+        for item in sprite:
+            if isinstance(item, str):
+                sprite_urls.append((None, item))
+            elif isinstance(item, dict) and "url" in item:
+                sprite_urls.append((item.get("id"), item["url"]))
+
+    if not sprite_urls:
+        return None, None
+
+    combined_json_dict = {}
+    images = []
+    json_dicts = []
+    ids = []
+
+    for s_id, s_url in sprite_urls:
+        try:
+            s_json = utils.qgis_request_json(f"{s_url}@2x.json")
+            img_data = utils.qgis_request_data(f"{s_url}@2x.png")
+            img = QImage()
+            img.loadFromData(img_data)
+            if s_json and not img.isNull():
+                json_dicts.append(s_json)
+                images.append(img)
+                ids.append(s_id)
+        except Exception as e:
+            print(f"Failed to fetch or parse sprite {s_url}: {e}")
+            continue
+
+    if not images:
+        return None, None
+
+    if len(images) == 1 and not (ids[0] and ids[0] != "default"):
+        return json_dicts[0], images[0]
+
+    total_height = sum(img.height() for img in images)
+    max_width = max(img.width() for img in images)
+
+    combined_img = QImage(max_width, total_height, QImage.Format_ARGB32)
+    combined_img.fill(QColor("transparent"))
+
+    painter = QPainter(combined_img)
+    y_offset = 0
+
+    for img, s_json, s_id in zip(images, json_dicts, ids):
+        painter.drawImage(0, y_offset, img)
+        for key, val in s_json.items():
+            val_copy = dict(val)
+            val_copy["y"] += y_offset
+            if not s_id or s_id == "default":
+                combined_json_dict[key] = val_copy
+            else:
+                combined_json_dict[f"{s_id}:{key}"] = val_copy
+        y_offset += img.height()
+
+    painter.end()
+    return combined_json_dict, combined_img
