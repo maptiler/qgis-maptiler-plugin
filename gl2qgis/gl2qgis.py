@@ -2083,12 +2083,65 @@ def parse_background(bg_layer_data: dict):
 
 
 def get_sprites_from_style_json(style_json_data: dict):
-    sprite_url = style_json_data.get("sprite")
-    if sprite_url is None:
+    from qgis.PyQt.QtGui import QPainter, QImage
+    from qgis.PyQt.QtCore import Qt
+
+    sprite = style_json_data.get("sprite")
+    if not sprite:
         return None, None
 
-    # sprite_json_dict = json.loads(requests.get(sprite_url + '@2x.json').text)
-    sprite_json_dict = utils.qgis_request_json(f"{sprite_url}@2x.json")
-    sprite_img = QImage()
-    sprite_img.loadFromData(utils.qgis_request_data(f"{sprite_url}@2x.png"))
-    return sprite_json_dict, sprite_img
+    sprite_urls = []
+    if isinstance(sprite, str):
+        sprite_urls = [(None, sprite)]
+    elif isinstance(sprite, list):
+        for item in sprite:
+            if isinstance(item, str):
+                sprite_urls.append((None, item))
+            elif isinstance(item, dict) and "url" in item:
+                sprite_urls.append((item.get("id"), item["url"]))
+
+    if not sprite_urls:
+        return None, None
+
+    combined_json_dict = {}
+    images = []
+    json_dicts = []
+    ids = []
+
+    for s_id, s_url in sprite_urls:
+        s_json = utils.qgis_request_json(f"{s_url}@2x.json")
+        img_data = utils.qgis_request_data(f"{s_url}@2x.png")
+        img = QImage()
+        img.loadFromData(img_data)
+        if s_json and not img.isNull():
+            json_dicts.append(s_json)
+            images.append(img)
+            ids.append(s_id)
+
+    if not images:
+        return None, None
+
+    if len(images) == 1 and not (ids[0] and ids[0] != "default"):
+        return json_dicts[0], images[0]
+
+    total_height = sum(img.height() for img in images)
+    max_width = max(img.width() for img in images)
+
+    combined_img = QImage(max_width, total_height, QImage.Format_ARGB32)
+    combined_img.fill(QColor("transparent"))
+
+    painter = QPainter(combined_img)
+    y_offset = 0
+
+    for img, s_json, s_id in zip(images, json_dicts, ids):
+        painter.drawImage(0, y_offset, img)
+        for key, val in s_json.items():
+            val_copy = dict(val)
+            val_copy["y"] += y_offset
+            combined_json_dict[key] = val_copy
+            if s_id and s_id != "default":
+                combined_json_dict[f"{s_id}:{key}"] = val_copy
+        y_offset += img.height()
+
+    painter.end()
+    return combined_json_dict, combined_img

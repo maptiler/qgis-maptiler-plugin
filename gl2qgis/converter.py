@@ -198,24 +198,42 @@ def get_raster_renderer_resampler(renderer, layer_json: dict):
 
 
 def write_sprite_imgs_from_style_json(style_json_data: dict, output_path: str):
-    sprite_url = style_json_data.get("sprite")
-    if sprite_url is None:
+    sprite = style_json_data.get("sprite")
+    if not sprite:
         return {}
+
+    sprite_urls = []
+    if isinstance(sprite, str):
+        sprite_urls = [(None, sprite)]
+    elif isinstance(sprite, list):
+        for item in sprite:
+            if isinstance(item, str):
+                sprite_urls.append((None, item))
+            elif isinstance(item, dict) and "url" in item:
+                sprite_urls.append((item.get("id"), item["url"]))
+
+    if not sprite_urls:
+        return {}
+
     try:
         from PIL import Image
-        sprite_json_dict = json.loads(
-            requests.get(sprite_url + '.json', timeout=10).text)
-        sprite_img = Image.open(
-            io.BytesIO(requests.get(sprite_url + '.png', timeout=10).content))
-        sprite_imgs_dict = {}
 
-        for key, value in sprite_json_dict.items():
-            left = int(value["x"])
-            top = int(value["y"])
-            right = left + int(value["width"])
-            bottom = top + int(value["height"])
-            cropped = sprite_img.crop((left, top, right, bottom))
-            sprite_imgs_dict[key] = cropped
+        sprite_imgs_dict = {}
+        for s_id, s_url in sprite_urls:
+            sprite_json_dict = json.loads(
+                requests.get(s_url + '.json', timeout=10).text)
+            sprite_img = Image.open(
+                io.BytesIO(requests.get(s_url + '.png', timeout=10).content))
+
+            for key, value in sprite_json_dict.items():
+                left = int(value["x"])
+                top = int(value["y"])
+                right = left + int(value["width"])
+                bottom = top + int(value["height"])
+                cropped = sprite_img.crop((left, top, right, bottom))
+                sprite_imgs_dict[key] = cropped
+                if s_id and s_id != "default":
+                    sprite_imgs_dict[f"{s_id}_{key}"] = cropped
 
         for key, value in sprite_imgs_dict.items():
             value.save(os.path.join(output_path, key + ".png"))
